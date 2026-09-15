@@ -92,9 +92,11 @@ function Get-PublicUrl {
         $ErrorActionPreference = 'Continue'
         $logs = (& docker compose logs --no-color --tail 200 tunnel 2>&1 | Out-String)
         $ErrorActionPreference = $previousPreference
-        $matches = [regex]::Matches($logs, 'https://[a-z0-9-]+\.trycloudflare\.com')
+        $matches = @([regex]::Matches($logs, 'https://[a-z0-9-]+\.trycloudflare\.com') |
+            ForEach-Object { $_.Value } |
+            Where-Object { $_ -ne 'https://api.trycloudflare.com' })
         if ($matches.Count -gt 0) {
-            return $matches[$matches.Count - 1].Value
+            return $matches[$matches.Count - 1]
         }
     }
     throw 'Cloudflare belum memberikan URL publik setelah 90 detik.'
@@ -193,9 +195,11 @@ function Send-DailyEmail {
         try {
             $client.EnableSsl = $true
             $client.UseDefaultCredentials = $false
-            $client.Credentials = [System.Net.NetworkCredential]::new($env:SMTP_USER, $env:SMTP_PASS)
+            $smtpPassword = $env:SMTP_PASS -replace '\s', ''
+            $client.Credentials = [System.Net.NetworkCredential]::new($env:SMTP_USER, $smtpPassword)
             $client.Send($message)
         } finally {
+            $smtpPassword = $null
             $client.Dispose()
         }
     } finally {

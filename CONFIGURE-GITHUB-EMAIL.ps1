@@ -37,7 +37,7 @@ try {
     $securePassword = Read-Host 'Google App Password 16 karakter (input disembunyikan)' -AsSecureString
     $ptr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePassword)
     try {
-        $plainPassword = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr)
+        $plainPassword = ([Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr)) -replace '\s', ''
         if ([string]::IsNullOrWhiteSpace($plainPassword)) { throw 'App Password tidak boleh kosong.' }
         $sender | & $gh secret set SMTP_USER --repo $repo
         if ($LASTEXITCODE -ne 0) { throw 'Gagal menyimpan SMTP_USER.' }
