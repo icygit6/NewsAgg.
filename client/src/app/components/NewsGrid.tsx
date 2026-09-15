@@ -27,6 +27,9 @@ export function NewsGrid() {
     sources: selectedSources,
     sentiment: selectedSentiment,
     q: debouncedQuery,
+    // The unfiltered front page is an editorially ranked, source-diverse feed.
+    // Search and category pages remain chronological.
+    sort: selectedCategory === 'all' && !debouncedQuery ? 'top' : 'latest',
     pageSize: 20,
   });
 

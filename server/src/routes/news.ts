@@ -58,7 +58,7 @@ const ORDER_LATEST = `
 `
 
 const SENTIMENTS = new Set(['positive', 'neutral', 'negative'])
-const PAGINATED_PARAMS = ['page', 'pageSize', 'fields', 'source', 'sentiment', 'q', 'sort'] as const
+const PAGINATED_PARAMS = ['page', 'pageSize', 'fields', 'source', 'sentiment', 'q', 'sort', 'sinceHours'] as const
 
 const newsCache = new TtlCache<any>(5 * 60 * 1000, 60)
 
@@ -153,7 +153,11 @@ async function paginatedResponse(req: Request, category: string | undefined) {
   const page = clampInt(req.query.page, 1, 100000, 1)
   const pageSize = clampInt(req.query.pageSize, 1, 50, 20)
   const fields = req.query.fields === 'summary' ? 'summary' : 'full'
-  const sort = req.query.sort === 'rank' ? 'rank' : 'latest'
+  const sortRaw = String(req.query.sort ?? '').toLowerCase()
+  const sort = sortRaw === 'rank' || sortRaw === 'top' ? sortRaw : 'latest'
+  const sinceHours = req.query.sinceHours === undefined
+    ? 0
+    : clampInt(req.query.sinceHours, 1, 168, 30)
   const sentimentRaw = String(req.query.sentiment ?? '').trim().toLowerCase()
   const sentiment = SENTIMENTS.has(sentimentRaw) ? sentimentRaw : ''
   const sources = String(req.query.source ?? '')
@@ -163,7 +167,7 @@ async function paginatedResponse(req: Request, category: string | undefined) {
   const q = String(req.query.q ?? '').trim().slice(0, 100)
 
   const key = 'pg:' + JSON.stringify({
-    c: (category || 'all').toLowerCase(), page, pageSize, fields, sort, sentiment, sources, q
+    c: (category || 'all').toLowerCase(), page, pageSize, fields, sort, sentiment, sources, q, sinceHours
   })
 
   return newsCache.wrap(key, async () => {
@@ -186,6 +190,10 @@ async function paginatedResponse(req: Request, category: string | undefined) {
       // Escape ILIKE wildcards so user input is matched literally.
       params.push('%' + q.replace(/([%_\\])/g, '\\$1') + '%')
       where.push(`(a.title ILIKE $${params.length} OR a.description ILIKE $${params.length})`)
+    }
+    if (sinceHours > 0) {
+      params.push(sinceHours)
+      where.push(`COALESCE(a.scraped_at, a.published_at) >= NOW() - ($${params.length}::double precision * interval '1 hour')`)
     }
     const whereSql = where.length > 0 ? `WHERE ${where.join(' AND ')}` : ''
 
@@ -220,6 +228,42 @@ async function paginatedResponse(req: Request, category: string | undefined) {
                  COALESCE(published_at, scraped_at, '-infinity'::timestamptz) DESC
         LIMIT $${limitIdx} OFFSET $${offsetIdx}
       `
+    } else if (sort === 'top') {
+      // Editorial front page: rank for importance, then round-robin each
+      // source's 1st, 2nd, 3rd... story. This prevents a fast/high-volume
+      // publisher from taking over the All Categories feed.
+      sql = `
+        WITH filtered AS (
+          SELECT ${cols}, ${SOURCE_AUTHOR_COLS},
+                 extract(epoch FROM COALESCE(a.published_at, a.scraped_at)) AS _epoch
+          ${JOINS}
+          ${whereSql}
+        ), scored AS (
+          SELECT *,
+                 (0.5 * abs(COALESCE(sentiment_polarity, 0))
+                  + 0.3 * COALESCE(ai_relevance, 0)
+                  + 0.2 * COALESCE(
+                      (_epoch - min(_epoch) OVER ())
+                      / NULLIF(max(_epoch) OVER () - min(_epoch) OVER (), 0), 0)
+                 ) AS _rank_score
+          FROM filtered
+        ), diversified AS (
+          SELECT *,
+                 row_number() OVER (
+                   PARTITION BY source_id
+                   ORDER BY _rank_score DESC,
+                            COALESCE(published_at, scraped_at, '-infinity'::timestamptz) DESC
+                 ) AS _source_position
+          FROM scored
+        )
+        SELECT *,
+               count(*) OVER ()::int AS _total_count,
+               max(scraped_at) OVER () AS _latest_scraped
+        FROM diversified
+        ORDER BY _source_position ASC, _rank_score DESC,
+                 COALESCE(published_at, scraped_at, '-infinity'::timestamptz) DESC
+        LIMIT $${limitIdx} OFFSET $${offsetIdx}
+      `
     } else {
       sql = `
         SELECT ${cols}, ${SOURCE_AUTHOR_COLS},
@@ -238,7 +282,7 @@ async function paginatedResponse(req: Request, category: string | undefined) {
     const scrapedAt = latestRaw ? new Date(latestRaw).toISOString() : null
 
     const articles = result.rows.map((row) => {
-      const { _total_count, _latest_scraped, _rank_score, _epoch, ...rest } = row
+      const { _total_count, _latest_scraped, _rank_score, _source_position, _epoch, ...rest } = row
       return rest
     })
 

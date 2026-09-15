@@ -59,6 +59,6 @@ export function useRankedHeadlines({
   return useQuery({
     queryKey: ['headlines', key],
     queryFn: () =>
-      fetchArticlesPage({ sort: 'rank', pageSize: limit, category, sources, sentiment }, 1),
+      fetchArticlesPage({ sort: category === 'all' || !category ? 'top' : 'rank', pageSize: limit, category, sources, sentiment }, 1),
   });
 }

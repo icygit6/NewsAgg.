@@ -48,7 +48,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export function AppProvider({ children }: { children: ReactNode }) {
   const [isDark, setIsDark] = useState(() => localStorage.getItem('isDark') === 'true');
   const [language, setLanguage] = useState<Language>(
-    () => (localStorage.getItem('language') as Language) || 'en'
+    () => localStorage.getItem('language') === 'zhTW' ? 'zhTW' : 'en'
   );
   const [translateMode, setTranslateModeState] = useState(() => localStorage.getItem('translateMode') === 'true');
   const [sidebarOpen, setSidebarOpen] = useState(false);

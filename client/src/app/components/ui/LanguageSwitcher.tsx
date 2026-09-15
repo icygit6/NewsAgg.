@@ -13,8 +13,6 @@ interface LanguageSwitcherProps {
 
 export const LANG_PILLS: { code: Language; short: string }[] = [
   { code: 'en', short: 'EN' },
-  { code: 'id', short: 'ID' },
-  { code: 'zhCN', short: '简中' },
   { code: 'zhTW', short: '繁中' },
 ];
 

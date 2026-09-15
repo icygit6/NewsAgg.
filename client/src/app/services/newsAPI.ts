@@ -347,7 +347,8 @@ export interface ArticlesPageParams {
   sources?: string[];
   sentiment?: SentimentType | 'all' | '';
   q?: string;
-  sort?: 'latest' | 'rank';
+  sort?: 'latest' | 'rank' | 'top';
+  sinceHours?: number;
   pageSize?: number;
 }
 
@@ -374,7 +375,8 @@ export const fetchArticlesPage = async (
   if (params.sources && params.sources.length > 0) sp.set('source', params.sources.join(','));
   if (params.sentiment && params.sentiment !== 'all') sp.set('sentiment', params.sentiment);
   if (params.q) sp.set('q', params.q);
-  if (params.sort === 'rank') sp.set('sort', 'rank');
+  if (params.sort && params.sort !== 'latest') sp.set('sort', params.sort);
+  if (params.sinceHours) sp.set('sinceHours', String(params.sinceHours));
 
   const res = await fetch(`${API_BASE_URL}?${sp.toString()}`);
   if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
