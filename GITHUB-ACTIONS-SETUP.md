@@ -40,6 +40,8 @@ Variables:
 - `SMTP_PORT`: default `587`.
 
 Ubah `REPORT_EMAIL_TO` kapan saja untuk mengganti penerima tanpa mengubah kode.
+Untuk mengisi atau mengganti konfigurasi email tanpa menampilkan password,
+jalankan `CONFIGURE-GITHUB-EMAIL.ps1` pada laptop ini.
 
 ## Tes manual
 
