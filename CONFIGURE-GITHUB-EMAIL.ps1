@@ -16,9 +16,11 @@ if (-not $passwordLine) { throw 'Login GitHub tidak ditemukan di Windows Credent
 $env:GH_TOKEN = $passwordLine.Substring(9)
 
 try {
-    $repoInfo = & $gh repo view $repo --json nameWithOwner,isPrivate --jq 'if .isPrivate then .nameWithOwner else error("repository must be private") end'
-    if ($LASTEXITCODE -ne 0) { throw 'Repository tidak dapat diakses atau belum private.' }
-    Write-Host "Konfigurasi email untuk $repoInfo" -ForegroundColor Cyan
+    $repoJson = & $gh repo view $repo --json nameWithOwner,isPrivate
+    if ($LASTEXITCODE -ne 0) { throw 'Repository tidak dapat diakses.' }
+    $repoInfo = $repoJson | ConvertFrom-Json
+    if (-not $repoInfo.isPrivate) { throw 'Repository belum private.' }
+    Write-Host "Konfigurasi email untuk $($repoInfo.nameWithOwner)" -ForegroundColor Cyan
     Write-Host ''
 
     $sender = (Read-Host 'Alamat Gmail pengirim').Trim()
