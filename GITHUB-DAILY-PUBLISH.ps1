@@ -131,7 +131,8 @@ function Send-DailyEmail {
 
     $smtpHost = if ($env:SMTP_HOST) { $env:SMTP_HOST } else { 'smtp.gmail.com' }
     $smtpPort = if ($env:SMTP_PORT) { [int]$env:SMTP_PORT } else { 587 }
-    $mailFrom = if ($env:MAIL_FROM) { $env:MAIL_FROM } else { $env:SMTP_USER }
+    $smtpUser = $env:SMTP_USER.Trim()
+    $mailFrom = if ($env:MAIL_FROM) { $env:MAIL_FROM.Trim() } else { $smtpUser }
     $recipients = @($env:REPORT_EMAIL_TO -split '[,;]' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
     if ($recipients.Count -eq 0) { throw 'REPORT_EMAIL_TO tidak berisi alamat email.' }
 
@@ -196,7 +197,7 @@ function Send-DailyEmail {
             $client.EnableSsl = $true
             $client.UseDefaultCredentials = $false
             $smtpPassword = $env:SMTP_PASS -replace '\s', ''
-            $client.Credentials = [System.Net.NetworkCredential]::new($env:SMTP_USER, $smtpPassword)
+            $client.Credentials = [System.Net.NetworkCredential]::new($smtpUser, $smtpPassword)
             $client.Send($message)
         } finally {
             $smtpPassword = $null
