@@ -25,7 +25,7 @@ jobs:
       SMTP_USER: ${{ secrets.SMTP_USER }}
       SMTP_PASS: ${{ secrets.SMTP_PASS }}
       MAIL_FROM: ${{ vars.MAIL_FROM }}
-      REPORT_EMAIL_TO: ${{ inputs.recipients || vars.REPORT_EMAIL_TO }}
+      REPORT_EMAIL_TO: ${{ inputs.recipients || vars.REPORT_EMAIL_TO || '01257166@email.ntou.edu.tw' }}
 
     steps:
       - name: Rotate tunnel and email latest report
