@@ -55,7 +55,11 @@ services:
     build:
       context: ./scraper
       dockerfile: Dockerfile
-    env_file: ./server/.env          # NEONDB_URL + GEMINI_API_KEY + HF_TOKEN live here
+    env_file:
+      - path: ./server/.env         # NEONDB_URL + application API keys
+        required: true
+      - path: ./server/.hf.env      # local Hugging Face token; ignored by Git
+        required: false
     environment:
       GEMINI_TRANSLATE_MODEL: "${GEMINI_TRANSLATE_MODEL:-gemini-3.5-flash-lite}"
     volumes:

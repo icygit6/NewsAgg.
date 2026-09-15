@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       recipients:
-        description: "Email penerima (pisahkan dengan koma)"
+        description: "Email recipients, separated by commas / 電子郵件收件者（以逗號分隔）"
         required: false
         type: string
 

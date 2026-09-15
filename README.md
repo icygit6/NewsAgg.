@@ -75,7 +75,7 @@ GET  /health                      DB-backed liveness probe → 200 {ok:true} | 5
 
 - One accent identity: cyan→pink brand gradient (`--brand*` tokens in `client/src/styles/tokens.css`); never name a custom token `--accent` — shadcn's `theme.css` owns that name and is imported later.
 - Brand assets in `client/public/` (PWA icons, maskable icon, apple-touch icon, OG image) are generated from the cyan→pink "N" mark by `client/scripts/generate-brand-assets.py`; `favicon.svg` is hand-authored. The PWA manifest is `client/public/manifest.webmanifest`.
-- All UI strings go through `client/src/app/i18n/translations.ts` (en / id / zh-CN / zh-TW).
+- Public language controls expose English and Traditional Chinese (`en` / `zh-TW`).
 - Server state lives in React Query hooks (`client/src/app/hooks/`); AppContext holds UI + identity only.
 - The posts feature is gated by `POSTS_ENABLED` in `client/src/app/constants/index.ts`.
 - Optional integrations degrade gracefully — Cloudflare Turnstile CAPTCHA, SMTP

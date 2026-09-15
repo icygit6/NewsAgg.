@@ -12,15 +12,21 @@ Tidak ada PostgreSQL lokal — semua service memakai NeonDB lewat `NEONDB_URL`.
 
 ## Environment
 
-Compose membaca env dari **`server/.env`** (dipakai server *dan* scraper). Tidak ada
-`.hf.env` terpisah. Minimal yang harus terisi:
+Compose membaca konfigurasi aplikasi dari **`server/.env`**. Token Hugging Face
+lokal dibaca terpisah dari **`server/.hf.env`** agar tidak ikut masuk Git. Minimal
+yang harus terisi:
 
 ```env
 NEONDB_URL=postgresql://...   # WAJIB — server & scraper
 JWT_SECRET=...                # WAJIB — server gagal boot di production tanpa ini
-HF_TOKEN=...                  # untuk scraper (model HuggingFace)
 # Sisanya (GROQ_API_KEY, GEMINI_API_KEY, GOOGLE_CLIENT_ID, FAVQS_API_KEY, MEM0_API_KEY)
 # opsional agar app menyala; fitur terkait nonaktif bila kosong.
+```
+
+Isi token model pada `server/.hf.env`:
+
+```env
+HF_TOKEN=...
 ```
 
 URL API frontend di-inject saat build (`VITE_API_URL`, default `http://localhost:3000`).

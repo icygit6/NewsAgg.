@@ -33,8 +33,6 @@ export function ProfileSidebar() {
 
   const languageOptions: { code: Language; label: string }[] = [
     { code: 'en', label: t.english },
-    { code: 'id', label: t.bahasa },
-    { code: 'zhCN', label: t.zhSimplified },
     { code: 'zhTW', label: t.zhTraditional },
   ];
 
