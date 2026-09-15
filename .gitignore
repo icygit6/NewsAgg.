@@ -1,0 +1,21 @@
+# Deployment secrets and machine-specific settings
+.env
+server/.env
+.newsagg-mail.json
+.newsagg-mail-credential.xml
+
+# Local dependency/build/cache output
+client/node_modules/
+client/dist/
+server/node_modules/
+server/dist/
+scraper/__pycache__/
+scraper/**/*.pyc
+.pytest_cache/
+
+# Local logs and editor/OS files
+*.log
+logs/
+.vscode/
+.idea/
+Thumbs.db

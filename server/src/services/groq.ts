@@ -1,0 +1,101 @@
+import Groq from 'groq-sdk'
+
+// Lazily construct the client: groq-sdk throws at construction when
+// GROQ_API_KEY is missing, so an eager top-level `new Groq()` would crash the
+// entire server at boot. Deferring it means a missing key only fails the
+// chat/summary endpoints that actually call Groq (mirrors the Gemini service).
+let groqClient: Groq | null = null
+const PRIMARY_CHAT_MODEL = process.env.GROQ_CHAT_MODEL || 'openai/gpt-oss-120b'
+const FALLBACK_CHAT_MODEL = process.env.GROQ_CHAT_FALLBACK_MODEL || 'llama-3.3-70b-versatile'
+function groq(): Groq {
+  if (!groqClient) {
+    if (!process.env.GROQ_API_KEY) {
+      throw new Error('GROQ_API_KEY is not set — AI summary/chat is unavailable')
+    }
+    groqClient = new Groq({ apiKey: process.env.GROQ_API_KEY })
+  }
+  return groqClient
+}
+
+// Human-readable names so the model answers in the user's selected language.
+// Codes match what the client sends (see ArticleChat.tsx LANG_CODE map).
+const CHAT_LANG_NAMES: Record<string, string> = {
+  en: 'English',
+  id: 'Indonesian (Bahasa Indonesia)',
+  'zh-CN': 'Simplified Chinese (简体中文)',
+  'zh-TW': 'Traditional Chinese (繁體中文)',
+}
+
+// Per-article AI chat (CLAUDE.md feature 3). CLAUDE.md specifies
+// llama-3.1-70b-versatile, which Groq has decommissioned; llama-3.3-70b-versatile
+// is its current successor (verified available on the live key). The article text
+// is supplied as system context so answers stay grounded in the article.
+function articleSystemPrompt(articleContent: string, lang: string): string {
+  const langName = CHAT_LANG_NAMES[lang] ?? 'English'
+  return (
+    `You are a helpful assistant answering questions about a single news article. ` +
+    `Base your answers only on the article below. If the answer is not in the article, ` +
+    `say so plainly instead of guessing. Be concise and factual. Always respond in ${langName}.\n\n` +
+    `--- ARTICLE ---\n${articleContent.slice(0, 6000)}`
+  )
+}
+
+export async function chatWithArticle(
+  message: string,
+  articleContent: string,
+  lang: string
+): Promise<string> {
+  const completion = await createChatCompletion([
+      { role: 'system', content: articleSystemPrompt(articleContent, lang) },
+      { role: 'user', content: message },
+    ])
+  return completion.choices[0]?.message?.content?.trim() || ''
+}
+
+async function createChatCompletion(messages: Groq.Chat.ChatCompletionMessageParam[]) {
+  try {
+    return await groq().chat.completions.create({
+      model: PRIMARY_CHAT_MODEL,
+      temperature: 0.3,
+      max_tokens: 1024,
+      messages,
+    })
+  } catch (error) {
+    if (PRIMARY_CHAT_MODEL === FALLBACK_CHAT_MODEL) throw error
+    return groq().chat.completions.create({
+      model: FALLBACK_CHAT_MODEL,
+      temperature: 0.3,
+      max_tokens: 1024,
+      messages,
+    })
+  }
+}
+
+export interface ChatTurn {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+/** Multi-turn variant: replays the conversation so follow-ups ("what did I
+ * just ask?") work. Budget: newest 12 turns, each capped at 2000 chars, and
+ * the combined transcript trimmed oldest-first to ≤6000 chars. */
+export async function chatWithArticleHistory(
+  turns: ChatTurn[],
+  articleContent: string,
+  lang: string
+): Promise<string> {
+  const capped = turns
+    .slice(-12)
+    .map((t) => ({ role: t.role, content: t.content.slice(0, 2000) }))
+  let total = capped.reduce((sum, t) => sum + t.content.length, 0)
+  while (capped.length > 1 && total > 6000) {
+    total -= capped[0].content.length
+    capped.shift()
+  }
+
+  const completion = await createChatCompletion([
+      { role: 'system', content: articleSystemPrompt(articleContent, lang) },
+      ...capped,
+    ])
+  return completion.choices[0]?.message?.content?.trim() || ''
+}

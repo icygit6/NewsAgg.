@@ -1,0 +1,36 @@
+/**
+ * Design tokens — Editorial Premium Dark (see CLAUDE.md "UI/UX PRODUCTION REDESIGN").
+ *
+ * NOTE: imported BEFORE theme.css so the shadcn tokens in theme.css keep
+ * precedence on the shared names (--accent, --border). The redesign-specific
+ * tokens below (--positive, --negative, --surface, --text-*, --font-*) are
+ * additive and safe to consume directly via var(...).
+ */
+:root {
+  /* Editorial signal identity: navy ink, paper, and semantic sentiment dots.
+     (imported after this file) owns --accent for the shadcn ui/ components,
+     so an --accent here would always be shadowed. */
+  --brand: #2563eb;
+  --brand-2: #173a63;
+  --brand-hover: #1d4ed8;
+  --brand-grad: linear-gradient(90deg, #173a63 0%, #2563eb 100%);
+  --brand-ring: rgba(37, 99, 235, 0.38);
+  --positive: #168c5b;
+  --neutral: #d99a1b;
+  --negative: #d64545;
+  --surface: #ffffff;
+  --surface-alt: #f7f4ee;
+  --border: #d8dee6;
+  --text-primary: #0b1f33;
+  --text-secondary: #475569;
+  --font-display: 'Nunito', 'Noto Sans TC', 'Noto Sans SC', sans-serif;
+  --font-body: 'Nunito', 'Noto Sans TC', 'Noto Sans SC', sans-serif;
+}
+
+.dark {
+  --surface: #0f172a;
+  --surface-alt: #1e293b;
+  --border: rgba(148, 163, 184, 0.15);
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+}

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Latest Breaking News and Personalized Headlines - NewsAgg" />
+  <link rel="icon" type="image/png" href="/favicon.png?v=20260910-baseline" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20260910-baseline" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <meta name="theme-color" content="#173a63" />
+
+  <!-- Open Graph / Twitter (link previews). Image paths are root-relative; set
+       absolute URLs at deploy time if a scraper requires them (e.g. Facebook). -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="NewsAgg" />
+  <meta property="og:title" content="NewsAgg — Breaking news, personalized" />
+  <meta property="og:description" content="Latest breaking news and personalized headlines with sentiment analytics." />
+  <meta property="og:image" content="/og-image.png?v=20260910-baseline" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="NewsAgg — Breaking news, personalized" />
+  <meta name="twitter:description" content="Latest breaking news and personalized headlines with sentiment analytics." />
+  <meta name="twitter:image" content="/og-image.png?v=20260910-baseline" />
+
+  <!-- Preconnect to the image CDNs that serve hero/LCP photos (no crossorigin: img loads are non-CORS) -->
+  <link rel="preconnect" href="https://ichef.bbci.co.uk" />
+  <link rel="preconnect" href="https://media.cnn.com" />
+
+  <!-- Preconnect for Google Fonts to improve LCP / FCP -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" /></noscript>
+  <title>NewsAgg</title>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
+</html>

@@ -1,0 +1,27 @@
+# NewsAgg scraper dependencies
+# Core scraping
+requests
+beautifulsoup4
+lxml
+lxml_html_clean
+newspaper3k
+trafilatura          # primary body extractor (DOM-aware boilerplate removal)
+
+# NLP stack (HuggingFace + helpers)
+transformers
+torch
+sentencepiece
+protobuf
+accelerate
+nltk
+langdetect
+textstat
+
+# Database
+psycopg2-binary
+
+# Yahoo TW (JS rendering). After install: playwright install chromium
+playwright
+
+# Translation fallback to Gemini (optional; Lingva needs no key)
+google-genai
