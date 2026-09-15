@@ -163,51 +163,52 @@ function Send-DailyEmail {
     if (-not $headlineItems) { $headlineItems = '<li>No reportable stories were found in this window.</li>' }
 
     $topicZh = @{
-        Business = '商業'; Climate = '氣候'; Health = '健康'; Lifestyle = '生活';
-        Politics = '政治'; Science = '科學'; Sport = '體育'; World = '國際'
+        Business = '&#21830;&#26989;'; Climate = '&#27683;&#20505;'; Health = '&#20581;&#24247;'; Lifestyle = '&#29983;&#27963;';
+        Politics = '&#25919;&#27835;'; Science = '&#31185;&#23416;'; Sport = '&#39636;&#32946;'; World = '&#22283;&#38555;'
     }
-    $sentimentZh = @{ positive = '正面'; neutral = '中立'; negative = '負面' }
+    $sentimentZh = @{ positive = '&#27491;&#38754;'; neutral = '&#20013;&#31435;'; negative = '&#36000;&#38754;' }
     $leadTopicsEn = @($topicGroups | Select-Object -First 3 | ForEach-Object { "$($_.Name) ($($_.Count))" }) -join ', '
     $leadTopicsZh = @($topicGroups | Select-Object -First 3 | ForEach-Object {
         $label = if ($topicZh.ContainsKey($_.Name)) { $topicZh[$_.Name] } else { $_.Name }
         "$label ($($_.Count))"
-    }) -join '、'
+    }) -join '&#12289;'
     $leadSources = @($sourceGroups | Select-Object -First 4 | ForEach-Object { $_.Name }) -join ', '
     $dominantSentiment = if ($sentimentGroups.Count -gt 0) { [string]$sentimentGroups[0].Name } else { 'mixed' }
-    $dominantSentimentZh = if ($sentimentZh.ContainsKey($dominantSentiment)) { $sentimentZh[$dominantSentiment] } else { '多元' }
+    $dominantSentimentZh = if ($sentimentZh.ContainsKey($dominantSentiment)) { $sentimentZh[$dominantSentiment] } else { '&#22810;&#20803;' }
     $developmentTitles = @($articles | Select-Object -First 3 | ForEach-Object { '&ldquo;' + (Encode-Html $_.title) + '&rdquo;' })
     $developments = if ($developmentTitles.Count -gt 0) { $developmentTitles -join '; ' } else { 'no leading developments yet' }
 
     $editorialEn = "NewsAgg tracked $freshCount stories during the latest 30-hour reporting window. Coverage is led by $leadTopicsEn, drawing on reporting from $leadSources. The overall news tone is predominantly $dominantSentiment. The leading developments include $developments. Together, these stories provide a cross-source view of what is shaping the current news cycle."
-    $editorialZh = "NewsAgg 在最近 30 小時的新聞週期中追蹤了 $freshCount 則報導。焦點主要集中於 $leadTopicsZh，資訊來源包括 $leadSources。整體新聞情緒以$dominantSentimentZh為主。重要發展包括：$developments。這些報導共同呈現目前值得關注的國際與區域動態。"
+    $editorialZh = "NewsAgg &#22312;&#26368;&#36817; 30 &#23567;&#26178;&#30340;&#26032;&#32862;&#36913;&#26399;&#20013;&#36861;&#36452;&#20102; $freshCount &#21063;&#22577;&#23566;&#12290;&#28966;&#40670;&#20027;&#35201;&#38598;&#20013;&#26044; $leadTopicsZh&#65292;&#36039;&#35338;&#20358;&#28304;&#21253;&#25324; $leadSources&#12290;&#25972;&#39636;&#26032;&#32862;&#24773;&#32210;&#20197;$dominantSentimentZh&#28858;&#20027;&#12290;&#37325;&#35201;&#30332;&#23637;&#21253;&#25324;&#65306;$developments&#12290;&#36889;&#20123;&#22577;&#23566;&#20849;&#21516;&#21576;&#29694;&#30446;&#21069;&#20540;&#24471;&#38364;&#27880;&#30340;&#22283;&#38555;&#33287;&#21312;&#22495;&#21205;&#24907;&#12290;"
 
     $safeUrl = Encode-Html $PublicUrl
     $safeStatus = Encode-Html $ScrapeStatus
     $generatedAt = Get-Date -Format 'dd MMMM yyyy, HH:mm'
-    $subject = "NewsAgg Daily Brief | 每日新聞摘要 - $freshCount fresh stories"
+    $subjectZh = [System.Net.WebUtility]::HtmlDecode('&#27599;&#26085;&#26032;&#32862;&#25688;&#35201;')
+    $subject = "NewsAgg Daily Brief | $subjectZh - $freshCount fresh stories"
     $body = @"
 <!doctype html><html><body style="margin:0;background:#eef2ff;font-family:Segoe UI,Arial,sans-serif;color:#172554">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:28px 12px;background:#eef2ff"><tr><td align="center">
 <table role="presentation" width="640" cellspacing="0" cellpadding="0" style="max-width:640px;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 12px 30px rgba(30,64,175,.12)">
-<tr><td style="padding:30px;background:linear-gradient(135deg,#123c88,#2563eb);color:#fff"><div style="font-size:12px;letter-spacing:1.8px;text-transform:uppercase;opacity:.8">Daily intelligence brief &middot; 每日新聞情報</div><h1 style="margin:8px 0 4px;font-size:30px">NewsAgg is live</h1><div style="opacity:.88">Updated $generatedAt &middot; 更新時間 $generatedAt</div></td></tr>
+<tr><td style="padding:30px;background:linear-gradient(135deg,#123c88,#2563eb);color:#fff"><div style="font-size:12px;letter-spacing:1.8px;text-transform:uppercase;opacity:.8">Daily intelligence brief &middot; &#27599;&#26085;&#26032;&#32862;&#24773;&#22577;</div><h1 style="margin:8px 0 4px;font-size:30px">NewsAgg is live</h1><div style="opacity:.88">Updated $generatedAt &middot; &#26356;&#26032;&#26178;&#38291; $generatedAt</div></td></tr>
 <tr><td style="padding:28px">
-<p style="margin-top:0;line-height:1.6">Your new public link is ready. This briefing is generated directly from the latest scraped coverage.<br>新的公開連結已建立，本摘要直接根據最新擷取的新聞內容產生。</p>
-<p style="text-align:center;margin:26px 0"><a href="$safeUrl" style="display:inline-block;padding:14px 26px;border-radius:999px;background:#2563eb;color:#fff;text-decoration:none;font-weight:700">Open NewsAgg &middot; 開啟 NewsAgg</a></p>
+<p style="margin-top:0;line-height:1.6">Your new public link is ready. This briefing is generated directly from the latest scraped coverage.<br>&#26032;&#30340;&#20844;&#38283;&#36899;&#32080;&#24050;&#24314;&#31435;&#65292;&#26412;&#25688;&#35201;&#30452;&#25509;&#26681;&#25818;&#26368;&#26032;&#25847;&#21462;&#30340;&#26032;&#32862;&#20839;&#23481;&#29986;&#29983;&#12290;</p>
+<p style="text-align:center;margin:26px 0"><a href="$safeUrl" style="display:inline-block;padding:14px 26px;border-radius:999px;background:#2563eb;color:#fff;text-decoration:none;font-weight:700">Open NewsAgg &middot; &#38283;&#21855; NewsAgg</a></p>
 <p style="text-align:center;font-size:12px;color:#64748b;word-break:break-all">$safeUrl</p>
 <table role="presentation" width="100%" cellspacing="8" cellpadding="0"><tr>
-<td style="padding:16px;background:#eff6ff;border-radius:12px;text-align:center"><div style="font-size:26px;font-weight:800;color:#1d4ed8">$DatabaseTotal</div><div style="font-size:12px;color:#64748b">Database stories<br>資料庫新聞</div></td>
-<td style="padding:16px;background:#ecfdf5;border-radius:12px;text-align:center"><div style="font-size:26px;font-weight:800;color:#059669">$freshCount</div><div style="font-size:12px;color:#64748b">Latest 30 hours<br>最近 30 小時</div></td>
-<td style="padding:16px;background:#fff7ed;border-radius:12px;text-align:center"><div style="font-size:15px;font-weight:800;color:#c2410c">$safeStatus</div><div style="font-size:12px;color:#64748b">Scraper status<br>擷取狀態</div></td>
+<td style="padding:16px;background:#eff6ff;border-radius:12px;text-align:center"><div style="font-size:26px;font-weight:800;color:#1d4ed8">$DatabaseTotal</div><div style="font-size:12px;color:#64748b">Database stories<br>&#36039;&#26009;&#24235;&#26032;&#32862;</div></td>
+<td style="padding:16px;background:#ecfdf5;border-radius:12px;text-align:center"><div style="font-size:26px;font-weight:800;color:#059669">$freshCount</div><div style="font-size:12px;color:#64748b">Latest 30 hours<br>&#26368;&#36817; 30 &#23567;&#26178;</div></td>
+<td style="padding:16px;background:#fff7ed;border-radius:12px;text-align:center"><div style="font-size:15px;font-weight:800;color:#c2410c">$safeStatus</div><div style="font-size:12px;color:#64748b">Scraper status<br>&#25847;&#21462;&#29376;&#24907;</div></td>
 </tr></table>
-<h2 style="font-size:18px;margin:28px 0 12px">Editor's overview &middot; 編輯概覽</h2>
+<h2 style="font-size:18px;margin:28px 0 12px">Editor's overview &middot; &#32232;&#36655;&#27010;&#35261;</h2>
 <p style="line-height:1.72;margin:8px 0">$editorialEn</p>
 <p style="line-height:1.8;margin:14px 0;color:#334155">$editorialZh</p>
-<p style="line-height:1.65;margin:6px 0"><strong>Leading sources &middot; 主要來源:</strong> $sources</p>
-<p style="line-height:1.65;margin:6px 0"><strong>Coverage mix &middot; 新聞主題:</strong> $topics</p>
-<p style="line-height:1.65;margin:6px 0"><strong>Sentiment &middot; 新聞情緒:</strong> $sentiments</p>
-<h2 style="font-size:18px;margin:28px 0 12px">Top developments &middot; 重要動態</h2><ol style="padding-left:22px;line-height:1.45">$headlineItems</ol>
+<p style="line-height:1.65;margin:6px 0"><strong>Leading sources &middot; &#20027;&#35201;&#20358;&#28304;:</strong> $sources</p>
+<p style="line-height:1.65;margin:6px 0"><strong>Coverage mix &middot; &#26032;&#32862;&#20027;&#38988;:</strong> $topics</p>
+<p style="line-height:1.65;margin:6px 0"><strong>Sentiment &middot; &#26032;&#32862;&#24773;&#32210;:</strong> $sentiments</p>
+<h2 style="font-size:18px;margin:28px 0 12px">Top developments &middot; &#37325;&#35201;&#21205;&#24907;</h2><ol style="padding-left:22px;line-height:1.45">$headlineItems</ol>
 </td></tr>
-<tr><td style="padding:18px 28px;background:#f8fafc;color:#64748b;font-size:12px;text-align:center">Automatically delivered by NewsAgg &middot; 由 NewsAgg 自動寄送</td></tr>
+<tr><td style="padding:18px 28px;background:#f8fafc;color:#64748b;font-size:12px;text-align:center">Automatically delivered by NewsAgg &middot; &#30001; NewsAgg &#33258;&#21205;&#23492;&#36865;</td></tr>
 </table></td></tr></table></body></html>
 "@
 
