@@ -22,12 +22,22 @@ function Write-RunLog {
 
 function Invoke-Docker {
     param([Parameter(Mandatory)][string[]]$Arguments)
-    & docker @Arguments 2>&1 | ForEach-Object {
-        $text = $_.ToString()
-        Write-Host $text
-        Add-Content -LiteralPath $logFile -Value $text -Encoding UTF8
+    # Docker Compose emits normal progress on stderr. Windows PowerShell turns
+    # those lines into NativeCommandError records when ErrorActionPreference is
+    # Stop, so temporarily allow native output and rely on the real exit code.
+    $previousPreference = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        & docker @Arguments 2>&1 | ForEach-Object {
+            $text = $_.ToString()
+            Write-Host $text
+            Add-Content -LiteralPath $logFile -Value $text -Encoding UTF8
+        }
+        $dockerExitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $previousPreference
     }
-    return $LASTEXITCODE
+    return $dockerExitCode
 }
 
 function Wait-DockerEngine {
