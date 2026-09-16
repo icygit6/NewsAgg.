@@ -1,8 +1,19 @@
 $ErrorActionPreference = 'Stop'
 
+$rootEnv = if (Test-Path -LiteralPath '.env') { Get-Content -Raw -LiteralPath '.env' } else { '' }
+$configuredUrl = [regex]::Match($rootEnv, '(?m)^PUBLIC_CLIENT_URL=\s*(https://\S+)\s*$').Groups[1].Value
+$namedContainerId = docker compose --profile production ps -q tunnel-named
+if ($namedContainerId) {
+    if ($configuredUrl) {
+        Write-Host "NewsAgg public / NewsAgg 公開網址: $configuredUrl"
+        exit 0
+    }
+    throw 'The named tunnel is running, but PUBLIC_CLIENT_URL is missing from root .env.'
+}
+
 $containerId = docker compose ps -q tunnel
 if (-not $containerId) {
-    throw 'Tunnel publik tidak aktif. Jalankan START-NEWSAGG.ps1 terlebih dahulu.'
+    throw 'No public tunnel is running. Run START-NEWSAGG.ps1 first.'
 }
 
 # Cloudflared writes normal informational messages (including the public URL)
@@ -23,4 +34,4 @@ if ($urls.Count -eq 0) {
 }
 
 $publicUrl = $urls[$urls.Count - 1].Value
-Write-Host "NewsAgg publik: $publicUrl"
+Write-Host "Temporary public URL / 臨時公開網址: $publicUrl"

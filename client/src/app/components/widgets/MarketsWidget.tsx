@@ -49,11 +49,13 @@ const nf2 = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
 /** Market snapshot for the Business view: USD exchange rates (IDR/TWD), US
  * indices and BTC/ETH — all server-cached keyless upstreams. */
 export function MarketsWidget() {
-  const { isDark, t } = useApp();
+  const { isDark, t, language } = useApp();
   const { data, isLoading } = useMarkets();
 
   if (isLoading || !data) return null;
-  const anyStale = Boolean(data.fx?.stale || data.indices?.stale || data.crypto?.stale);
+  const anyStale = Boolean(data.fx.stale || data.indices.stale || data.crypto.stale);
+  const unavailableLabel = language === 'zhTW' ? '資料暫時無法取得' : 'Data temporarily unavailable';
+  const disclaimer = language === 'zhTW' ? '延遲資料，僅供參考' : 'Delayed data — informational only';
 
   const row = `flex items-center justify-between gap-2 py-1.5`;
   const label = `text-xs font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`;
@@ -82,7 +84,7 @@ export function MarketsWidget() {
         )}
       </div>
 
-      {data.fx && (
+      {!data.fx.unavailable && (
         <div className={`border-b pb-1 mb-1 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
           <div className={row}>
             <span className={label}>USD / IDR</span>
@@ -95,7 +97,7 @@ export function MarketsWidget() {
         </div>
       )}
 
-      {data.indices?.items.map((ix) => (
+      {data.indices.items.map((ix) => (
         <div key={ix.symbol} className={row}>
           <span className={label}>{ix.name}</span>
           <div className="flex items-center gap-2">
@@ -106,7 +108,13 @@ export function MarketsWidget() {
         </div>
       ))}
 
-      {data.crypto?.items.map((c) => (
+      {data.indices.unavailable && (
+        <p className={`py-2 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+          {unavailableLabel} — US indices
+        </p>
+      )}
+
+      {data.crypto.items.map((c) => (
         <div key={c.id} className={row}>
           <span className={label}>{c.symbol}</span>
           <div className="flex items-center gap-2">
@@ -116,6 +124,15 @@ export function MarketsWidget() {
           </div>
         </div>
       ))}
+
+      {data.crypto.unavailable && (
+        <p className={`py-2 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+          {unavailableLabel} — cryptocurrency
+        </p>
+      )}
+      <p className={`mt-2 text-[10px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
+        {disclaimer} · FX: {data.fx.provider} · Indices: {data.indices.provider} · Crypto: {data.crypto.provider}
+      </p>
     </div>
   );
 }

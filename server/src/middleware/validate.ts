@@ -103,7 +103,7 @@ export const bookmarkSchema = z.object({
 
 export const chatSchema = z.object({
   message: z.string().trim().min(1, 'message required').max(4000),
-  articleContent: z.string().max(30000).optional().default(''),
+  articleId: z.string().regex(/^[0-9a-f]{16}$/, 'invalid article reference'),
   lang: z.string().trim().max(10).optional().default('en'),
   // Optional prior turns (F8 multi-turn). Absent → exact legacy single-turn path.
   messages: z

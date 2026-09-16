@@ -2,8 +2,8 @@ name: NewsAgg Daily Publish and Report
 
 on:
   schedule:
-    - cron: "0 5 * * *"
-      timezone: "Asia/Taipei"
+    # GitHub cron is UTC. 21:00 UTC = 05:00 Asia/Taipei (next day).
+    - cron: "0 21 * * *"
   workflow_dispatch:
     inputs:
       recipients:
@@ -25,10 +25,11 @@ jobs:
       SMTP_USER: ${{ secrets.SMTP_USER }}
       SMTP_PASS: ${{ secrets.SMTP_PASS }}
       MAIL_FROM: ${{ vars.MAIL_FROM }}
+      PUBLIC_CLIENT_URL: ${{ vars.PUBLIC_CLIENT_URL }}
       REPORT_EMAIL_TO: ${{ inputs.recipients || vars.REPORT_EMAIL_TO || '01257166@email.ntou.edu.tw' }}
 
     steps:
-      - name: Rotate tunnel and email latest report
+      - name: Publish permanent site and email latest report
         shell: powershell
         run: |
           & powershell.exe -NoProfile -ExecutionPolicy Bypass `

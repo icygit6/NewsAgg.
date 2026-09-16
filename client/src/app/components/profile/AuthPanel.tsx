@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Eye, EyeOff, Info, LogIn, UserPlus, Mail } from 'lucide-react';
 import { GoogleLogin } from '@react-oauth/google';
+import { getRuntimeConfig } from '../../lib/runtimeConfig';
 import { useApp } from '../../contexts/AppContext';
 import { authService } from '../../services/authService';
-import { Turnstile, turnstileEnabled } from '../auth/Turnstile';
+import { Turnstile } from '../auth/Turnstile';
 
 interface AuthPanelProps {
   isDark: boolean;
@@ -34,7 +35,7 @@ export function AuthPanel({ isDark, onAuthenticated }: AuthPanelProps) {
 
   // Register + forgot always challenge; login only after repeated failures.
   const showCaptcha =
-    turnstileEnabled() &&
+    Boolean(getRuntimeConfig().turnstileSiteKey) &&
     (mode === 'signup' || mode === 'forgot' || (mode === 'login' && loginCaptchaRequired));
 
   const resetCaptcha = () => {
@@ -277,7 +278,7 @@ export function AuthPanel({ isDark, onAuthenticated }: AuthPanelProps) {
           : mode === 'login' ? 'Sign In' : mode === 'signup' ? 'Create Account' : 'Send reset link'}
       </button>
 
-      {mode !== 'forgot' && !(mode === 'signup' && pendingGoogleSignup) && (
+      {getRuntimeConfig().googleClientId && mode !== 'forgot' && !(mode === 'signup' && pendingGoogleSignup) && (
         <div className="mb-4">
           <GoogleLogin
             onSuccess={handleGoogleSuccess}

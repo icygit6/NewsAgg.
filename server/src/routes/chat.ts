@@ -1,37 +1,41 @@
 import { Router, Request, Response } from 'express'
 import { logger } from '../lib/logger'
-import { chatWithArticle, chatWithArticleHistory, type ChatTurn } from '../services/groq'
+import { answerArticleQuestion, type ChatTurn } from '../services/groq'
 import { validateBody, chatSchema } from '../middleware/validate'
+import { authMiddleware } from '../middleware/auth'
+import { query } from '../db/client'
+import { chatLimiter } from '../middleware/rateLimit'
 
-// POST /api/chat  { message, articleContent, lang, messages? }
-// Groq proxy for the per-article "Ask AI" chat. With `messages` (prior turns)
-// the conversation is replayed for multi-turn answers; without it the body is
-// served by the exact legacy single-turn path. Keeps GROQ_API_KEY server-side.
-// Rate-limited by chatLimiter at the mount point (index.ts) BEFORE validation,
-// so even malformed floods count against the bucket.
+// POST /api/chat  { message, articleId, lang, messages? }
+// The server fetches the article by ID; browser-supplied article text is never
+// trusted. Authentication plus the mount-level limiter protect AI quota.
 export const chatRouter = Router()
 
-chatRouter.post('/', validateBody(chatSchema), async (req: Request, res: Response) => {
-  const { message, articleContent, lang, messages } = req.body as {
+chatRouter.post('/', authMiddleware, chatLimiter, validateBody(chatSchema), async (req: Request, res: Response) => {
+  const { message, articleId, lang, messages } = req.body as {
     message: string
-    articleContent: string
+    articleId: string
     lang: string
     messages?: ChatTurn[]
   }
 
   try {
-    const reply =
-      messages && messages.length > 0
-        ? await chatWithArticleHistory(
-            [...messages, { role: 'user', content: message }],
-            articleContent,
-            lang
-          )
-        : await chatWithArticle(message, articleContent, lang)
-    if (!reply) {
+    const articleResult = await query(
+      'SELECT title, description, content FROM articles WHERE id = $1',
+      [articleId]
+    )
+    if (articleResult.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Article not found' })
+    }
+    const article = articleResult.rows[0]
+    const articleText = [article.title, article.description, article.content]
+      .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+      .join('\n\n')
+    const answer = await answerArticleQuestion(message, articleText, lang, messages ?? [])
+    if (!answer.reply) {
       return res.status(502).json({ success: false, message: 'No response from AI' })
     }
-    return res.json({ success: true, data: { reply } })
+    return res.json({ success: true, data: answer })
   } catch (err: any) {
     logger.error({ err: err?.message }, '[POST /api/chat]')
     return res.status(500).json({ success: false, message: 'AI chat failed' })

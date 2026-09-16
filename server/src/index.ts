@@ -25,7 +25,8 @@ import { userRouter } from './routes/user'
 import { quotesRouter } from './routes/quotes'
 import { translateRouter } from './routes/translate'
 import { chatRouter } from './routes/chat'
-import { apiLimiter, authLimiter, chatLimiter } from './middleware/rateLimit'
+import { apiLimiter, authLimiter } from './middleware/rateLimit'
+import { mailerConfigured } from './services/mailer'
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -52,6 +53,20 @@ app.use(express.urlencoded({ extended: true, limit: '200kb' }))
 
 app.use(apiLimiter)
 
+// Public identifiers required by the browser at runtime. Keeping these behind
+// the same-origin API avoids rebuilding the SPA whenever an OAuth client ID or
+// Turnstile site key changes. No secret values are exposed here.
+app.get('/api/config/public', (_req, res) => {
+  res.set('Cache-Control', 'no-store')
+  res.json({
+    success: true,
+    data: {
+      googleClientId: process.env.GOOGLE_CLIENT_ID || '',
+      turnstileSiteKey: process.env.TURNSTILE_SITE_KEY || '',
+    },
+  })
+})
+
 // Endpoints the client uses (same contract as the retired server.js, now on 3001)
 app.use('/api/news-from-db', newsRouter)
 app.use('/api/articles', translateRouter)
@@ -59,7 +74,7 @@ app.use('/api/articles', articlesRouter)
 app.use('/api/markets', marketsRouter)
 app.use('/api/stats', statsRouter)
 app.use('/api/quotes', quotesRouter)
-app.use('/api/chat', chatLimiter, chatRouter)
+app.use('/api/chat', chatRouter)
 app.use('/api/user', userRouter)
 app.use('/api/account', accountRouter)
 app.use('/api/posts', postsRouter)
@@ -74,7 +89,18 @@ app.use('/bookmarks', bookmarksRouter)
 app.get('/health', async (_req, res) => {
   try {
     await pool.query('SELECT 1')
-    res.json({ ok: true, db: 'up' })
+    res.json({
+      ok: true,
+      db: 'up',
+      integrations: {
+        googleAuth: Boolean(process.env.GOOGLE_CLIENT_ID),
+        smtp: mailerConfigured,
+        translation: Boolean(process.env.GEMINI_API_KEY),
+        chat: Boolean(process.env.GROQ_API_KEY),
+        financePrimary: Boolean(process.env.TWELVE_DATA_API_KEY),
+        publicUrl: /^https:\/\//i.test(process.env.PUBLIC_CLIENT_URL || ''),
+      },
+    })
   } catch (err) {
     logger.error({ err }, 'health check: database unreachable')
     res.status(503).json({ ok: false, db: 'down' })

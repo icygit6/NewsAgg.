@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 // Lightweight Cloudflare Turnstile wrapper — no extra dependency, just the
 // official script loaded once and rendered explicitly. Renders nothing when
 // VITE_TURNSTILE_SITE_KEY is unset, so the auth forms work with zero config.
-const SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined;
+import { getRuntimeConfig } from '../../lib/runtimeConfig';
 const SCRIPT_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
 
 interface TurnstileApi {
@@ -38,7 +38,8 @@ interface TurnstileProps {
   isDark?: boolean;
 }
 
-export function turnstileEnabled(): boolean {
+function turnstileEnabled(): boolean {
+  const SITE_KEY = getRuntimeConfig().turnstileSiteKey;
   return typeof SITE_KEY === 'string' && SITE_KEY.length > 0;
 }
 
@@ -51,12 +52,13 @@ export function Turnstile({ onToken, isDark }: TurnstileProps) {
 
   useEffect(() => {
     if (!turnstileEnabled()) return;
+    const siteKey = getRuntimeConfig().turnstileSiteKey;
     let cancelled = false;
     loadScript()
       .then(() => {
         if (cancelled || !containerRef.current || !window.turnstile) return;
         widgetId.current = window.turnstile.render(containerRef.current, {
-          sitekey: SITE_KEY,
+          sitekey: siteKey,
           theme: isDark ? 'dark' : 'light',
           callback: (token: string) => onTokenRef.current(token),
           'expired-callback': () => onTokenRef.current(''),

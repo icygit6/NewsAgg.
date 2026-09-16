@@ -33,7 +33,9 @@ def build_ai_summary(text: str, language: str = "en") -> Optional[str]:
     """BART abstractive teaser for English; extractive first sentences for
     everything else (BART emits garbage on non-EN, and CJK text has no
     whitespace words — the old word-count gate silently skipped zh entirely)."""
-    chunk = text[:1024]
+    # Let the tokenizer apply its own 1,024-token limit rather than imposing a
+    # much shorter 1,024-character limit before tokenization.
+    chunk = text[:4000]
     is_en = (language or "en").startswith("en")
 
     if is_en:

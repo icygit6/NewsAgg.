@@ -3,11 +3,10 @@ name: Scraper
 
 on:
   schedule:
-    # Scrape two hours before the 05:00 daily email.
-    - cron: '0 3 * * *'
-      timezone: 'Asia/Taipei'
-    - cron: '0 3 * * 0'
-      timezone: 'UTC'
+    # GitHub cron is UTC. 19:00 UTC = 03:00 Asia/Taipei (next day), two
+    # hours before the daily email. Weekly cleanup: Sunday 04:00 Taipei.
+    - cron: '0 19 * * *'
+    - cron: '0 20 * * 6'
   workflow_dispatch:
     inputs:
       job:
@@ -27,7 +26,7 @@ concurrency:
 jobs:
   scrape:
     if: >-
-      (github.event_name == 'schedule' && github.event.schedule == '0 3 * * *') ||
+      (github.event_name == 'schedule' && github.event.schedule == '0 19 * * *') ||
       (github.event_name == 'workflow_dispatch' && inputs.job == 'scrape')
     runs-on: ubuntu-latest
     timeout-minutes: 360
@@ -83,7 +82,7 @@ jobs:
 
   cleanup:
     if: >-
-      (github.event_name == 'schedule' && github.event.schedule == '0 3 * * 0') ||
+      (github.event_name == 'schedule' && github.event.schedule == '0 20 * * 6') ||
       (github.event_name == 'workflow_dispatch' && inputs.job == 'cleanup')
     runs-on: ubuntu-latest
     timeout-minutes: 20

@@ -32,10 +32,17 @@ if ($LASTEXITCODE -ne 0) {
 docker compose config --quiet
 if ($LASTEXITCODE -ne 0) { throw 'Konfigurasi Docker Compose tidak valid.' }
 
-docker compose up -d --build server client tunnel
+$rootEnv = Get-Content -Raw -LiteralPath '.env'
+$hasNamedTunnel = $rootEnv -match '(?m)^CLOUDFLARE_TUNNEL_TOKEN=\s*\S+'
+if ($hasNamedTunnel) {
+    docker compose --profile production up -d --build server client tunnel-named
+    docker compose stop tunnel *> $null
+} else {
+    docker compose up -d --build server client tunnel
+}
 if ($LASTEXITCODE -ne 0) { throw 'Docker gagal membangun atau menjalankan NewsAgg.' }
 
 docker compose ps
 Write-Host ''
 Write-Host 'NewsAgg aktif. Docker langsung: http://localhost:8080'
-Write-Host 'Untuk alamat publik jalankan: .\SHOW-PUBLIC-URL.ps1'
+Write-Host 'Public address / 公開網址: run .\SHOW-PUBLIC-URL.ps1'

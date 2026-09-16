@@ -28,9 +28,9 @@ export interface TrendPoint {
 }
 
 export interface MarketsSummary {
-  fx: { base: 'USD'; idr: number; twd: number; eur: number; updatedAt: string | null; stale: boolean } | null;
-  indices: { items: Array<{ symbol: string; name: string; close: number; changePct: number | null; spark: number[] }>; stale: boolean } | null;
-  crypto: { items: Array<{ id: string; symbol: string; price: number; changePct24h: number | null; spark: number[] }>; stale: boolean } | null;
+  fx: { base: 'USD'; idr: number; twd: number; eur: number; updatedAt: string | null; provider: string; fetchedAt: string; stale: boolean; unavailable: boolean };
+  indices: { items: Array<{ symbol: string; name: string; close: number; changePct: number | null; spark: number[]; asOf: string | null; provider: string; exchangeTimezone: string | null }>; provider: string; fetchedAt: string; stale: boolean; unavailable: boolean };
+  crypto: { items: Array<{ id: string; symbol: string; price: number; changePct24h: number | null; spark: number[]; asOf: string | null; provider: string }>; provider: string; fetchedAt: string; stale: boolean; unavailable: boolean };
 }
 
 async function getJson<T>(path: string): Promise<T> {

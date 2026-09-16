@@ -16,10 +16,12 @@ if (SMTP_HOST) {
   transporter = nodemailer.createTransport({
     host: SMTP_HOST,
     port,
-    secure: process.env.SMTP_SECURE === '1' || port === 465,
+    secure: process.env.SMTP_SECURE === '1' || process.env.SMTP_SECURE === 'true' || port === 465,
     auth: process.env.SMTP_USER
-      ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+      ? { user: process.env.SMTP_USER.trim(), pass: (process.env.SMTP_PASS || '').replace(/\s/g, '') }
       : undefined,
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
   })
 }
 
@@ -57,7 +59,14 @@ async function send(to: string, subject: string, html: string, text: string) {
     logger.info({ to, subject }, '[mailer] email sent')
   } catch (err) {
     logger.error({ err, to, subject }, '[mailer] send failed')
+    throw err
   }
+}
+
+export async function verifyMailerConnection(): Promise<boolean> {
+  if (!transporter) return false
+  await transporter.verify()
+  return true
 }
 
 export async function sendPasswordResetEmail(to: string, rawToken: string) {

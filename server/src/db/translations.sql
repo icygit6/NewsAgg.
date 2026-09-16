@@ -16,6 +16,9 @@ CREATE TABLE IF NOT EXISTS translations (
   description TEXT,
   content TEXT,
   ai_summary TEXT,
+  source_hash VARCHAR(64),
+  provider VARCHAR(32),
+  model_version VARCHAR(128),
   translated_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(article_id, lang)
 );

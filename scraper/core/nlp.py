@@ -149,10 +149,29 @@ def resolve_sentiment_key(topic: str, language: str = "en") -> str:
 
 
 def analyze_sentiment(text: str, topic: str, language: str = "en") -> dict:
-    """Return {type, score, comparative, probabilities, model}."""
+    """Return article-level sentiment aggregated across several body chunks.
+
+    The previous implementation classified only the first 1,500 characters,
+    which over-weighted headlines and introductions. Three representative
+    chunks provide broader coverage without making scraping prohibitively slow.
+    """
     model_key = resolve_sentiment_key(topic, language)
-    raw = _sentiment_pipe(model_key)(text[:1500])
-    probs = _extract_probs(raw)
+    cleaned = (text or "").strip()
+    window = 1400
+    candidates = [cleaned[i:i + window] for i in range(0, min(len(cleaned), window * 8), window)]
+    if len(candidates) > 3:
+        candidates = [candidates[0], candidates[len(candidates) // 2], candidates[-1]]
+    candidates = [chunk for chunk in candidates if chunk.strip()]
+    raw_rows = _sentiment_pipe(model_key)(candidates or [cleaned[:window]])
+    aggregate = {"positive": 0.0, "neutral": 0.0, "negative": 0.0}
+    total_weight = 0.0
+    for chunk, raw in zip(candidates or [cleaned[:window]], raw_rows):
+        chunk_probs = _extract_probs(raw)
+        weight = max(1.0, float(len(chunk)))
+        total_weight += weight
+        for key in aggregate:
+            aggregate[key] += chunk_probs[key] * weight
+    probs = {key: value / total_weight for key, value in aggregate.items()} if total_weight else aggregate
     label, conf, pol = _classify(probs)
     return {
         "type": label,
@@ -174,12 +193,14 @@ def run_ner(text: str) -> dict:
     entities = {"persons": [], "organizations": [], "locations": [], "misc": []}
     type_map = {"PER": "persons", "ORG": "organizations", "LOC": "locations", "MISC": "misc"}
     try:
-        raw = _ner()(text[:1500])
-        for ent in raw:
-            key = type_map.get(ent["entity_group"])
-            word = (ent.get("word") or "").strip()
-            if key and word and word not in entities[key]:
-                entities[key].append(word)
+        chunks = [text[i:i + 1400] for i in range(0, min(len(text), 4200), 1400)]
+        for chunk in chunks:
+            raw = _ner()(chunk)
+            for ent in raw:
+                key = type_map.get(ent["entity_group"])
+                word = (ent.get("word") or "").strip()
+                if key and word and word not in entities[key]:
+                    entities[key].append(word)
     except Exception as e:                         # noqa: BLE001
         _log.debug("NER failed: %s", e)
     return entities

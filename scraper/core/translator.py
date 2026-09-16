@@ -11,6 +11,7 @@ rather than raising, so a translation outage never breaks a scrape run.
 from __future__ import annotations
 
 import logging
+import os
 from typing import Optional
 
 import requests

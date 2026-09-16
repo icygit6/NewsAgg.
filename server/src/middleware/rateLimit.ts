@@ -17,6 +17,9 @@ export const authLimiter = rateLimit({
 export const chatLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
+  // chatRouter authenticates before this limiter, so each account receives an
+  // independent quota even when many users share the same proxy IP.
+  keyGenerator: (req: any) => `user:${req.userId}`,
   message: { success: false, message: 'Too many chat requests — try again later' }
 })
 

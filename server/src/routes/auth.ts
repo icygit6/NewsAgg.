@@ -322,7 +322,7 @@ authRouter.post('/google', validateBody(googleAuthSchema), async (req: Request, 
     const username = payload.name || email.split('@')[0]
 
     const userResult = await query(
-      'SELECT id, email, username, avatar, email_verified FROM users WHERE email = $1',
+      'SELECT id, email, username, avatar, email_verified, google_id FROM users WHERE email = $1',
       [email]
     )
 
@@ -353,6 +353,26 @@ authRouter.post('/google', validateBody(googleAuthSchema), async (req: Request, 
     }
 
     const user = userResult.rows[0]
+    if (user.google_id && user.google_id !== payload.sub) {
+      logger.warn({ userId: user.id }, 'Google subject mismatch for an already-linked account')
+      return res.status(409).json({ success: false, error: 'This account is linked to another Google identity' })
+    }
+    const emailDomain = email.split('@')[1]?.toLowerCase()
+    const hostedDomain = payload.hd?.toLowerCase()
+    const authoritativeGoogleEmail =
+      emailDomain === 'gmail.com' ||
+      emailDomain === 'googlemail.com' ||
+      (Boolean(hostedDomain) && hostedDomain === emailDomain)
+    if (!user.google_id && !authoritativeGoogleEmail) {
+      // Google can verify a non-Gmail consumer-account email without being the
+      // authoritative mailbox provider. Do not auto-link that identity to an
+      // existing password account, which could otherwise become an account-
+      // takeover path. A future signed-in account-link endpoint can handle it.
+      return res.status(409).json({
+        success: false,
+        error: 'Sign in with your NewsAgg password before linking this Google account',
+      })
+    }
     // Signing in with Google proves control of the email, so mark it verified.
     // payload.sub comes from the server-verified token, never the client;
     // COALESCE keeps an already-linked id untouched.

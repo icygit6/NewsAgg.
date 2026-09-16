@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { Eraser, Loader2, Send, Sparkles, X } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { getArticleId } from '../../services/newsAPI';
+import { authService } from '../../services/authService';
 import type { Language } from '../../i18n/translations';
 import type { NewsArticle } from '../../types/article';
 
@@ -25,6 +26,7 @@ const REPLAYED_TURNS = 10;
 interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
+  citations?: Array<{ index: number; text: string }>;
 }
 
 const loadHistory = (key: string): ChatMessage[] => {
@@ -61,7 +63,6 @@ export function ArticleChat({ article, isDark }: ArticleChatProps) {
     activeKeyRef.current = storageKey;
     setMessages(loadHistory(storageKey));
     setLoading(false); // any in-flight reply belongs to the previous article
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storageKey]);
 
   // Persist per-article history, capped so localStorage stays small.
@@ -77,8 +78,6 @@ export function ArticleChat({ article, isDark }: ArticleChatProps) {
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, loading]);
-
-  const articleContent = `${article.title}\n\n${article.content ?? article.description ?? ''}`;
 
   const clearChat = () => setMessages([]);
 
@@ -98,27 +97,40 @@ export function ArticleChat({ article, isDark }: ArticleChatProps) {
     const stillCurrent = () => activeKeyRef.current === keyAtSend;
 
     try {
+      const token = authService.getToken();
+      if (!token) throw new Error('Please sign in to use AI chat.');
       const response = await fetch(`${API_BASE}/api/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           message: trimmed,
-          articleContent,
+          articleId: getArticleId(article),
           lang: LANG_CODE[language],
           ...(history.length > 0 ? { messages: history } : {}),
         }),
       });
       const payload = await response.json();
+      if (!response.ok) throw new Error(payload?.message || payload?.error || `HTTP ${response.status}`);
       const reply =
         typeof payload?.data === 'string'
           ? payload.data
           : payload?.data?.reply ?? payload?.message ?? 'No response received.';
       if (stillCurrent()) {
-        setMessages([...nextMessages, { role: 'assistant', content: reply }]);
+        setMessages([
+          ...nextMessages,
+          {
+            role: 'assistant',
+            content: reply,
+            citations: Array.isArray(payload?.data?.citations) ? payload.data.citations : [],
+          },
+        ]);
       }
-    } catch {
+    } catch (error) {
       if (stillCurrent()) {
-        setMessages([...nextMessages, { role: 'assistant', content: t.aiUnavailable }]);
+        const message = error instanceof Error && error.message === 'Please sign in to use AI chat.'
+          ? (language === 'zhTW' ? '請先登入以使用 AI 問答。' : 'Please sign in to use AI chat.')
+          : t.aiUnavailable;
+        setMessages([...nextMessages, { role: 'assistant', content: message }]);
       }
     } finally {
       if (stillCurrent()) setLoading(false);
@@ -209,6 +221,20 @@ export function ArticleChat({ article, isDark }: ArticleChatProps) {
                       }`}
                     >
                       {message.content}
+                      {message.role === 'assistant' && message.citations && message.citations.length > 0 && (
+                        <details className="mt-2 border-t border-current/10 pt-2 text-xs opacity-80">
+                          <summary className="cursor-pointer font-medium">
+                            {language === 'zhTW' ? '來源段落' : 'Source passages'}
+                          </summary>
+                          <div className="mt-2 space-y-2">
+                            {message.citations.map((citation) => (
+                              <p key={citation.index} className="line-clamp-4">
+                                [{citation.index}] {citation.text}
+                              </p>
+                            ))}
+                          </div>
+                        </details>
+                      )}
                     </div>
                   </div>
                 ))}

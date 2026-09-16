@@ -1,7 +1,15 @@
 import { Router, Request, Response } from 'express'
+import { createHash } from 'node:crypto'
 import { logger } from '../lib/logger'
 import { query } from '../db/client'
-import { translateArticleFields, translateArticlePreviews, SUPPORTED_LANGS, type ApiLang } from '../services/translate'
+import {
+  translateArticleFields,
+  translateArticlePreviews,
+  translationModelVersion,
+  TRANSLATION_PIPELINE_VERSION,
+  SUPPORTED_LANGS,
+  type ApiLang,
+} from '../services/translate'
 import { translateLimiter } from '../middleware/rateLimit'
 
 // GET /api/articles/:id/translate?lang=en|id|zh-CN|zh-TW
@@ -58,9 +66,15 @@ function ensureTable(): Promise<void> {
         description TEXT,
         content TEXT,
         ai_summary TEXT,
+        source_hash VARCHAR(64),
+        provider VARCHAR(32),
+        model_version VARCHAR(128),
         translated_at TIMESTAMPTZ DEFAULT NOW(),
         UNIQUE(article_id, lang)
-      )
+      );
+      ALTER TABLE translations ADD COLUMN IF NOT EXISTS source_hash VARCHAR(64);
+      ALTER TABLE translations ADD COLUMN IF NOT EXISTS provider VARCHAR(32);
+      ALTER TABLE translations ADD COLUMN IF NOT EXISTS model_version VARCHAR(128)
     `)
       .then(() => undefined)
       .catch((err) => {
@@ -69,6 +83,18 @@ function ensureTable(): Promise<void> {
       })
   }
   return tableReady
+}
+
+function sourceHash(article: Record<string, unknown>): string {
+  return createHash('sha256')
+    .update(JSON.stringify({
+      title: article.title ?? null,
+      description: article.description ?? null,
+      content: article.content ?? null,
+      aiSummary: article.ai_summary ?? null,
+      language: article.language ?? null,
+    }))
+    .digest('hex')
 }
 
 // Maps a stored article.language value onto our 4 supported codes (best effort).
@@ -104,6 +130,7 @@ translateRouter.get('/:id/translate', translateLimiter, async (req: Request, res
       return res.status(404).json({ success: false, message: 'Article not found' })
     }
     const article = articleRes.rows[0]
+    const currentSourceHash = sourceHash(article)
 
     // Already in the requested language → serve the originals, no translation.
     if (normalizeStoredLang(article.language) === targetLang) {
@@ -127,9 +154,11 @@ translateRouter.get('/:id/translate', translateLimiter, async (req: Request, res
 
     // Cache hit?
     const cacheRes = await query(
-      `SELECT title, description, content, ai_summary
-       FROM translations WHERE article_id = $1 AND lang = $2`,
-      [articleId, targetLang]
+      `SELECT title, description, content, ai_summary, provider, model_version
+       FROM translations
+       WHERE article_id = $1 AND lang = $2 AND source_hash = $3
+         AND model_version LIKE $4`,
+      [articleId, targetLang, currentSourceHash, `%:${TRANSLATION_PIPELINE_VERSION}`]
     )
     if (cacheRes.rows.length > 0) {
       const c = cacheRes.rows[0]
@@ -144,7 +173,8 @@ translateRouter.get('/:id/translate', translateLimiter, async (req: Request, res
           aiSummary: c.ai_summary,
           cached: true,
           autoTranslated: true,
-          provider: 'cache',
+          provider: c.provider || 'cache',
+          modelVersion: c.model_version,
         },
       })
     }
@@ -162,16 +192,25 @@ translateRouter.get('/:id/translate', translateLimiter, async (req: Request, res
 
     // Only persist a real translation — never cache a passthrough failure.
     if (translated.provider !== 'none') {
+      const modelVersion = translationModelVersion(translated.provider)
       await query(
-        `INSERT INTO translations (article_id, lang, title, description, content, ai_summary)
-         VALUES ($1, $2, $3, $4, $5, $6)
+        `INSERT INTO translations
+           (article_id, lang, title, description, content, ai_summary, source_hash, provider, model_version)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
          ON CONFLICT (article_id, lang) DO UPDATE SET
            title = EXCLUDED.title,
            description = EXCLUDED.description,
            content = EXCLUDED.content,
            ai_summary = EXCLUDED.ai_summary,
+           source_hash = EXCLUDED.source_hash,
+           provider = EXCLUDED.provider,
+           model_version = EXCLUDED.model_version,
            translated_at = NOW()`,
-        [articleId, targetLang, translated.title, translated.description, translated.content, translated.aiSummary]
+        [
+          articleId, targetLang, translated.title, translated.description,
+          translated.content, translated.aiSummary, currentSourceHash,
+          translated.provider, modelVersion,
+        ]
       )
     }
 
@@ -187,6 +226,7 @@ translateRouter.get('/:id/translate', translateLimiter, async (req: Request, res
         cached: false,
         autoTranslated: translated.provider !== 'none',
         provider: translated.provider,
+        modelVersion: translationModelVersion(translated.provider),
       },
     })
   } catch (err: any) {
