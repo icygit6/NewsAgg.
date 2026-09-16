@@ -1,6 +1,7 @@
 import { Link } from 'react-router';
 import { Sun, Moon } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
+import { BrandLogo } from '../ui/BrandLogo';
 import { SearchBox } from './SearchBox';
 
 /** Mobile top bar (hidden ≥md): brand, search and theme toggle. Filters live
@@ -13,13 +14,8 @@ export function TopBar() {
       className={`md:hidden sticky top-0 z-40 flex items-center gap-3 px-4 py-2.5 border-b backdrop-blur-xl
         ${isDark ? 'bg-slate-950/90 border-slate-800' : 'bg-white/90 border-slate-200'}`}
     >
-      <Link to="/" className="shrink-0">
-        <span
-          className="w-8 h-8 rounded-lg flex items-center justify-center font-poppins font-bold text-white"
-          style={{ background: 'var(--brand-grad, #06b6d4)' }}
-        >
-          N
-        </span>
+      <Link to="/" className="shrink-0" aria-label="NewsAgg home">
+        <BrandLogo showWordmark={false} markClassName="w-8 h-8" />
       </Link>
       <div className="flex-1 min-w-0">
         <SearchBox />
