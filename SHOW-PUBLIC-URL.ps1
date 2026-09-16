@@ -1,16 +1,5 @@
 $ErrorActionPreference = 'Stop'
 
-$rootEnv = if (Test-Path -LiteralPath '.env') { Get-Content -Raw -LiteralPath '.env' } else { '' }
-$configuredUrl = [regex]::Match($rootEnv, '(?m)^PUBLIC_CLIENT_URL=\s*(https://\S+)\s*$').Groups[1].Value
-$namedContainerId = docker compose --profile production ps -q tunnel-named
-if ($namedContainerId) {
-    if ($configuredUrl) {
-        Write-Host "NewsAgg public URL: $configuredUrl"
-        exit 0
-    }
-    throw 'The named tunnel is running, but PUBLIC_CLIENT_URL is missing from root .env.'
-}
-
 $containerId = docker compose ps -q tunnel
 if (-not $containerId) {
     throw 'No public tunnel is running. Run START-NEWSAGG.ps1 first.'

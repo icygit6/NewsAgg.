@@ -1,115 +1,85 @@
-# NewsAgg production activation
+# NewsAgg free-only deployment
 
-The repository is prepared for a permanent Cloudflare Tunnel, runtime Google
-Sign-In configuration, account email, a keyed finance provider, grounded AI
-chat, and scheduled scraping/reporting. Credentials and the domain must still
-be created in their respective provider dashboards.
+This deployment intentionally avoids a custom domain, a named Cloudflare
+Tunnel, and GitHub-hosted runner usage. The laptop, Docker Desktop, and the
+GitHub self-hosted runner must remain online for the public site and schedules.
 
-## 1. Rotate credentials that appeared in screenshots or chat
+## Public access
 
-- Revoke the old Google App Password and generate a new one.
-- Revoke the old Hugging Face token and generate a new one.
-- Never commit `server/.env`, `server/.hf.env`, or the root `.env`.
-
-## 2. Create a permanent Cloudflare Tunnel
-
-1. Put the domain on Cloudflare.
-2. In Cloudflare Zero Trust, create a tunnel named `NewsAgg`.
-3. Add a public hostname such as `news.example.com`.
-4. Set the hostname service to `http://client:80`.
-5. In the root `.env`, set:
-
-   ```env
-   CLOUDFLARE_TUNNEL_TOKEN=replace-with-token
-   PUBLIC_CLIENT_URL=https://news.example.com
-   CLIENT_URL=https://news.example.com,http://localhost:8080,http://localhost
-   TRUST_PROXY=1
-   ```
-
-`START-NEWSAGG.ps1` automatically selects the named tunnel when the token is
-present. Without it, the script retains the temporary Quick Tunnel.
-
-After creating the provider credentials, the values can be entered without
-echoing secrets by running `CONFIGURE-PRODUCTION.ps1` in PowerShell.
-
-## 3. Configure Google Sign-In
-
-Create a Google OAuth Web client and register these exact JavaScript origins:
-
-```text
-https://news.example.com
-http://localhost:8080
-```
-
-Put the client ID in `server/.env`:
-
-```env
-GOOGLE_CLIENT_ID=replace.apps.googleusercontent.com
-```
-
-The browser obtains this public identifier at runtime from
-`/api/config/public`; duplicating it into the client build is optional.
-
-## 4. Configure account email
-
-Put the newly generated 16-character Google App Password in `server/.env`
-without spaces:
-
-```env
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_SECURE=0
-SMTP_USER=sender@gmail.com
-SMTP_PASS=replace-with-new-app-password
-MAIL_FROM=NewsAgg <sender@gmail.com>
-PUBLIC_CLIENT_URL=https://news.example.com
-```
-
-GitHub Actions uses separate `SMTP_USER` and `SMTP_PASS` repository secrets.
-Set repository variables `REPORT_EMAIL_TO`, `MAIL_FROM`, and
-`PUBLIC_CLIENT_URL`. Multiple recipients may be comma-separated.
-
-## 5. Configure market indices
-
-Create a Twelve Data API key and set it in both the root `.env` and (for direct
-non-Compose server runs) `server/.env`:
-
-```env
-TWELVE_DATA_API_KEY=replace-with-key
-```
-
-Twelve Data is primary; Stooq remains a fallback. The server persists the last
-valid snapshot in the `market_cache` Docker volume and exposes provider,
-timestamp, stale, and unavailable metadata.
-
-## 6. Start and validate
+`START-NEWSAGG.ps1` starts a free Cloudflare Quick Tunnel. It requires no
+Cloudflare account, tunnel token, DNS record, or purchased domain.
 
 ```powershell
 .\START-NEWSAGG.ps1
 .\SHOW-PUBLIC-URL.ps1
-docker compose ps
+```
+
+The generated `https://*.trycloudflare.com` address is temporary and changes
+whenever the tunnel container is recreated. Quick Tunnel is intended for demos:
+Cloudflare provides no uptime guarantee, limits it to 200 concurrent in-flight
+requests, and does not support Server-Sent Events.
+
+The 05:00 workflow intentionally recreates the tunnel, applies the new address
+to the server for account-email links, and emails the new address and news
+brief. IIS is not used.
+
+## Free-only scheduled jobs
+
+- 03:00 Asia/Taipei: scrape news on the laptop self-hosted runner.
+- 05:00 Asia/Taipei: rotate the Quick Tunnel and send the email report on the
+  same self-hosted runner.
+- Sunday 04:00 Asia/Taipei: clean old database rows on the self-hosted runner.
+
+No workflow uses `ubuntu-latest` or another GitHub-hosted runner. This prevents
+the private repository from consuming metered GitHub-hosted minutes.
+
+## Required local configuration
+
+Copy the example files if they do not exist, then keep the completed files out
+of Git:
+
+```powershell
+Copy-Item compose.env.example .env
+Copy-Item server.env.example server/.env
+.\CONFIGURE-PRODUCTION.ps1
+```
+
+`server/.env` must contain a PostgreSQL connection (`NEONDB_URL`) and an
+application secret (`SECRET_KEY`). The current Neon database can stay on its
+free allowance; do not enable a paid plan or usage overage for this project.
+
+## Optional integrations
+
+These integrations are optional and the application starts without them:
+
+- `GEMINI_API_KEY`: translation uses Gemini when configured and otherwise tries
+  the no-key Lingva fallback.
+- `GROQ_API_KEY`: enables article chat. Without it, AI chat is unavailable.
+- `GOOGLE_CLIENT_ID`: enables Google Sign-In. A rotating Quick Tunnel URL must
+  be added as an authorized JavaScript origin after each rotation; ordinary
+  email/password login does not have this restriction.
+- `TURNSTILE_SECRET` and `VITE_TURNSTILE_SITE_KEY`: optional free CAPTCHA.
+- `SENTRY_DSN`, `MEM0_API_KEY`, `FAVQS_API_KEY`, and `TWELVE_DATA_API_KEY`:
+  optional. Leave them empty to avoid external plans or quotas. Finance falls
+  back to no-key public data sources when Twelve Data is empty.
+- `HF_TOKEN`: optional for downloading Hugging Face models; local cached models
+  continue to work without a paid inference service.
+
+Free tiers still have provider quotas. Do not upgrade a provider account or add
+a payment method unless you deliberately choose to do so.
+
+## Gmail delivery
+
+Email uses Gmail SMTP with a Google App Password; it is not a paid email API.
+Configure `SMTP_USER` and `SMTP_PASS` as GitHub Actions secrets and set
+`REPORT_EMAIL_TO` as a repository variable. Multiple recipients may be
+comma-separated.
+
+## Validate
+
+```powershell
+docker compose config --quiet
+.\CHECK-NEWSAGG.ps1
 Invoke-RestMethod http://127.0.0.1:3000/health
 Invoke-RestMethod http://127.0.0.1:3000/api/markets/summary
 ```
-
-Test from mobile data: home feed, Google login, registration verification,
-password reset, translation, signed-in article chat, and markets. IIS is not
-part of this path and may stay stopped.
-
-## 7. Schedules
-
-- Scraper: 03:00 Asia/Taipei (`19:00 UTC` in GitHub Actions).
-- Daily email: 05:00 Asia/Taipei (`21:00 UTC`).
-- The email runner is self-hosted, so the laptop, Docker Desktop, and GitHub
-  runner service must be online.
-
-## 8. Model-quality evaluation
-
-Create a real, independently labelled JSONL dataset and run:
-
-```powershell
-python scraper/evaluate_sentiment.py path\to\sentiment-gold.jsonl
-```
-
-The report includes accuracy, macro-F1, per-label F1, a confusion matrix, and
-model usage. Do not tune thresholds until this dataset exists.

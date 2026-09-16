@@ -1,5 +1,5 @@
-NEWSAGG - WINDOWS + DOCKER + IIS
-================================
+NEWSAGG - WINDOWS + DOCKER + FREE QUICK TUNNEL
+==============================================
 
 ISI PAKET
 - client, server, scraper: source yang dibutuhkan Docker
@@ -35,15 +35,6 @@ PUBLIK TANPA IIS (DIREKOMENDASIKAN UNTUK DEMO)
 2. Tunnel meneruskan trafik langsung ke Nginx dalam container client; IIS boleh dihentikan.
 3. Jalankan SHOW-PUBLIC-URL.ps1 untuk melihat alamat trycloudflare.com terbaru.
 4. Quick Tunnel adalah layanan demo; alamat dapat berubah setelah tunnel restart.
-
-MENGGUNAKAN IIS
-1. Buat IIS Site dan arahkan Physical Path ke folder iis-site dalam paket.
-2. Atur binding/domain/sertifikat HTTPS di IIS.
-3. Copy compose.env.example menjadi .env.
-4. Isi VITE_API_URL dan CLIENT_URL dengan origin IIS yang sama, tanpa slash akhir.
-   Contoh: https://news.example.com
-5. Jalankan START-NEWSAGG.ps1. Perubahan VITE_API_URL membutuhkan build ulang;
-   skrip start sudah menjalankan build.
 
 MEMASUKKAN UPDATE KODE
 1. Jangan pernah replace file .env atau server/.env; file itu berisi konfigurasi/secret laptop server.

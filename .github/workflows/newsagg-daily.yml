@@ -25,11 +25,10 @@ jobs:
       SMTP_USER: ${{ secrets.SMTP_USER }}
       SMTP_PASS: ${{ secrets.SMTP_PASS }}
       MAIL_FROM: ${{ vars.MAIL_FROM }}
-      PUBLIC_CLIENT_URL: ${{ vars.PUBLIC_CLIENT_URL }}
       REPORT_EMAIL_TO: ${{ inputs.recipients || vars.REPORT_EMAIL_TO || '01257166@email.ntou.edu.tw' }}
 
     steps:
-      - name: Publish permanent site and email latest report
+      - name: Rotate free Quick Tunnel and email latest report
         shell: powershell
         run: |
           & powershell.exe -NoProfile -ExecutionPolicy Bypass `

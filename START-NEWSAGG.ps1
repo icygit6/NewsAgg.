@@ -32,14 +32,7 @@ if ($LASTEXITCODE -ne 0) {
 docker compose config --quiet
 if ($LASTEXITCODE -ne 0) { throw 'Konfigurasi Docker Compose tidak valid.' }
 
-$rootEnv = Get-Content -Raw -LiteralPath '.env'
-$hasNamedTunnel = $rootEnv -match '(?m)^CLOUDFLARE_TUNNEL_TOKEN=\s*\S+'
-if ($hasNamedTunnel) {
-    docker compose --profile production up -d --build server client tunnel-named
-    docker compose stop tunnel *> $null
-} else {
-    docker compose up -d --build server client tunnel
-}
+docker compose up -d --build --remove-orphans server client tunnel
 if ($LASTEXITCODE -ne 0) { throw 'Docker gagal membangun atau menjalankan NewsAgg.' }
 
 docker compose ps

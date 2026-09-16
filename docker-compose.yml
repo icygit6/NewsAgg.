@@ -49,29 +49,14 @@ services:
       retries: 3
     restart: unless-stopped
 
-  # Temporary demo tunnel. START-NEWSAGG.ps1 uses this only when a named-tunnel
-  # token has not been configured. Its trycloudflare.com URL is not permanent.
+  # Free temporary Quick Tunnel. The public trycloudflare.com URL changes when
+  # this container is recreated; no Cloudflare account or custom domain needed.
   tunnel:
     image: cloudflare/cloudflared:latest
     command: tunnel --no-autoupdate --url http://client:80
     depends_on:
       client:
         condition: service_healthy
-    restart: unless-stopped
-
-  # Permanent public tunnel. Create it in Cloudflare Zero Trust, add a public
-  # hostname that targets http://client:80, then put the token in root .env.
-  # The profile prevents an empty token from breaking local/quick-tunnel use.
-  tunnel-named:
-    image: cloudflare/cloudflared:latest
-    command: tunnel --no-autoupdate run
-    environment:
-      TUNNEL_TOKEN: "${CLOUDFLARE_TUNNEL_TOKEN:-}"
-    depends_on:
-      client:
-        condition: service_healthy
-    profiles:
-      - production
     restart: unless-stopped
 
   scraper:

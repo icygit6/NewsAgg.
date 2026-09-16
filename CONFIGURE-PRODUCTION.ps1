@@ -44,30 +44,14 @@ Ensure-EnvFile -Path 'server/.env' -Template 'server.env.example'
 Write-Host 'NewsAgg production configuration' -ForegroundColor Cyan
 Write-Host 'Press Enter on an optional prompt to preserve the existing value.'
 
-$publicUrl = (Read-Host 'Permanent HTTPS URL (example: https://news.example.com)').Trim().TrimEnd('/')
-if ($publicUrl) {
-    $uri = $null
-    if (-not [Uri]::TryCreate($publicUrl, [UriKind]::Absolute, [ref]$uri) -or $uri.Scheme -ne 'https') {
-        throw 'The public URL must be a valid https:// origin.'
-    }
-    Set-EnvValue '.env' 'PUBLIC_CLIENT_URL' $publicUrl
-    Set-EnvValue '.env' 'CLIENT_URL' "$publicUrl,http://localhost:8080,http://localhost"
-    Set-EnvValue 'server/.env' 'PUBLIC_CLIENT_URL' $publicUrl
-    Set-EnvValue 'server/.env' 'CLIENT_URL' "$publicUrl,http://localhost:8080,http://localhost"
-}
+Set-EnvValue '.env' 'PUBLIC_CLIENT_URL' 'http://localhost:8080'
+Set-EnvValue '.env' 'CLIENT_URL' 'http://localhost:8080,http://localhost'
+Set-EnvValue 'server/.env' 'PUBLIC_CLIENT_URL' 'http://localhost:8080'
+Set-EnvValue 'server/.env' 'CLIENT_URL' 'http://localhost:8080,http://localhost'
 Set-EnvValue '.env' 'TRUST_PROXY' '1'
-
-$tunnelToken = Read-SecretPlainText 'Cloudflare named-tunnel token (hidden)'
-if ($tunnelToken) { Set-EnvValue '.env' 'CLOUDFLARE_TUNNEL_TOKEN' $tunnelToken.Trim() }
 
 $googleClientId = (Read-Host 'Google OAuth Web client ID (public identifier)').Trim()
 if ($googleClientId) { Set-EnvValue 'server/.env' 'GOOGLE_CLIENT_ID' $googleClientId }
-
-$twelveKey = Read-SecretPlainText 'Twelve Data API key (hidden)'
-if ($twelveKey) {
-    Set-EnvValue '.env' 'TWELVE_DATA_API_KEY' $twelveKey.Trim()
-    Set-EnvValue 'server/.env' 'TWELVE_DATA_API_KEY' $twelveKey.Trim()
-}
 
 $smtpUser = (Read-Host 'Gmail sender address for account emails').Trim()
 if ($smtpUser) {

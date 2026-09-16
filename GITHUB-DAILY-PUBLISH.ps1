@@ -92,14 +92,6 @@ function Wait-NewsApi {
 }
 
 function Get-PublicUrl {
-    if ($env:PUBLIC_CLIENT_URL -and $env:PUBLIC_CLIENT_URL -match '^https://') {
-        return $env:PUBLIC_CLIENT_URL.TrimEnd('/')
-    }
-    if (Test-Path -LiteralPath '.env') {
-        $rootEnv = Get-Content -Raw -LiteralPath '.env'
-        $configured = [regex]::Match($rootEnv, '(?m)^PUBLIC_CLIENT_URL=\s*(https://\S+)\s*$').Groups[1].Value
-        if ($configured) { return $configured.TrimEnd('/') }
-    }
     foreach ($attempt in 1..30) {
         Start-Sleep -Seconds 3
         $previousPreference = $ErrorActionPreference
@@ -283,21 +275,22 @@ try {
     $databaseTotal = [int]$after.totalCount
     $digest = Get-DigestSnapshot
 
-    $rootEnv = if (Test-Path -LiteralPath '.env') { Get-Content -Raw -LiteralPath '.env' } else { '' }
-    $hasNamedTunnel = $rootEnv -match '(?m)^CLOUDFLARE_TUNNEL_TOKEN=\s*\S+'
-    if ($hasNamedTunnel) {
-        Write-RunLog 'Ensuring the permanent Cloudflare Tunnel is running.'
-        if ((Invoke-Docker -Arguments @('compose', '--profile', 'production', 'up', '-d', 'tunnel-named')) -ne 0) {
-            throw 'Failed to start the permanent Cloudflare tunnel.'
-        }
-    } else {
-        Write-RunLog 'No named-tunnel token found; rotating the temporary Quick Tunnel.'
-        if ((Invoke-Docker -Arguments @('compose', 'up', '-d', '--force-recreate', '--no-deps', 'tunnel')) -ne 0) {
-            throw 'Failed to rotate the temporary Cloudflare tunnel.'
-        }
+    Write-RunLog 'Rotating the free temporary Cloudflare Quick Tunnel.'
+    if ((Invoke-Docker -Arguments @('compose', 'up', '-d', '--force-recreate', '--no-deps', 'tunnel')) -ne 0) {
+        throw 'Failed to rotate the temporary Cloudflare Quick Tunnel.'
     }
     $publicUrl = Get-PublicUrl
     Write-RunLog "Public URL: $publicUrl"
+
+    # Account verification/reset messages must point at the current temporary
+    # hostname. Shell variables override the localhost defaults from .env for
+    # this server recreation without storing the short-lived URL on disk.
+    $env:PUBLIC_CLIENT_URL = $publicUrl
+    $env:CLIENT_URL = "$publicUrl,http://localhost:8080,http://localhost"
+    if ((Invoke-Docker -Arguments @('compose', 'up', '-d', '--force-recreate', '--no-deps', 'server')) -ne 0) {
+        throw 'Failed to apply the temporary public URL to the server.'
+    }
+    Wait-NewsApi
 
     Send-DailyEmail -PublicUrl $publicUrl -Snapshot $digest -DatabaseTotal $databaseTotal -ScrapeStatus $scrapeStatus
     Write-RunLog "Email delivered to $env:REPORT_EMAIL_TO"
