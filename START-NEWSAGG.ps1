@@ -45,4 +45,4 @@ if ($LASTEXITCODE -ne 0) { throw 'Docker gagal membangun atau menjalankan NewsAg
 docker compose ps
 Write-Host ''
 Write-Host 'NewsAgg aktif. Docker langsung: http://localhost:8080'
-Write-Host 'Public address / 公開網址: run .\SHOW-PUBLIC-URL.ps1'
+Write-Host 'Public address: run .\SHOW-PUBLIC-URL.ps1'

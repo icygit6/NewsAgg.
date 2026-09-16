@@ -41,7 +41,7 @@ function Read-SecretPlainText {
 Ensure-EnvFile -Path '.env' -Template 'compose.env.example'
 Ensure-EnvFile -Path 'server/.env' -Template 'server.env.example'
 
-Write-Host 'NewsAgg production configuration / NewsAgg 正式環境設定' -ForegroundColor Cyan
+Write-Host 'NewsAgg production configuration' -ForegroundColor Cyan
 Write-Host 'Press Enter on an optional prompt to preserve the existing value.'
 
 $publicUrl = (Read-Host 'Permanent HTTPS URL (example: https://news.example.com)').Trim().TrimEnd('/')
@@ -83,5 +83,5 @@ if ($smtpUser) {
 
 Write-Host ''
 Write-Host 'Configuration saved without displaying secret values.' -ForegroundColor Green
-Write-Host '設定已儲存，未顯示任何密鑰。' -ForegroundColor Green
+Write-Host 'Settings saved successfully. No secrets were displayed.' -ForegroundColor Green
 Write-Host 'Run: .\START-NEWSAGG.ps1'
