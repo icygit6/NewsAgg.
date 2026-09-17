@@ -27,15 +27,18 @@ Open **Settings > Secrets and variables > Actions**.
 
 Secrets:
 
-- `SMTP_USER`: Gmail sender address.
 - `SMTP_PASS`: 16-character Google App Password, with spaces removed.
 
 Variables:
 
-- `REPORT_EMAIL_TO`: comma-separated recipients.
-- `MAIL_FROM`: optional sender address; normally the same as `SMTP_USER`.
 - `SMTP_HOST`: optional; defaults to `smtp.gmail.com`.
 - `SMTP_PORT`: optional; defaults to `587`.
+
+The sender and scheduled recipient list are saved directly in
+`.github/workflows/newsagg-daily.yml`: sender `newsaggtest123@gmail.com`, with
+recipients `01257166@email.ntou.edu.tw`, `01257168@email.ntou.edu.tw`, and
+`01257169@email.ntou.edu.tw`. A manually dispatched run may temporarily override
+the recipients without changing the saved schedule.
 
 The scraper reads `D:\Website\server\.env` locally. GitHub no longer needs
 `NEONDB_URL` or `HF_TOKEN` for the scraper workflow.

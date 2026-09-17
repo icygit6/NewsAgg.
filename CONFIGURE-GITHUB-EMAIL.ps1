@@ -26,7 +26,7 @@ try {
     $sender = (Read-Host 'Alamat Gmail pengirim').Trim()
     try { [void][System.Net.Mail.MailAddress]::new($sender) } catch { throw 'Alamat Gmail pengirim tidak valid.' }
 
-    $defaultRecipient = '01257166@email.ntou.edu.tw'
+    $defaultRecipient = '01257166@email.ntou.edu.tw,01257168@email.ntou.edu.tw,01257169@email.ntou.edu.tw'
     $recipientInput = (Read-Host "Penerima, pisahkan dengan koma [$defaultRecipient]").Trim()
     if (-not $recipientInput) { $recipientInput = $defaultRecipient }
     $recipients = @($recipientInput -split '[,;]' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
