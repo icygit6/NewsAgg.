@@ -23,8 +23,8 @@ jobs:
     env:
       SMTP_HOST: ${{ vars.SMTP_HOST || 'smtp.gmail.com' }}
       SMTP_PORT: ${{ vars.SMTP_PORT || '587' }}
-      # The sender address is not secret; only its Google App Password is.
-      SMTP_USER: newsaggtest123@gmail.com
+      # Local server/.env may override these fallback values on the self-hosted runner.
+      SMTP_USER: ${{ secrets.SMTP_USER || 'newsaggtest123@gmail.com' }}
       SMTP_PASS: ${{ secrets.SMTP_PASS }}
       MAIL_FROM: NewsAgg <newsaggtest123@gmail.com>
     steps:

@@ -11,11 +11,6 @@ on:
         type: choice
         options: [scrape, full-recheck, cleanup, backfill-lang]
         default: scrape
-      target:
-        description: "Articles per category per source (default 10)"
-        type: number
-        default: 10
-
 concurrency:
   group: newsagg-daily-pipeline
   cancel-in-progress: false

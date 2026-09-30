@@ -26,13 +26,8 @@ try {
     $sender = (Read-Host 'Alamat Gmail pengirim').Trim()
     try { [void][System.Net.Mail.MailAddress]::new($sender) } catch { throw 'Alamat Gmail pengirim tidak valid.' }
 
-    $defaultRecipient = '01257166@email.ntou.edu.tw,01257168@email.ntou.edu.tw,01257169@email.ntou.edu.tw,edkong17@gmail.com,xuemingwang28@gmail.com'
-    $recipientInput = (Read-Host "Penerima, pisahkan dengan koma [$defaultRecipient]").Trim()
-    if (-not $recipientInput) { $recipientInput = $defaultRecipient }
-    $recipients = @($recipientInput -split '[,;]' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
-    foreach ($recipient in $recipients) {
-        try { [void][System.Net.Mail.MailAddress]::new($recipient) } catch { throw "Alamat penerima tidak valid: $recipient" }
-    }
+    $recipients = @((Get-Content -LiteralPath (Join-Path $PSScriptRoot 'ops\daily-config.json') -Raw | ConvertFrom-Json).recipients)
+    if (-not $recipients.Count) { throw 'Daftar penerima di ops/daily-config.json kosong.' }
 
     $securePassword = Read-Host 'Google App Password 16 karakter (input disembunyikan)' -AsSecureString
     $ptr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePassword)
@@ -49,13 +44,8 @@ try {
         $securePassword = $null
     }
 
-    & $gh variable set REPORT_EMAIL_TO --repo $repo --body ($recipients -join ',')
-    if ($LASTEXITCODE -ne 0) { throw 'Gagal menyimpan REPORT_EMAIL_TO.' }
-    & $gh variable set MAIL_FROM --repo $repo --body $sender
-    if ($LASTEXITCODE -ne 0) { throw 'Gagal menyimpan MAIL_FROM.' }
-
     Write-Host ''
-    Write-Host "Berhasil. Laporan akan dikirim ke: $($recipients -join ', ')" -ForegroundColor Green
+    Write-Host "Rahasia GitHub disimpan. Penerima pipeline aktif ditentukan oleh ops/daily-config.json: $($recipients -join ', ')" -ForegroundColor Green
 } finally {
     Remove-Item Env:GH_TOKEN -ErrorAction SilentlyContinue
 }
