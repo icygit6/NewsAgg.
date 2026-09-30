@@ -17,7 +17,7 @@ export function PostsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [category, setCategory] = useState('all');
-  const [sort, setSort] = useState<'latest' | 'popular'>('latest');
+  const [sort, setSort] = useState<'latest' | 'oldest' | 'popular'>('latest');
 
   const compose = searchParams.get('compose') === '1';
   const attachId = searchParams.get('attach') ?? undefined;
@@ -49,9 +49,9 @@ export function PostsPage() {
         {t.posts}
       </h1>
       <div className="space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <div role="group" aria-label={ui('Sort posts')} className={`inline-flex rounded-xl border p-1 ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-slate-100'}`}>
-            {(['latest', 'popular'] as const).map(option => <button key={option} type="button" aria-pressed={sort === option} onClick={() => setSort(option)} className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${sort === option ? isDark ? 'bg-slate-700 text-white shadow-sm' : 'bg-white text-slate-900 shadow-sm' : isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>{ui(option === 'latest' ? 'Newest first' : 'Most popular')}</button>)}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div role="group" aria-label={ui('Sort posts')} className={`inline-flex max-w-full overflow-x-auto rounded-xl border p-1 ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-slate-100'}`}>
+            {(['latest', 'oldest', 'popular'] as const).map(option => <button key={option} type="button" aria-pressed={sort === option} onClick={() => setSort(option)} className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${sort === option ? isDark ? 'bg-slate-700 text-white shadow-sm' : 'bg-white text-slate-900 shadow-sm' : isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>{ui(option === 'latest' ? 'Newest first' : option === 'oldest' ? 'Oldest first' : 'Most popular')}</button>)}
           </div>
           <button type="button" onClick={() => refetch()} className="text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">{ui('Refresh')}</button>
         </div>

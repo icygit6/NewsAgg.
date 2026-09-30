@@ -11,6 +11,11 @@ on:
         type: choice
         options: [scrape, full-recheck, cleanup, backfill-lang]
         default: scrape
+      target:
+        description: "Articles per source/category (1-100; default 15), not total articles"
+        type: number
+        required: false
+        default: 15
 concurrency:
   group: newsagg-daily-pipeline
   cancel-in-progress: false
@@ -22,21 +27,27 @@ jobs:
     if: github.event_name == 'schedule' || inputs.job == 'scrape' || inputs.job == 'full-recheck'
     runs-on: [self-hosted, Windows, X64]
     timeout-minutes: 360
+    env:
+      NEWSAGG_TARGET: ${{ inputs.target }}
     steps:
       - name: Ingest and publish news (idempotent daily run)
         if: github.event_name == 'schedule' || inputs.job == 'scrape'
         shell: powershell
         run: |
+          $flags = @('-Ingest')
+          if ($env:NEWSAGG_TARGET) { $flags += @('-Target', $env:NEWSAGG_TARGET) }
           & powershell.exe -NoProfile -ExecutionPolicy Bypass `
-            -File 'D:\Website\RUN-NEWSAGG-DAILY.ps1' -Ingest
+            -File 'D:\Website\RUN-NEWSAGG-DAILY.ps1' @flags
           if ($LASTEXITCODE -ne 0) { throw "News ingestion failed with exit code $LASTEXITCODE." }
 
       - name: Full recheck without daily email
         if: github.event_name == 'workflow_dispatch' && inputs.job == 'full-recheck'
         shell: powershell
         run: |
+          $flags = @('-Full')
+          if ($env:NEWSAGG_TARGET) { $flags += @('-Target', $env:NEWSAGG_TARGET) }
           & powershell.exe -NoProfile -ExecutionPolicy Bypass `
-            -File 'D:\Website\RUN-NEWSAGG-DAILY.ps1' -Full
+            -File 'D:\Website\RUN-NEWSAGG-DAILY.ps1' @flags
           if ($LASTEXITCODE -ne 0) { throw "Full recheck failed with exit code $LASTEXITCODE." }
 
   cleanup:

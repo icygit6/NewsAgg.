@@ -22,7 +22,7 @@ postsRouter.get('/', optionalAuth, async (req: any, res: Response) => {
     const mine = req.query.mine === '1'
     if (mine && !req.userId) return res.status(401).json({ success: false, error: 'Sign in to view your posts' })
     const limit = /^\d+$/.test(String(req.query.limit ?? '')) ? Math.min(50, Math.max(1, Number(req.query.limit))) : 20
-    const sort = req.query.sort === 'popular' ? 'popular' : 'latest'
+    const sort = req.query.sort === 'popular' ? 'popular' : req.query.sort === 'oldest' ? 'oldest' : 'latest'
     const params: any[] = [req.userId ?? null]
     const where = ['p.deleted_at IS NULL']
     if (req.query.category && req.query.category !== 'all') {
@@ -38,13 +38,16 @@ postsRouter.get('/', optionalAuth, async (req: any, res: Response) => {
       if (sort === 'popular') {
         params.push(Number(cursor.likes) || 0, cursor.date, cursor.id)
         where.push(`((SELECT count(*)::int FROM post_likes x WHERE x.post_id=p.id),p.created_at,p.id)<($${params.length - 2},$${params.length - 1}::timestamptz,$${params.length})`)
+      } else if (sort === 'oldest') {
+        params.push(cursor.date, cursor.id)
+        where.push(`(p.created_at,p.id)>($${params.length - 1}::timestamptz,$${params.length})`)
       } else {
         params.push(cursor.date, cursor.id)
         where.push(`(p.created_at,p.id)<($${params.length - 1}::timestamptz,$${params.length})`)
       }
     }
     params.push(limit + 1)
-    const order = sort === 'popular' ? 'like_count DESC,p.created_at DESC,p.id DESC' : 'p.created_at DESC,p.id DESC'
+    const order = sort === 'popular' ? 'like_count DESC,p.created_at DESC,p.id DESC' : sort === 'oldest' ? 'p.created_at ASC,p.id ASC' : 'p.created_at DESC,p.id DESC'
     const result = await query(`${base} WHERE ${where.join(' AND ')} ORDER BY ${order} LIMIT $${params.length}`, params)
     const more = result.rows.length > limit
     const rows = result.rows.slice(0, limit)

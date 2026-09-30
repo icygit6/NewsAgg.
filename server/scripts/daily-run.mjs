@@ -10,18 +10,23 @@ import {taipeiDay,taipeiTime,validateRun,renderDigest} from './daily-policy.mjs'
 import {readJson,atomicJson,acquireLock,command,deliver} from './daily-runtime.mjs';
 import {freezeEdition,ingestionEdition} from './daily-edition.mjs';
 import {nextIngestionAttempt} from './ingestion-state.mjs';
+import {resolveRecipients} from './daily-recipients.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
-const {values:args}=parseArgs({options:{'dry-run':{type:'boolean'},ingest:{type:'boolean'},benchmark:{type:'boolean'},'refresh-existing':{type:'boolean'},target:{type:'string'},'max-minutes':{type:'string'}}});
+const {values:args}=parseArgs({options:{'dry-run':{type:'boolean'},ingest:{type:'boolean'},benchmark:{type:'boolean'},'refresh-existing':{type:'boolean'},target:{type:'string'},recipients:{type:'string'},'max-minutes':{type:'string'}}});
 const config=readJson(path.join(root,'ops/daily-config.json'));
+const savedRecipients=process.env.REPORT_EMAIL_TO||'';
 dotenv.config({path:path.join(root,'server/.env'),quiet:true,override:true});
 dotenv.config({path:path.join(root,'.env'),quiet:true});
+config.recipients=resolveRecipients(config.recipients,savedRecipients,args.recipients);
 const target=Number(args.target||config.targetPerSourceCategory);
 const minutes=Number(args['max-minutes']||210);
 if(!Number.isInteger(target)||target<1||target>100||!Number.isFinite(minutes)||minutes<1||minutes>260) throw new Error('Invalid benchmark or target limits');
-if((args.target||args['max-minutes'])&&!args.benchmark) throw new Error('Overrides are only available in benchmark mode');
+if(args.target&&!args.benchmark&&!args.ingest) throw new Error('Target override requires ingestion or benchmark mode');
+if(args['max-minutes']&&!args.benchmark) throw new Error('Time override requires benchmark mode');
+if(args.recipients&&(args.ingest||args.benchmark)) throw new Error('Recipient override is only available for daily email or preflight');
 if(args['refresh-existing']&&!args.benchmark&&!args.ingest) throw new Error('Full rechecks require a no-email ingestion run');
-if(config.timeZone!=='Asia/Taipei'||!Array.isArray(config.recipients)||!config.recipients.length||config.recipients.some(r=>typeof r!=='string'||!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/.test(r))||new Set(config.recipients.map(r=>r.toLowerCase())).size!==config.recipients.length) throw new Error('Invalid daily recipient configuration');
+if(config.timeZone!=='Asia/Taipei') throw new Error('Invalid daily time zone');
 const publicUrl=(process.env.NEWSAGG_STABLE_URL||'').replace(/\/$/,'');
 if(!/^https:\/\/[^/]+$/.test(publicUrl)) throw new Error('Stable HTTPS public origin is required');
 const day=args.ingest?ingestionEdition(new Date(),config.startTime):taipeiDay();
