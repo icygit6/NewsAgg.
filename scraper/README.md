@@ -1,4 +1,8 @@
-# NewsAgg Scraper
+# NewsAgg: Automated News Aggregation, NLP-Based Sentiment and Topic Classification, and Topic Insights Dashboard
+
+NewsAgg：自動化新聞聚合、以 NLP 進行情緒與主題分類，以及主題洞察儀表板
+
+## Scraper
 
 Transformer-enriched news scraper. Refactored from the monolithic
 `server/scraping/scraper4.py` (CPU/local) and `scraper5.py` (Colab/GPU) into a

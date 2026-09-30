@@ -7,6 +7,7 @@ import { useApp } from '../contexts/AppContext';
 import { usePosts } from '../hooks/usePosts';
 import { PostComposer } from '../components/posts/PostComposer';
 import { PostCard } from '../components/posts/PostCard';
+import { PostCategoryPicker } from '../components/posts/PostCategoryPicker';
 
 /** Full posts feed (/posts): composer on top for signed-in users, infinite
  * list below. Supports ?compose=1&attach=<articleId> from "Quote this". */
@@ -16,11 +17,12 @@ export function PostsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [category, setCategory] = useState('all');
+  const [sort, setSort] = useState<'latest' | 'popular'>('latest');
 
   const compose = searchParams.get('compose') === '1';
   const attachId = searchParams.get('attach') ?? undefined;
 
-  const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = usePosts({ sort: 'latest', category });
+  const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = usePosts({ sort, category });
   const posts = data?.pages.flatMap((p) => p.posts) ?? [];
 
   useEffect(() => {
@@ -46,13 +48,14 @@ export function PostsPage() {
       >
         {t.posts}
       </h1>
-      <div className="flex gap-2 items-center">
-        <span className="text-sm">{ui("Newest first")}</span>
-        <select aria-label={ui("Filter posts by category")} value={category} onChange={e => setCategory(e.target.value)} className="rounded-lg border p-2 text-sm bg-transparent">
-          <option value="all">{ui("All categories")}</option>
-          {['General','Sport','Health','Business','World','Politics','Lifestyle','Science','Climate'].map(c => <option key={c} value={c}>{ui(c)}</option>)}
-        </select>
-        <button onClick={()=>refetch()} className="ml-auto text-sm text-cyan-500">{ui("Refresh")}</button>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div role="group" aria-label={ui('Sort posts')} className={`inline-flex rounded-xl border p-1 ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-slate-100'}`}>
+            {(['latest', 'popular'] as const).map(option => <button key={option} type="button" aria-pressed={sort === option} onClick={() => setSort(option)} className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${sort === option ? isDark ? 'bg-slate-700 text-white shadow-sm' : 'bg-white text-slate-900 shadow-sm' : isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>{ui(option === 'latest' ? 'Newest first' : 'Most popular')}</button>)}
+          </div>
+          <button type="button" onClick={() => refetch()} className="text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">{ui('Refresh')}</button>
+        </div>
+        <PostCategoryPicker value={category === 'all' ? '' : category} onChange={value => setCategory(value || 'all')} allLabel={ui('All categories')} isDark={isDark} ariaLabel={ui('Filter posts by category')} />
       </div>
 
       {isAuthenticated ? (

@@ -1,4 +1,8 @@
-# NewsAgg free-only deployment
+# NewsAgg: Automated News Aggregation, NLP-Based Sentiment and Topic Classification, and Topic Insights Dashboard
+
+NewsAgg：自動化新聞聚合、以 NLP 進行情緒與主題分類，以及主題洞察儀表板
+
+## Free-only deployment
 
 This deployment intentionally avoids a custom domain, a named Cloudflare
 Tunnel, and GitHub-hosted runner usage. The laptop, Docker Desktop, and the

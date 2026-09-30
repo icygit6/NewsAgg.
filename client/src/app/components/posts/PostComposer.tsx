@@ -4,6 +4,7 @@ import { Loader2, Send, X } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { usePostMutations } from '../../hooks/usePosts';
 import { useArticle } from '../../hooks/useArticle';
+import { PostCategoryPicker } from './PostCategoryPicker';
 
 const MAX_CHARS = 280;
 
@@ -110,11 +111,8 @@ export function PostComposer({ attachId, onAttachClear, autoFocus = false }: Pos
 
           {error && <p role="alert" aria-live="polite" className="text-xs text-rose-500 mb-2">{error}</p>}
 
-          <div className="flex items-center justify-between">
-            <select aria-label={ui("Post category")} value={category} onChange={e => setCategory(e.target.value)} className="max-w-40 rounded-lg border p-1 text-xs bg-transparent">
-              <option value="">{ui("Auto category")}</option>
-              {['General','Sport','Health','Business','World','Politics','Lifestyle','Science','Climate'].map(c => <option key={c} value={c}>{ui(c)}</option>)}
-            </select>
+          <PostCategoryPicker value={category} onChange={setCategory} allLabel={ui('Auto category')} isDark={isDark} ariaLabel={ui('Post category')} />
+          <div className="mt-3 flex items-center justify-end gap-3">
             <span
               className={`text-xs tabular-nums ${
                 remaining < 0

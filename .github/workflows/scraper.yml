@@ -1,13 +1,15 @@
 name: Scraper
 
 on:
-  # Nightly ingestion is owned exclusively by Windows Task Scheduler.
+  # 17:05 Asia/Taipei (Taiwan has no daylight-saving time).
+  schedule:
+    - cron: '5 9 * * *'
   workflow_dispatch:
     inputs:
       job:
         description: "Which job to run"
         type: choice
-        options: [scrape, cleanup, backfill-lang]
+        options: [scrape, full-recheck, cleanup, backfill-lang]
         default: scrape
       target:
         description: "Articles per category per source (default 10)"
@@ -15,22 +17,32 @@ on:
         default: 10
 
 concurrency:
-  group: newsagg-scraper
+  group: newsagg-daily-pipeline
   cancel-in-progress: false
 
 # Every job uses the laptop runner. This avoids billable GitHub-hosted minutes
 # for the private repository and reuses locally cached Docker images and models.
 jobs:
   scrape:
-    if: github.event_name == 'workflow_dispatch' && inputs.job == 'scrape'
+    if: github.event_name == 'schedule' || inputs.job == 'scrape' || inputs.job == 'full-recheck'
     runs-on: [self-hosted, Windows, X64]
     timeout-minutes: 360
     steps:
-      - name: Check pipeline (ingestion is owned by Windows)
+      - name: Ingest and publish news (idempotent daily run)
+        if: github.event_name == 'schedule' || inputs.job == 'scrape'
         shell: powershell
         run: |
           & powershell.exe -NoProfile -ExecutionPolicy Bypass `
-            -File 'D:\Website\RUN-NEWSAGG-DAILY.ps1' -DryRun
+            -File 'D:\Website\RUN-NEWSAGG-DAILY.ps1' -Ingest
+          if ($LASTEXITCODE -ne 0) { throw "News ingestion failed with exit code $LASTEXITCODE." }
+
+      - name: Full recheck without daily email
+        if: github.event_name == 'workflow_dispatch' && inputs.job == 'full-recheck'
+        shell: powershell
+        run: |
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass `
+            -File 'D:\Website\RUN-NEWSAGG-DAILY.ps1' -Full
+          if ($LASTEXITCODE -ne 0) { throw "Full recheck failed with exit code $LASTEXITCODE." }
 
   cleanup:
     if: github.event_name == 'workflow_dispatch' && inputs.job == 'cleanup'

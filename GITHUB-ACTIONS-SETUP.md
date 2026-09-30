@@ -1,52 +1,24 @@
-# NewsAgg scheduled automation / NewsAgg 排程自動化
+# NewsAgg: Automated News Aggregation, NLP-Based Sentiment and Topic Classification, and Topic Insights Dashboard
 
-Both scheduled workflows use the Windows self-hosted runner on this laptop.
-Neither workflow uses billable GitHub-hosted compute.
+NewsAgg：自動化新聞聚合、以 NLP 進行情緒與主題分類，以及主題洞察儀表板
 
-- 03:00 Asia/Taipei: scrape all news sources.
-- 05:00 Asia/Taipei: generate a new free Cloudflare Quick Tunnel URL and email
-  the bilingual daily brief.
-- Sunday 04:00 Asia/Taipei: database cleanup.
+## GitHub Actions operations / GitHub Actions 操作
 
-兩個排程工作流程都使用此筆記型電腦上的 Windows 自架執行器，不使用可能產生費用的
-GitHub 託管運算資源。
+GitHub Actions is the intended owner of both daily jobs. The Windows self-hosted runner on this laptop executes them using `D:\Website` and Docker Desktop; these are not GitHub-hosted jobs. The machine, runner, Docker Desktop, and internet connection must remain available. The public origin remains `https://newsagg.sentsis.workers.dev/`.
 
-## Self-hosted runner / 自架執行器
+| Taipei time | Workflow | Action |
+| --- | --- | --- |
+| 17:05 | `Scraper` | `RUN-NEWSAGG-DAILY.ps1 -Ingest` publishes verified news for the next edition. |
+| 04:25 | `NewsAgg Daily Publish and Report` | Freezes the 04:30 edition and sends at 04:40. |
 
-In the private repository, open **Settings > Actions > Runners > New
-self-hosted runner**, choose **Windows x64**, and install it using the same
-Windows account that runs Docker Desktop. Keep the runner, laptop, Docker
-Desktop, and internet connection available at 03:00 and 05:00.
+The cron expressions are UTC (`09:05` and `20:25`) because Taiwan stays at UTC+8. GitHub may delay scheduled events, so the daily pipeline's own state, locks, and delivery ledger remain the final authority. Both workflows share a concurrency group to prevent overlapping runs. Do not re-enable the Windows ingestion/delivery tasks while these schedules are active or they may race for the same edition.
 
-在私人儲存庫中開啟 **Settings > Actions > Runners > New self-hosted runner**，
-選擇 **Windows x64**，並使用執行 Docker Desktop 的同一個 Windows 帳號安裝。
+Both workflows need the local ignored `.env` and `server/.env` configuration (database, public URL, SMTP). The configured recipients are in `ops/daily-config.json`: the three NTOU addresses plus `edkong17@gmail.com` and `xuemingwang28@gmail.com`. GitHub's `SMTP_PASS` secret can still be supplied, but the local `server/.env` takes priority for this self-hosted runner. Never commit passwords or tokens.
 
-## Secrets and variables / 密鑰與變數
+### Manual tests / 手動測試
 
-Open **Settings > Secrets and variables > Actions**.
+In **Actions → Scraper → Run workflow**, choose `scrape` to invoke real daily ingestion. If the edition is already complete, it exits successfully with `ingestion_already_complete`; choose `full-recheck` only when you intentionally want a fresh, potentially long recheck without sending email. `cleanup` is a preview, and `backfill-lang` is a separate database maintenance action.
 
-Secrets:
+In **Actions → NewsAgg Daily Publish and Report → Run workflow**, `preflight` checks dependencies without sending email. Choose `send` only if you intend to run the real daily edition; the delivery ledger prevents resending already accepted recipients. The old `GITHUB-DAILY-PUBLISH.ps1` workflow is obsolete and must not be used.
 
-- `SMTP_PASS`: 16-character Google App Password, with spaces removed.
-
-Variables:
-
-- `SMTP_HOST`: optional; defaults to `smtp.gmail.com`.
-- `SMTP_PORT`: optional; defaults to `587`.
-
-The sender and scheduled recipient list are saved directly in
-`.github/workflows/newsagg-daily.yml`: sender `newsaggtest123@gmail.com`, with
-recipients `01257166@email.ntou.edu.tw`, `01257168@email.ntou.edu.tw`, and
-`01257169@email.ntou.edu.tw`. A manually dispatched run may temporarily override
-the recipients without changing the saved schedule.
-
-The scraper reads `D:\Website\server\.env` locally. GitHub no longer needs
-`NEONDB_URL` or `HF_TOKEN` for the scraper workflow.
-
-## Manual test / 手動測試
-
-Open the repository **Actions** tab, select a workflow, and choose **Run
-workflow**. The 05:00 workflow rotates the temporary URL and sends a real email.
-
-在儲存庫的 **Actions** 頁面選擇工作流程並按下 **Run workflow**。05:00 的工作
-流程會更換臨時網址並寄出真實郵件。
+GitHub Actions 的兩個排程都透過本機 Windows 自架執行器執行；請保持電腦、Docker 與網路運作。手動測試 Scraper 時，`scrape` 會使用每日執行紀錄；若當日已完成，會安全結束而不重複擷取。`full-recheck` 才會重新檢查，但不寄送每日郵件。

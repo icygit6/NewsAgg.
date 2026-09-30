@@ -1,7 +1,7 @@
 {
   "name": "NewsAgg",
   "short_name": "NewsAgg",
-  "description": "Latest breaking news and personalized headlines with sentiment analytics.",
+  "description": "Automated News Aggregation, NLP-Based Sentiment and Topic Classification, and Topic Insights Dashboard.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

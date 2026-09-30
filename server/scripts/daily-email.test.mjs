@@ -8,6 +8,10 @@ test('newsletter uses email-safe layout with working escaped article links',()=>
   assert.match(result.html,/table role="presentation"/);
   assert.match(result.html,/Today's reading list/);
   assert.match(result.html,/Collection coverage/);
+  assert.match(result.html,/今日選讀|每日簡報/);
+  assert.match(result.html,/蒐集涵蓋範圍/);
+  assert.match(result.text,/時區|網站/);
+  assert.match(result.subject,/篇已驗證文章/);
   assert.match(result.html,/href="https:\/\/example.com\/article\/id%22%20onclick%3D%22bad"/);
   assert.doesNotMatch(result.html,/<script>/);
   assert.match(result.html,/&lt;script&gt;/);
@@ -25,4 +29,5 @@ test('failure layout has no article cards or misleading completed date',()=>{
   assert.match(result.subject,/FAILED/);
   assert.doesNotMatch(result.html,/Today's reading list|1 Jan/);
   assert.match(result.html,/not completed/);
+  assert.match(result.html,/失敗通知/);
 });

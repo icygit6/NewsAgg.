@@ -21,7 +21,7 @@ const minutes=Number(args['max-minutes']||210);
 if(!Number.isInteger(target)||target<1||target>100||!Number.isFinite(minutes)||minutes<1||minutes>260) throw new Error('Invalid benchmark or target limits');
 if((args.target||args['max-minutes'])&&!args.benchmark) throw new Error('Overrides are only available in benchmark mode');
 if(args['refresh-existing']&&!args.benchmark&&!args.ingest) throw new Error('Full rechecks require a no-email ingestion run');
-if(config.timeZone!=='Asia/Taipei'||!config.recipients?.length||config.recipients.some(r=>!/^\d{8}@email\.ntou\.edu\.tw$/.test(r))) throw new Error('Invalid daily configuration');
+if(config.timeZone!=='Asia/Taipei'||!Array.isArray(config.recipients)||!config.recipients.length||config.recipients.some(r=>typeof r!=='string'||!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/.test(r))||new Set(config.recipients.map(r=>r.toLowerCase())).size!==config.recipients.length) throw new Error('Invalid daily recipient configuration');
 const publicUrl=(process.env.NEWSAGG_STABLE_URL||'').replace(/\/$/,'');
 if(!/^https:\/\/[^/]+$/.test(publicUrl)) throw new Error('Stable HTTPS public origin is required');
 const day=args.ingest?ingestionEdition(new Date(),config.startTime):taipeiDay();

@@ -1,4 +1,8 @@
-# NewsAgg Docker Guide
+# NewsAgg: Automated News Aggregation, NLP-Based Sentiment and Topic Classification, and Topic Insights Dashboard
+
+NewsAgg：自動化新聞聚合、以 NLP 進行情緒與主題分類，以及主題洞察儀表板
+
+## Docker Guide
 
 `docker-compose.yml` menjalankan tiga service:
 
