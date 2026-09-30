@@ -16,18 +16,24 @@ export function QuoteCard({ quote, pinned = false }: QuoteCardProps) {
     <div
       className={`rounded-2xl border p-4 ${
         isDark ? 'bg-slate-900/70 border-slate-800' : 'bg-white border-slate-200'
-      } ${pinned ? 'border-l-4 border-l-[var(--brand,#06b6d4)]' : ''}`}
+      } ${pinned ? 'border-l-4 border-l-[var(--brand,#2563eb)]' : ''}`}
     >
       <div className="flex items-center gap-1.5 mb-2">
-        <QuoteIcon size={12} className="text-[var(--brand,#06b6d4)]" />
-        <span className={`text-[10px] font-mono uppercase tracking-wide ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+        <QuoteIcon size={12} className="text-[var(--brand,#2563eb)]" />
+        <span
+          className={`text-[10px] font-mono uppercase tracking-wide ${isDark ? 'text-slate-500' : 'text-slate-400'}`}
+        >
           {pinned ? t.quoteOfDay : 'FavQs'}
         </span>
       </div>
-      <p className={`text-sm italic leading-relaxed ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+      <p
+        className={`text-sm italic leading-relaxed ${isDark ? 'text-slate-200' : 'text-slate-700'}`}
+      >
         “{quote.quote}”
       </p>
-      <p className={`mt-2 text-xs font-semibold text-right ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
+      <p
+        className={`mt-2 text-xs font-semibold text-right ${isDark ? 'text-slate-500' : 'text-slate-500'}`}
+      >
         — {quote.author}
       </p>
     </div>

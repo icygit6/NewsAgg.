@@ -1,5 +1,5 @@
+import { useUiText } from '../i18n/uiText';
 import { Link, useNavigate } from 'react-router';
-import { motion } from 'motion/react';
 import { Clock3, MessageSquareQuote, PlayCircle, ShieldAlert, Sparkles, Bookmark } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { useBookmarks } from '../hooks/useBookmarks';
@@ -8,7 +8,6 @@ import { getArticleId } from '../services/newsAPI';
 import type { NewsArticle } from '../types/article';
 import type { SentimentType } from '../types/sentiment';
 import { ImageWithFallback } from './utils/ImageWithFallback';
-import { CategoryAttribution } from './ui/CategoryAttribution';
 
 const SENTIMENT_STYLE: Record<SentimentType, { bg: string; dot: string; dark: string }> = {
   positive: { bg: 'bg-emerald-100 text-emerald-700', dot: 'bg-emerald-500', dark: 'bg-emerald-900/40 text-emerald-300' },
@@ -26,10 +25,10 @@ const formatDate = (value: string): string => {
 
 interface NewsCardProps {
   article: NewsArticle;
-  index: number;
 }
 
-export function NewsCard({ article, index }: NewsCardProps) {
+export function NewsCard({ article }: NewsCardProps) {
+  const ui = useUiText();
   const { t, isDark, isAuthenticated, setSidebarOpen } = useApp();
   const { isBookmarked: isArticleBookmarked, bookmarkIdFor, add, remove } = useBookmarks();
   const navigate = useNavigate();
@@ -67,16 +66,10 @@ export function NewsCard({ article, index }: NewsCardProps) {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: Math.min(index * 0.05, 0.4) }}
-      whileHover={{ y: -2 }}
-      className="group"
-    >
+    <article className="content-auto-card group min-w-0 motion-safe:transition-transform motion-safe:duration-200 motion-safe:hover:-translate-y-0.5">
       <Link to={`/article/${articleId}`} className="block h-full">
-        <div className={`h-full rounded-xl border overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col ${isDark ? 'bg-slate-900 border-slate-800 hover:border-slate-600' : 'bg-[#fffdfa] border-[#d8dee6] hover:border-blue-300'}`}>
-          <div className="relative overflow-hidden h-36 lg:h-44 flex-shrink-0">
+        <div className={`flex h-full min-h-[500px] flex-col overflow-hidden rounded-2xl border transition-[border-color,box-shadow] duration-200 ${isDark ? 'bg-slate-900/90 border-slate-800 hover:border-slate-600' : 'bg-white border-slate-200 hover:border-blue-300 hover:shadow-md'}`}>
+          <div className="relative h-52 flex-shrink-0 overflow-hidden sm:h-56 lg:h-60">
             <ImageWithFallback
               src={article.urlToImage || secondaryImage || undefined}
               alt={article.title}
@@ -88,7 +81,7 @@ export function NewsCard({ article, index }: NewsCardProps) {
 
             <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2">
               <div className={`text-xs px-2.5 py-1 rounded-full font-semibold uppercase tracking-wide ${categoryClass}`}>
-                {article.topic}
+                {ui(article.topic)}
               </div>
 
               <div className="flex flex-wrap items-center justify-end gap-1.5">
@@ -120,15 +113,11 @@ export function NewsCard({ article, index }: NewsCardProps) {
 
                 {article.videoUrl && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-black/60 px-2 py-1 text-[11px] font-medium text-white backdrop-blur-sm">
-                    <PlayCircle size={12} />
-                    Video
-                  </span>
+                    <PlayCircle size={12} />{ui("Video")} </span>
                 )}
                 {article.isPremium && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/90 px-2 py-1 text-[11px] font-medium text-white">
-                    <ShieldAlert size={12} />
-                    Premium
-                  </span>
+                    <ShieldAlert size={12} />{ui("Premium")} </span>
                 )}
               </div>
             </div>
@@ -136,7 +125,7 @@ export function NewsCard({ article, index }: NewsCardProps) {
             <div className="absolute bottom-3 left-3 right-3 flex flex-wrap items-center gap-2">
               <span className={`hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${isDark ? sentStyle.dark : sentStyle.bg}`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${sentStyle.dot}`} />
-                {article.sentiment.type}
+                {t[article.sentiment.type]}
               </span>
 
               {article.section && (
@@ -147,48 +136,50 @@ export function NewsCard({ article, index }: NewsCardProps) {
             </div>
           </div>
 
-          <div className="flex flex-col flex-1 p-4">
-            <div className="flex items-center gap-2 mb-3 min-w-0">
+          <div className="flex min-w-0 flex-1 flex-col p-5">
+            <div className="mb-4 flex min-w-0 items-center gap-3">
               {article.source.logo ? (
                 <img
                   src={article.source.logo}
                   alt={article.source.name}
-                  className={`w-8 h-8 rounded-full object-cover flex-shrink-0 ${isDark ? 'bg-slate-900/80' : 'bg-white'}`}
+                  loading="lazy"
+                  decoding="async"
+                  className={`h-9 w-9 rounded-full object-cover flex-shrink-0 ${isDark ? 'bg-slate-900/80' : 'bg-white'}`}
                 />
               ) : (
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${isDark ? 'bg-slate-700 text-slate-200' : 'bg-gray-100 text-gray-600'}`}>
+                <div className={`h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${isDark ? 'bg-slate-700 text-slate-200' : 'bg-gray-100 text-gray-600'}`}>
                   {article.source.name.slice(0, 1)}
                 </div>
               )}
 
               <div className="min-w-0">
-                <p className={`text-xs font-semibold truncate ${isDark ? 'text-slate-200' : 'text-gray-700'}`}>
+                <p className={`truncate text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-gray-700'}`}>
                   {article.source.name}
                 </p>
                 <p className={`text-[11px] truncate ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                  {article.author || 'Unknown'}
+                  {article.author || ui("Unknown")}
                 </p>
               </div>
             </div>
 
-            <h3 className={`font-poppins text-[1.05rem] font-semibold leading-snug mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors ${isDark ? 'text-slate-100' : 'text-[#0b1f33]'}`}>
+            <h3 className={`mb-3 line-clamp-3 font-poppins text-xl font-semibold leading-snug transition-colors group-hover:text-blue-600 ${isDark ? 'text-slate-100' : 'text-[#0b1f33]'}`}>
               {article.title}
             </h3>
 
             <div className="flex-1" />
 
-            <div className="flex flex-wrap items-center gap-2 mb-3">
+            <div className="mb-4 flex flex-wrap items-center gap-2">
               {article.aiTopLabel && (
                 <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${isDark ? 'bg-cyan-500/15 text-cyan-300' : 'bg-cyan-50 text-cyan-700'}`}>
                   <Sparkles size={12} />
-                  {article.aiTopLabel}
+                  {ui(article.aiTopLabel)}
                 </span>
               )}
 
-              {article.keywords.slice(0, 2).map((keyword) => (
+              {article.keywords.slice(0, 3).map((keyword) => (
                 <span
                   key={`${article.id}-${keyword}`}
-                  className={`inline-block max-w-[80px] truncate rounded-full px-2.5 py-1 text-[11px] ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-gray-100 text-gray-600'}`}
+                  className={`inline-block max-w-[120px] truncate rounded-full px-2.5 py-1 text-[11px] ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-gray-100 text-gray-600'}`}
                 >
                   #{keyword}
                 </span>
@@ -199,7 +190,7 @@ export function NewsCard({ article, index }: NewsCardProps) {
               <div className="flex items-center gap-1.5 min-w-0">
                 <Clock3 size={13} className="flex-shrink-0 opacity-70" />
                 <span className="truncate font-medium">
-                  {article.readability.readingTimeMin > 0 ? `${article.readability.readingTimeMin} min` : 'Quick read'}
+                  {ui(article.readability.readingTimeMin > 0 ? `${article.readability.readingTimeMin} min` : 'Quick read')}
                 </span>
               </div>
 
@@ -208,11 +199,10 @@ export function NewsCard({ article, index }: NewsCardProps) {
 
             <div className={`flex items-center justify-between gap-3 mt-2.5 text-[11px] ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
               <span className="truncate opacity-80">{article.source.domain || t.source}</span>
-              <CategoryAttribution article={article} />
             </div>
           </div>
         </div>
       </Link>
-    </motion.div>
+    </article>
   );
 }

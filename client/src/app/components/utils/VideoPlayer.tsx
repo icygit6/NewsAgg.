@@ -1,3 +1,4 @@
+import { useUiText } from '../../i18n/uiText';
 import { useState } from 'react';
 import { Play, ExternalLink } from 'lucide-react';
 
@@ -41,6 +42,7 @@ export function isExternalVideoUrl(url: string): boolean {
 }
 
 export function VideoPlayer({ videoUrl, title, isDark }: VideoPlayerProps) {
+  const ui = useUiText();
   const [isLoading, setIsLoading] = useState(true);
 
   if (!videoUrl) return null;
@@ -56,9 +58,7 @@ export function VideoPlayer({ videoUrl, title, isDark }: VideoPlayerProps) {
       <div className={`rounded-2xl overflow-hidden border mb-6 flex items-center gap-4 p-4 ${isDark ? 'border-slate-700/50 bg-slate-800/60' : 'border-gray-100 bg-white/70'}`}>
         <Play size={32} className={isDark ? 'text-slate-400' : 'text-gray-400'} />
         <div className="flex-1 min-w-0">
-          <p className={`text-xs font-semibold mb-1 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
-            Featured Video
-          </p>
+          <p className={`text-xs font-semibold mb-1 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>{ui("Featured Video")} </p>
           <p className={`text-sm line-clamp-2 mb-3 ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>
             {title}
           </p>
@@ -68,9 +68,7 @@ export function VideoPlayer({ videoUrl, title, isDark }: VideoPlayerProps) {
             rel="noopener noreferrer"
             className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${isDark ? 'bg-slate-700 text-slate-100 hover:bg-slate-600' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
           >
-            <ExternalLink size={14} />
-            Watch on source
-          </a>
+            <ExternalLink size={14} />{ui("Watch on source")} </a>
         </div>
       </div>
     );
@@ -92,7 +90,7 @@ export function VideoPlayer({ videoUrl, title, isDark }: VideoPlayerProps) {
             <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm">
               <div className="flex flex-col items-center gap-2">
                 <Play size={40} className="text-white animate-pulse" />
-                <p className="text-white text-xs">Loading video...</p>
+                <p className="text-white text-xs">{ui("Loading video...")}</p>
               </div>
             </div>
           )}
@@ -113,9 +111,7 @@ export function VideoPlayer({ videoUrl, title, isDark }: VideoPlayerProps) {
 
       {/* Video info */}
       <div className={`px-4 py-3 ${isDark ? 'bg-slate-800/40' : 'bg-white/50'}`}>
-        <p className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
-          Featured Video
-        </p>
+        <p className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>{ui("Featured Video")} </p>
         <p className={`text-sm line-clamp-2 ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>
           {title}
         </p>

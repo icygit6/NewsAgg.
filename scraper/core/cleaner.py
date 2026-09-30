@@ -16,36 +16,39 @@ from core import config
 
 # ── Domain identity ─────────────────────────────────────────────────
 def dom(url: str) -> str:
-    return urlparse(url).netloc.lower()
+    return (urlparse(url).hostname or '').lower()
+
+def host_matches(host: str, domain: str) -> bool:
+    return host == domain or host.endswith('.' + domain)
 
 
 def is_cnn(u: str) -> bool:
-    return "cnn.com" in dom(u)
+    return host_matches(dom(u), 'cnn.com')
 
 
 def is_bbc(u: str) -> bool:
-    return "bbc.com" in dom(u)
+    return any(host_matches(dom(u), d) for d in ('bbc.com','bbc.co.uk'))
 
 
 def is_alj(u: str) -> bool:
-    return "aljazeera.com" in dom(u)
+    return host_matches(dom(u), 'aljazeera.com')
 
 
 def is_yahoo_tw(u: str) -> bool:
     d = dom(u)
-    return "tw.news.yahoo.com" in d or (d.endswith("yahoo.com") and d.startswith("tw."))
+    return host_matches(d, 'yahoo.com') and d.startswith('tw.')
 
 
 def source_meta(url: str) -> dict:
     """Map a URL to its source identity row (matches the live `sources` table)."""
     d = dom(url)
-    if "cnn.com" in d:
+    if is_cnn(url):
         return {"id": "cnn", "name": "CNN", "domain": "edition.cnn.com", "country": "US", "language": "en", "logo": "https://edition.cnn.com/media/sites/cnn/favicon.ico"}
-    if "bbc.com" in d:
+    if is_bbc(url):
         return {"id": "bbc", "name": "BBC", "domain": "bbc.com", "country": "GB", "language": "en", "logo": "https://www.bbc.com/favicon.ico"}
-    if "aljazeera.com" in d:
+    if is_alj(url):
         return {"id": "aljazeera", "name": "Al Jazeera", "domain": "aljazeera.com", "country": "QA", "language": "en", "logo": "https://www.aljazeera.com/favicon.ico"}
-    if "yahoo.com" in d:
+    if is_yahoo_tw(url):
         return {"id": "yahoo_tw", "name": "Yahoo TW", "domain": "tw.news.yahoo.com", "country": "TW", "language": "zh-TW", "logo": "https://tw.news.yahoo.com/favicon.ico"}
     return {"id": d, "name": d, "domain": d, "country": None, "language": "en", "logo": None}
 
@@ -89,8 +92,8 @@ SITE_FAMILIES = [
 def same_family(u: str, base: str) -> bool:
     sd, ud = dom(base), dom(u)
     for fam in SITE_FAMILIES:
-        if any(x in sd for x in fam):
-            return any(x in ud for x in fam)
+        if any(host_matches(sd, x) for x in fam):
+            return any(host_matches(ud, x) for x in fam)
     return sd == ud
 
 
@@ -142,10 +145,10 @@ def is_fresh(url: str, published: Optional[datetime]) -> bool:
     cutoff = datetime.now(timezone.utc) - timedelta(days=config.MAX_AGE_DAYS)
     dt = published or date_from_url(url)
     if dt is None:
-        return True            # unknown date — include optimistically
+        return False           # unknown dates are not fresh news
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
-    return dt >= cutoff
+    return cutoff <= dt <= datetime.now(timezone.utc) + timedelta(hours=2)
 
 
 # ── Text cleaning ───────────────────────────────────────────────────

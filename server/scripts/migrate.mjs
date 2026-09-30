@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 import pg from 'pg';
 
 const file = process.argv[2];
-if (!file) {
+if (!file || !/^\d+_[a-z0-9_]+\.sql$/i.test(file)) {
   console.error('Usage: node scripts/migrate.mjs <migration.sql>');
   process.exit(1);
 }
@@ -19,7 +19,7 @@ if (!connectionString) {
   process.exit(1);
 }
 
-const pool = new pg.Pool({ connectionString, ssl: { rejectUnauthorized: false } });
+const pool = new pg.Pool({ connectionString, ssl: { rejectUnauthorized: true }, connectionTimeoutMillis: 15000 });
 try {
   await pool.query(sql);
   const tables = await pool.query(

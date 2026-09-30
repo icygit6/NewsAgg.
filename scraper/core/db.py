@@ -15,6 +15,8 @@ This matches the ~364 existing rows and the TS server's read contract.
 from __future__ import annotations
 
 import logging
+import os
+import uuid
 from typing import Optional
 
 from core import config
@@ -44,6 +46,7 @@ def connect():
         )
     return psycopg2.connect(
         dsn,
+        connect_timeout=10,
         keepalives=1,
         keepalives_idle=30,
         keepalives_interval=10,
@@ -67,7 +70,9 @@ def existing_canonicals(conn) -> set[str]:
     """All canonical_urls already stored — used to skip re-enriching duplicates."""
     try:
         with conn.cursor() as cur:
-            cur.execute("SELECT canonical_url FROM articles WHERE canonical_url IS NOT NULL")
+            cur.execute("""SELECT canonical_url FROM articles WHERE canonical_url IS NOT NULL
+                AND extraction_version = %s AND last_checked_at > NOW() - interval '24 hours'""",
+                (__import__('core.quality', fromlist=['VERSION']).VERSION,))
             return {row[0] for row in cur.fetchall()}
     except Exception as e:                          # noqa: BLE001
         _log.warning("Could not preload existing canonicals: %s", e)
@@ -83,8 +88,8 @@ def canonical_exists(conn, canonical_url: str) -> bool:
 # ═══════════════════════════════════════════════════════════════════
 # Upsert — preserved from scraper4/5 (writes the live schema)
 # ═══════════════════════════════════════════════════════════════════
-def insert_article(conn, record: dict) -> str:
-    """Upsert one enriched article (+ its source and author). Commits on success.
+def _insert_public_article(conn, record: dict) -> str:
+    """Internal upsert. Caller owns the transaction and admission gate.
 
     Returns 'inserted' | 'updated' | 'unchanged'. The DO UPDATE is guarded by
     IS DISTINCT FROM so a re-scrape of an unchanged article writes NOTHING —
@@ -141,7 +146,8 @@ def insert_article(conn, record: dict) -> str:
                 word_count, reading_time_min, flesch_score, flesch_kincaid, smog_index,
                 ai_relevance, ai_top_label, is_premium, is_accessible_free,
                 keywords, entities, images, related_urls,
-                og_data, ai_label_scores, meta_tags
+                og_data, ai_label_scores, meta_tags,
+                content_blocks, quality_metadata, summary_method, content_hash, extraction_version, last_checked_at, feed_eligible
             ) VALUES (
                 %(id)s, %(url)s, %(canonical_url)s, %(source_id)s, %(author_id)s,
                 %(title)s, %(description)s, %(content)s, %(ai_summary)s,
@@ -153,7 +159,8 @@ def insert_article(conn, record: dict) -> str:
                 %(word_count)s, %(reading_time_min)s, %(flesch_score)s, %(flesch_kincaid)s, %(smog_index)s,
                 %(ai_relevance)s, %(ai_top_label)s, %(is_premium)s, %(is_accessible_free)s,
                 %(keywords)s, %(entities)s, %(images)s, %(related_urls)s,
-                %(og_data)s, %(ai_label_scores)s, %(meta_tags)s
+                %(og_data)s, %(ai_label_scores)s, %(meta_tags)s,
+                %(content_blocks)s, %(quality_metadata)s, %(summary_method)s, %(content_hash)s, %(extraction_version)s, NOW(), true
             )
             ON CONFLICT (canonical_url) DO UPDATE SET
                 title              = EXCLUDED.title,
@@ -164,11 +171,35 @@ def insert_article(conn, record: dict) -> str:
                 sentiment_score    = EXCLUDED.sentiment_score,
                 sentiment_polarity = EXCLUDED.sentiment_polarity,
                 keywords           = EXCLUDED.keywords,
-                scraped_at         = EXCLUDED.scraped_at
-            WHERE articles.title       IS DISTINCT FROM EXCLUDED.title
-               OR articles.description IS DISTINCT FROM EXCLUDED.description
-               OR articles.content     IS DISTINCT FROM EXCLUDED.content
-            RETURNING (xmax = 0) AS inserted
+                scraped_at         = EXCLUDED.scraped_at,
+                url_to_image       = EXCLUDED.url_to_image,
+                images             = EXCLUDED.images,
+                published_at       = EXCLUDED.published_at,
+                modified_at        = EXCLUDED.modified_at,
+                topic              = EXCLUDED.topic,
+                content_blocks     = EXCLUDED.content_blocks,
+                quality_metadata   = EXCLUDED.quality_metadata,
+                summary_method     = EXCLUDED.summary_method,
+                content_hash       = EXCLUDED.content_hash,
+                extraction_version = EXCLUDED.extraction_version,
+                last_checked_at    = NOW(),
+                feed_eligible      = true,
+                sentiment_pos      = EXCLUDED.sentiment_pos,
+                sentiment_neu      = EXCLUDED.sentiment_neu,
+                sentiment_neg      = EXCLUDED.sentiment_neg,
+                sentiment_model    = EXCLUDED.sentiment_model,
+                toxicity_label     = EXCLUDED.toxicity_label,
+                toxicity_score     = EXCLUDED.toxicity_score,
+                entities           = EXCLUDED.entities,
+                reading_time_min   = EXCLUDED.reading_time_min,
+                word_count         = EXCLUDED.word_count,
+                flesch_score       = EXCLUDED.flesch_score,
+                flesch_kincaid     = EXCLUDED.flesch_kincaid,
+                smog_index         = EXCLUDED.smog_index,
+                ai_relevance       = EXCLUDED.ai_relevance,
+                ai_top_label       = EXCLUDED.ai_top_label,
+                ai_label_scores    = EXCLUDED.ai_label_scores
+            RETURNING (xmax = 0) AS inserted, id
             """,
             {
                 "id": record["id"],
@@ -214,13 +245,108 @@ def insert_article(conn, record: dict) -> str:
                 "og_data": extras.Json(og),
                 "ai_label_scores": extras.Json(record.get("ai_label_scores", {})),
                 "meta_tags": extras.Json(record.get("meta_tags", [])),
+                "content_blocks": extras.Json(record.get("content_blocks", [])),
+                "quality_metadata": extras.Json(record.get("quality_metadata", {})),
+                "summary_method": record.get("summary_method"),
+                "content_hash": record.get("content_hash"),
+                "extraction_version": record.get("extraction_version"),
             },
         )
         row = cur.fetchone()
-    conn.commit()
+    if row:
+        record['id'] = row[1]  # Preserve the existing ID on canonical conflicts.
     if row is None:
         return "unchanged"           # WHERE guard filtered the update out
     return "inserted" if row[0] else "updated"
+
+
+def stage_candidate(conn, item, source_id):
+    from core.cleaner import normalize_canonical, url_id
+    from psycopg2.extras import Json
+    key = url_id(normalize_canonical(item['url']))
+    run = os.environ.get('NEWSAGG_RUN_KEY') or 'manual'
+    with conn.cursor() as cur:
+        cur.execute("""INSERT INTO staging.articles(candidate_key,run_key,source_id,candidate_url,status,payload)
+            VALUES(%s,%s,%s,%s,'pending',%s)
+            ON CONFLICT(candidate_key) DO UPDATE SET run_key=excluded.run_key,status='pending',
+            payload=excluded.payload,validation='{}',updated_at=now(),published_at=NULL""",
+            (key,run,source_id,item['url'],Json(item)))
+    conn.commit()
+    return key
+
+
+def reject_candidate(conn, key, reason):
+    from psycopg2.extras import Json
+    with conn.cursor() as cur:
+        cur.execute("UPDATE staging.articles SET status='rejected',validation=%s,updated_at=now() WHERE candidate_key=%s",
+                    (Json({'reason':reason}),key))
+    conn.commit()
+
+
+def insert_article(conn, record: dict) -> str:
+    """Durable staging first; production + publication receipt commit together.
+
+    A crash after staging leaves a resumable ready row, never half an article
+    visible to the website. Rejected updates leave the old public row intact.
+    """
+    from core.publication import rejection
+    from psycopg2.extras import Json
+    key = record.get('_stage_key') or record['id']
+    run = os.environ.get('NEWSAGG_RUN_KEY') or record.setdefault('_manual_run', str(uuid.uuid4()))
+    payload = {k:v for k,v in record.items() if not k.startswith('_')}
+    reason = rejection(payload)
+    if not reason:
+        # Preserve existing URLs/IDs, but quarantine alternate-URL copies.
+        # Exact bodies may match across publishers; headlines only match within
+        # one publisher and a 24-hour publication window (not recurring reports).
+        with conn.cursor() as cur:
+            cur.execute("""SELECT 1 FROM articles WHERE feed_eligible = true
+                AND extraction_version = 'structured-v3'
+                AND canonical_url <> %s
+                AND (content_hash = %s OR (source_id = %s
+                  AND lower(regexp_replace(btrim(title), '\\s+', ' ', 'g')) = lower(regexp_replace(btrim(%s), '\\s+', ' ', 'g'))
+                  AND abs(extract(epoch FROM published_at - %s::timestamptz)) < 86400))
+                AND NOT EXISTS (SELECT 1 FROM articles existing WHERE existing.canonical_url = %s)
+                LIMIT 1""", (record['canonical_url'], record['content_hash'], record['source']['id'],
+                             record['title'], record['published_at'], record['canonical_url']))
+            if cur.fetchone():
+                reason = 'duplicate_article'
+    with conn.cursor() as cur:
+        cur.execute("""INSERT INTO staging.articles(candidate_key,run_key,source_id,candidate_url,article_id,status,payload,validation)
+            VALUES(%s,%s,%s,%s,%s,%s,%s,%s)
+            ON CONFLICT(candidate_key) DO UPDATE SET run_key=excluded.run_key,article_id=excluded.article_id,
+            status=excluded.status,payload=excluded.payload,validation=excluded.validation,updated_at=now(),published_at=NULL""",
+            (key,run,record['source']['id'],record['url'],record['id'],'rejected' if reason else 'ready',Json(payload),Json({'reason':reason} if reason else {'passed':True})))
+    conn.commit()
+    if reason:
+        return 'quarantined'
+    try:
+        with conn.cursor() as cur:
+            cur.execute('SELECT payload,status FROM staging.articles WHERE candidate_key=%s AND run_key=%s FOR UPDATE', (key,run))
+            staged = cur.fetchone()
+            if not staged or staged[1] != 'ready':
+                raise RuntimeError('Staging ownership changed')
+            ready = staged[0]
+        reason = rejection(ready)
+        if reason:
+            conn.rollback()
+            reject_candidate(conn,key,reason)
+            return 'quarantined'
+        status = _insert_public_article(conn, ready)
+        with conn.cursor() as cur:
+            cur.execute("""INSERT INTO public.article_publications(article_id,run_key,content_hash) VALUES(%s,%s,%s)
+                ON CONFLICT(article_id) DO UPDATE SET run_key=excluded.run_key,content_hash=excluded.content_hash,approved_at=now()""",
+                (ready['id'],run,ready['content_hash']))
+            # Once copied atomically to production, retain a receipt rather than
+            # a second full article body in the free-tier staging buffer.
+            cur.execute("UPDATE staging.articles SET status='published',article_id=%s,payload=%s,published_at=now(),updated_at=now() WHERE candidate_key=%s",
+                        (ready['id'],Json({'articleId':ready['id'],'contentHash':ready['content_hash']}),key))
+        conn.commit()
+        record['id'] = ready['id']
+        return status
+    except Exception:
+        conn.rollback()
+        raise
 
 
 def upsert_with_retry(conn, record: dict):
@@ -241,8 +367,24 @@ def upsert_with_retry(conn, record: dict):
                 conn.rollback()
         except Exception:                           # noqa: BLE001
             pass                                    # rollback on a dead conn also raises
+        if conn is not None:
+            conn.close()
         conn = connect()                            # reconnect (raises only if DSN vanished)
         return insert_article(conn, record), conn
+
+
+def staging_with_retry(conn, operation, *args):
+    try:
+        return operation(conn, *args), conn
+    except Exception:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        if conn is not None:
+            conn.close()
+        conn = connect()
+        return operation(conn, *args), conn
 
 
 def insert_all(dsn_or_conn, articles: list[dict]) -> int:
@@ -258,8 +400,9 @@ def insert_all(dsn_or_conn, articles: list[dict]) -> int:
     ok = 0
     for art in articles:
         try:
-            insert_article(conn, art)
-            ok += 1
+            status = insert_article(conn, art)
+            if status != 'quarantined':
+                ok += 1
         except Exception as e:                      # noqa: BLE001
             conn.rollback()
             print(f"   DB insert error: {e}")

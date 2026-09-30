@@ -1,9 +1,11 @@
-import { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from 'react';
 import { Language, translations, Translations } from '../i18n/translations';
 import { Category } from '../constants';
 import { User, authService } from '../services/authService';
 import { AUTH_UNAUTHORIZED_EVENT } from '../lib/apiFetch';
 import type { SentimentType } from '../types/sentiment';
+import type { ArticleSort } from '../services/newsAPI';
+import { UiLocaleContext } from '../i18n/uiText';
 
 // UI + identity state only. Server state (articles, bookmarks, quotes,
 // preferences) lives in React Query hooks — see hooks/.
@@ -15,9 +17,6 @@ interface AppContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
   t: Translations;
-  // Translate (true = translate all content into selected language)
-  translateMode: boolean;
-  setTranslateMode: (v: boolean) => void;
   // Sidebar
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
@@ -30,12 +29,16 @@ interface AppContextType {
   // Sentiment filter (positive | neutral | negative | 'all')
   selectedSentiment: SentimentType | 'all';
   setSelectedSentiment: (s: SentimentType | 'all') => void;
+  // Feed ordering
+  selectedSort: ArticleSort;
+  setSelectedSort: (sort: ArticleSort) => void;
   // Search
   searchQuery: string;
   setSearchQuery: (q: string) => void;
   // Auth
   user: User | null;
   isAuthenticated: boolean;
+  authInitialized: boolean;
   setUser: (user: User | null) => void;
   // Avatar (user-set profile picture, persisted per-account in localStorage)
   avatarUrl: string | null;
@@ -47,17 +50,33 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [isDark, setIsDark] = useState(() => localStorage.getItem('isDark') === 'true');
-  const [language, setLanguage] = useState<Language>(
-    () => localStorage.getItem('language') === 'zhTW' ? 'zhTW' : 'en'
+  const [language, setLanguageState] = useState<Language>(() =>
+    localStorage.getItem('language') === 'zhTW' ? 'zhTW' : 'en',
   );
-  const [translateMode, setTranslateModeState] = useState(() => localStorage.getItem('translateMode') === 'true');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all');
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [selectedSentiment, setSelectedSentiment] = useState<SentimentType | 'all'>('all');
+  const [selectedSort, setSelectedSort] = useState<ArticleSort>('latest');
   const [searchQuery, setSearchQuery] = useState('');
   const [user, setUser] = useState<User | null>(null);
+  const [authInitialized, setAuthInitialized] = useState(false);
   const [avatarUrl, setAvatarUrlState] = useState<string | null>(null);
+
+  const setLanguage = useCallback((lang: Language) => {
+    // The public product currently guarantees complete UI + news translation
+    // for these two locales. Keep legacy values from leaking into the account.
+    const supported: Language = lang === 'zhTW' ? 'zhTW' : 'en';
+    setLanguageState(supported);
+    if (user) {
+      void authService.updatePreferences({ preferredLanguage: supported }).then((res) => {
+        if (res.success && res.user) {
+          setUser(res.user);
+          authService.setUser(res.user);
+        }
+      });
+    }
+  }, [user]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -72,16 +91,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Persist the selected language so it survives reloads
   useEffect(() => {
     localStorage.setItem('language', language);
+    document.documentElement.lang = language === 'zhTW' ? 'zh-Hant' : 'en';
+    // Retire the former global content-translation preference.
+    localStorage.removeItem('translateMode');
   }, [language]);
 
-  const setTranslateMode = (value: boolean) => {
-    setTranslateModeState(value);
-    localStorage.setItem('translateMode', String(value));
-  };
+  // A signed-in account's saved locale follows it to every browser/device.
+  useEffect(() => {
+    if (user?.preferredLanguage === 'en' || user?.preferredLanguage === 'zhTW') {
+      setLanguageState(user.preferredLanguage);
+    }
+  }, [user?.preferredLanguage]);
 
-  // Load user from localStorage on mount, then validate the token against
-  // /api/account/me — a stale/revoked token signs out via the 401 event, a
-  // valid one refreshes the profile (username/avatar) from the server.
+
+  // Paint the last known non-sensitive profile immediately, then validate the
+  // HttpOnly cookie against /api/account/me. The JWT itself is never readable
+  // by browser JavaScript.
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
@@ -91,8 +116,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         console.error('Error loading user from localStorage:', err);
       }
     }
-    if (!localStorage.getItem('authToken')) return;
-    authService.me()
+    authService
+      .me()
       .then((res) => {
         if (res.success && res.user) {
           setUser(res.user);
@@ -101,8 +126,43 @@ export function AppProvider({ children }: { children: ReactNode }) {
       })
       // accountFetch resolves {success:false} on its own failures; this catch
       // is defense-in-depth so boot-time validation can never reject unhandled.
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setAuthInitialized(true));
   }, []);
+
+  // Verification links commonly open in a new tab. Refresh an account that
+  // still looks unverified whenever this tab becomes active again, so the
+  // verification banner disappears without requiring a sign-out or reload.
+  useEffect(() => {
+    if (!user || user.emailVerified !== false) return;
+
+    let refreshing = false;
+    const refreshVerificationState = async () => {
+      if (refreshing || document.visibilityState === 'hidden') return;
+      refreshing = true;
+      try {
+        const res = await authService.me();
+        if (res.success && res.user) {
+          setUser(res.user);
+          authService.setUser(res.user);
+        }
+      } finally {
+        refreshing = false;
+      }
+    };
+
+    const onVisibilityChange = () => void refreshVerificationState();
+    window.addEventListener('focus', onVisibilityChange);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    void refreshVerificationState();
+    return () => {
+      window.removeEventListener('focus', onVisibilityChange);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+    // Depend on identity + verification only; depending on the whole profile
+    // would refetch whenever an unrelated field receives a new object value.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.email, user?.emailVerified]);
 
   // One-time migration: avatars used to live only in this browser's
   // localStorage; push the local copy to the server once, then drop it.
@@ -161,8 +221,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       language,
       setLanguage,
       t,
-      translateMode,
-      setTranslateMode,
       sidebarOpen,
       setSidebarOpen,
       selectedCategory,
@@ -171,10 +229,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setSelectedSources,
       selectedSentiment,
       setSelectedSentiment,
+      selectedSort,
+      setSelectedSort,
       searchQuery,
       setSearchQuery,
       user,
       isAuthenticated,
+      authInitialized,
       setUser,
       avatarUrl,
       setAvatarUrl,
@@ -185,20 +246,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
       isDark,
       language,
       t,
-      translateMode,
       sidebarOpen,
       selectedCategory,
       selectedSources,
       selectedSentiment,
+      selectedSort,
       searchQuery,
       user,
       isAuthenticated,
+      authInitialized,
       avatarUrl,
       avatarSrc,
-    ]
+    ],
   );
 
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+  return <AppContext.Provider value={value}><UiLocaleContext.Provider value={language}>{children}</UiLocaleContext.Provider></AppContext.Provider>;
 }
 
 export function useApp() {

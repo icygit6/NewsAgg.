@@ -18,30 +18,79 @@ import { translateLimiter } from '../middleware/rateLimit'
 export const translateRouter = Router()
 
 translateRouter.post('/translate-previews', translateLimiter, async (req: Request, res: Response) => {
-  const ids = Array.isArray(req.body?.articleIds)
-    ? [...new Set(req.body.articleIds.filter((id: unknown) => typeof id === 'string' && id.length > 0))].slice(0, 20)
+  const ids: string[] = Array.isArray(req.body?.articleIds)
+    ? [...new Set<string>((req.body.articleIds as unknown[]).filter(
+        (id: unknown): id is string => typeof id === 'string' && id.length > 0
+      ))].slice(0, 20)
     : []
   const targetLang = req.body?.lang as ApiLang
   if (ids.length === 0 || !SUPPORTED_LANGS.includes(targetLang)) {
     return res.status(400).json({ success: false, message: 'articleIds and a supported lang are required' })
   }
   try {
+    await ensurePreviewTable()
     const result = await query(
-      `SELECT id, title, description, ai_summary, language FROM articles WHERE id = ANY($1::text[])`,
+      `SELECT id, title, language FROM articles WHERE id = ANY($1::text[])`,
       [ids]
     )
-    const needsTranslation = result.rows.filter((row) => normalizeStoredLang(row.language) !== targetLang)
-    const translated = await translateArticlePreviews(
-      needsTranslation.map((row) => ({
-        id: String(row.id), title: row.title, description: row.description,
-        aiSummary: row.ai_summary,
-      })),
-      targetLang
+    const articlesById = new Map(result.rows.map((row) => [String(row.id), row]))
+    const translatable = result.rows.filter((row) => normalizeStoredLang(row.language) !== targetLang)
+    const hashes = new Map(translatable.map((row) => [String(row.id), previewSourceHash(row)]))
+    const cached = translatable.length === 0
+      ? { rows: [] as any[] }
+      : await query(
+          `SELECT article_id, title, description, ai_summary, source_hash, provider, model_version
+           FROM article_preview_translations
+           WHERE article_id = ANY($1::text[]) AND lang = $2
+             AND model_version LIKE $3`,
+          [translatable.map((row) => String(row.id)), targetLang, `%:${TRANSLATION_PIPELINE_VERSION}`]
+        )
+    const cachedById = new Map(
+      cached.rows
+        .filter((row) => row.source_hash === hashes.get(String(row.article_id)))
+        .map((row) => [String(row.article_id), {
+          id: String(row.article_id), title: row.title, description: null,
+          aiSummary: null, provider: row.provider || 'cache', cached: true,
+        }])
     )
-    const translatedById = new Map(translated.map((row) => [row.id, row]))
-    const data = result.rows.map((row) => translatedById.get(String(row.id)) ?? {
-      id: String(row.id), title: row.title, description: row.description,
-      aiSummary: row.ai_summary, provider: 'none',
+    const needsTranslation = translatable.filter((row) => !cachedById.has(String(row.id)))
+    const translated = needsTranslation.length === 0
+      ? []
+      : await translateArticlePreviews(
+          needsTranslation.map((row) => ({
+            id: String(row.id), title: row.title, description: null,
+            aiSummary: null,
+          })),
+          targetLang
+        )
+    for (const row of translated) {
+      if (row.provider === 'none') continue
+      await query(
+        `INSERT INTO article_preview_translations
+           (article_id, lang, title, description, ai_summary, source_hash, provider, model_version)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         ON CONFLICT (article_id, lang) DO UPDATE SET
+           title = EXCLUDED.title,
+           description = EXCLUDED.description,
+           ai_summary = EXCLUDED.ai_summary,
+           source_hash = EXCLUDED.source_hash,
+           provider = EXCLUDED.provider,
+           model_version = EXCLUDED.model_version,
+           translated_at = NOW()`,
+        [
+          row.id, targetLang, row.title, null, null,
+          hashes.get(row.id), row.provider, translationModelVersion(row.provider),
+        ]
+      )
+    }
+    const translatedById = new Map(translated.map((row) => [row.id, { ...row, description: null, aiSummary: null, cached: false }]))
+    const data = ids.flatMap((id) => {
+      const row = articlesById.get(id)
+      if (!row) return []
+      return [cachedById.get(id) ?? translatedById.get(id) ?? {
+        id, title: row.title, description: null,
+        aiSummary: null, provider: 'none', cached: false,
+      }]
     })
     return res.json({ success: true, data })
   } catch (err: any) {
@@ -49,6 +98,35 @@ translateRouter.post('/translate-previews', translateLimiter, async (req: Reques
     return res.status(500).json({ success: false, message: 'Preview translation failed' })
   }
 })
+
+let previewTableReady: Promise<void> | null = null
+function ensurePreviewTable(): Promise<void> {
+  if (!previewTableReady) {
+    previewTableReady = query(`
+      CREATE TABLE IF NOT EXISTS article_preview_translations (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        article_id TEXT NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
+        lang VARCHAR(10) NOT NULL,
+        title TEXT,
+        description TEXT,
+        ai_summary TEXT,
+        source_hash VARCHAR(64) NOT NULL,
+        provider VARCHAR(32) NOT NULL,
+        model_version VARCHAR(128) NOT NULL,
+        translated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(article_id, lang)
+      );
+      CREATE INDEX IF NOT EXISTS idx_preview_translations_article
+        ON article_preview_translations(article_id)
+    `)
+      .then(() => undefined)
+      .catch((err) => {
+        previewTableReady = null
+        throw err
+      })
+  }
+  return previewTableReady
+}
 
 // Lazily create the translations table. articles.id is TEXT in the live DB
 // (old scraper schema), so the FK is TEXT — not UUID as CLAUDE.md's schema.sql
@@ -92,6 +170,16 @@ function sourceHash(article: Record<string, unknown>): string {
       description: article.description ?? null,
       content: article.content ?? null,
       aiSummary: article.ai_summary ?? null,
+      language: article.language ?? null,
+    }))
+    .digest('hex')
+}
+
+export function previewSourceHash(article: Record<string, unknown>): string {
+  return createHash('sha256')
+    .update(JSON.stringify({
+      title: article.title ?? null,
+      scope: 'title-only-v1',
       language: article.language ?? null,
     }))
     .digest('hex')

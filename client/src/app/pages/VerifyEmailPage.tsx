@@ -1,3 +1,4 @@
+import { useUiText } from '../i18n/uiText';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
@@ -8,6 +9,7 @@ import { AuthLayout } from '../components/auth/AuthLayout';
 type Status = 'verifying' | 'success' | 'error';
 
 export function VerifyEmailPage() {
+  const ui = useUiText();
   const { isDark, user, setUser } = useApp();
   const [params] = useSearchParams();
   const token = params.get('token') || '';
@@ -41,21 +43,19 @@ export function VerifyEmailPage() {
   }, [token]);
 
   return (
-    <AuthLayout title="Email verification" isDark={isDark}>
+    <AuthLayout title={ui("Email verification")} isDark={isDark}>
       <div className="flex flex-col items-center text-center gap-3">
         {status === 'verifying' && <Loader2 size={44} className="text-cyan-500 animate-spin" />}
         {status === 'success' && <CheckCircle2 size={44} className="text-emerald-500" />}
         {status === 'error' && <XCircle size={44} className="text-red-500" />}
         <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
-          {status === 'verifying' ? 'Verifying your email…' : message}
+          {ui(status === 'verifying' ? 'Verifying your email…' : message)}
         </p>
         {status !== 'verifying' && (
           <Link
             to="/"
             className="mt-2 w-full px-5 py-3 rounded-2xl bg-gradient-to-r from-cyan-500 to-pink-500 text-white font-semibold hover:from-cyan-600 hover:to-pink-600 transition-all shadow-lg shadow-cyan-500/20"
-          >
-            Continue to NewsAgg
-          </Link>
+          >{ui("Continue to NewsAgg")} </Link>
         )}
       </div>
     </AuthLayout>

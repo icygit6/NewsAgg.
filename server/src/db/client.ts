@@ -1,4 +1,5 @@
 import { Pool } from 'pg'
+import { logger } from '../lib/logger'
 
 // CLAUDE.md specifies NEONDB_URL; fall back to the other connection-string
 // names already present in this project's .env so the server connects
@@ -16,7 +17,19 @@ export const pool = new Pool({
   connectionString,
   ssl: isLocal
     ? false
-    : { rejectUnauthorized: process.env.PGSSL_NO_VERIFY !== '1' }
+    : { rejectUnauthorized: process.env.PGSSL_NO_VERIFY !== '1' },
+  // Fail quickly enough for the readiness probe to report an outage, while
+  // allowing idle Neon connections to be discarded and recreated cleanly.
+  connectionTimeoutMillis: 10_000,
+  idleTimeoutMillis: 30_000,
+  keepAlive: true,
+})
+
+// node-postgres emits idle-client failures on the Pool itself. Without this
+// listener Node treats a transient network/Neon disconnect as an unhandled
+// error and terminates the whole API process.
+pool.on('error', (err) => {
+  logger.error({ err }, 'unexpected idle PostgreSQL client error; pool will reconnect on demand')
 })
 
 export async function query(text: string, params?: any[]) {

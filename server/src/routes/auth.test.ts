@@ -29,7 +29,7 @@ describe('auth routes', () => {
     mockQuery.mockResolvedValue({ rows: [] })
   })
 
-  it('registers a new user → 201 with a token and emailVerified:false', async () => {
+  it('registers a new user → 201 with an HttpOnly session and emailVerified:false', async () => {
     mockQuery
       .mockResolvedValueOnce({ rows: [] }) // duplicate check: none
       .mockResolvedValueOnce({
@@ -38,11 +38,13 @@ describe('auth routes', () => {
 
     const res = await request(makeApp())
       .post('/auth/register')
-      .send({ email: 'a@b.com', username: 'alice', password: 'password123' })
+      .send({ email: 'a@b.com', username: 'alice', password: 'password123', termsAccepted: true })
 
     expect(res.status).toBe(201)
     expect(res.body.success).toBe(true)
-    expect(res.body.token).toBeTruthy()
+    expect(res.headers['set-cookie']?.[0]).toContain('newsagg_session=')
+    expect(res.headers['set-cookie']?.[0]).toContain('HttpOnly')
+    expect(res.body.token).toBeUndefined()
     expect(res.body.user.emailVerified).toBe(false)
   })
 
@@ -51,7 +53,7 @@ describe('auth routes', () => {
 
     const res = await request(makeApp())
       .post('/auth/register')
-      .send({ email: 'a@b.com', username: 'alice', password: 'password123' })
+      .send({ email: 'a@b.com', username: 'alice', password: 'password123', termsAccepted: true })
 
     expect(res.status).toBe(409)
     expect(res.body.success).toBe(false)
@@ -79,6 +81,15 @@ describe('auth routes', () => {
 
     expect(res.status).toBe(401)
     expect(res.body.error).toBe('Invalid password')
+  })
+
+  it('fails Google sign-in closed when CAPTCHA is not configured', async () => {
+    const res = await request(makeApp())
+      .post('/auth/google')
+      .send({ token: 'google-credential-placeholder' })
+
+    expect(res.status).toBe(503)
+    expect(res.body.captchaRequired).toBe(true)
   })
 
   it('answers forgot-password with a generic 200 even for unknown emails', async () => {

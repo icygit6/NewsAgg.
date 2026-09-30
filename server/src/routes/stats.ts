@@ -1,13 +1,35 @@
 import { Router, Request, Response } from 'express'
 import { logger } from '../lib/logger'
 import { query } from '../db/client'
-import { TtlCache } from '../lib/ttlCache'
+import { PublicationCache } from '../lib/publicationCache'
+import { ACTIVE_ARTICLES } from '../lib/articleQuality'
+import { NLP_MODELS } from '../lib/nlpModels'
 
 // Aggregate analytics endpoints so the client widgets no longer pull the full
 // article dataset just to count things. All SQL-side, 5-minute TTL cache.
 export const statsRouter = Router()
 
-const statsCache = new TtlCache<any>(5 * 60 * 1000, 40)
+statsRouter.use((_req, res, next) => {
+  res.set('Cache-Control', 'no-store')
+  next()
+})
+
+const statsCache = new PublicationCache<any>(5 * 60 * 1000, 40)
+
+// Public operational counts only: never return URLs, credentials or raw errors.
+statsRouter.get('/scraper-status', async (_req: Request, res: Response) => {
+  res.set('Cache-Control', 'no-store')
+  try {
+    const result = await query('SELECT started_at, finished_at, status, report FROM scraper_runs ORDER BY started_at DESC LIMIT 1')
+    const row = result.rows[0]
+    if (!row) return res.json({ success: true, data: null })
+    const counts = Object.fromEntries(Object.entries(row.report || {}).filter(([key,value]) =>
+      /^(inserted|updated|unchanged|quarantined|errors|deficit_[a-z_]+_[A-Za-z]+|rejected_[a-z_]+)$/.test(key) && typeof value === 'number' && Number.isFinite(value)))
+    return res.json({ success:true, data:{ startedAt:row.started_at, finishedAt:row.finished_at, status:row.status, counts } })
+  } catch {
+    return res.status(503).json({ success:false, message:'Scraper status unavailable' })
+  }
+})
 
 const TOPICS = new Set([
   'Sport', 'Health', 'Business', 'World', 'Politics', 'Lifestyle', 'Science', 'Climate',
@@ -36,10 +58,10 @@ statsRouter.get('/overview', async (req: Request, res: Response) => {
     const topic = topicParam(req.query.category)
     const body = await statsCache.wrap(`overview:${topic ?? 'all'}`, async () => {
       const params: any[] = []
-      let where = ''
+      let where = `WHERE ${ACTIVE_ARTICLES}`
       if (topic) {
         params.push(topic)
-        where = `WHERE a.topic = $1`
+        where += ` AND a.topic = $1`
       }
       const agg = await query(
         `
@@ -64,17 +86,18 @@ statsRouter.get('/overview', async (req: Request, res: Response) => {
         params
       )
       const categories = await query(
-        `SELECT DISTINCT topic FROM articles WHERE topic IS NOT NULL AND btrim(topic) <> '' ORDER BY topic`
+        `SELECT DISTINCT topic FROM articles a WHERE ${ACTIVE_ARTICLES} AND topic IS NOT NULL AND btrim(topic) <> '' ORDER BY topic`
       )
       const models = await query(
-        `SELECT DISTINCT sentiment_model FROM articles
-         WHERE sentiment_model IS NOT NULL AND btrim(sentiment_model) <> '' ORDER BY sentiment_model`
+        `SELECT DISTINCT sentiment_model FROM articles a
+         WHERE ${ACTIVE_ARTICLES} AND sentiment_model IS NOT NULL AND btrim(sentiment_model) <> '' ORDER BY sentiment_model`
       )
       const row = agg.rows[0]
       return {
         success: true,
         data: {
           total: row.total,
+          nlpModels: NLP_MODELS,
           sentiments: { positive: row.positive, neutral: row.neutral, negative: row.negative },
           sourceCount: row.source_count,
           keywordCount: kw.rows[0]?.keyword_count ?? 0,
@@ -101,7 +124,7 @@ statsRouter.get('/trending', async (req: Request, res: Response) => {
     const limit = Math.min(50, Math.max(1, parseInt(String(req.query.limit), 10) || 10))
     const body = await statsCache.wrap(`trending:${topic ?? 'all'}:${limit}`, async () => {
       const params: any[] = []
-      let where = `WHERE jsonb_typeof(a.keywords) = 'array'`
+      let where = `WHERE ${ACTIVE_ARTICLES} AND jsonb_typeof(a.keywords) = 'array'`
       if (topic) {
         params.push(topic)
         where += ` AND a.topic = $${params.length}`
@@ -118,7 +141,7 @@ statsRouter.get('/trending', async (req: Request, res: Response) => {
         params
       )
       const items = result.rows
-        .filter((r) => r.keyword.length >= 4 && !/^\d+$/.test(r.keyword) && !KEYWORD_STOPLIST.has(r.keyword))
+        .filter((r) => r.keyword.length >= 2 && r.keyword.length <= 40 && !/^\d+$/.test(r.keyword) && !KEYWORD_STOPLIST.has(r.keyword))
         .slice(0, limit)
       return { success: true, data: items }
     })
@@ -145,6 +168,7 @@ statsRouter.get('/business-trend', async (req: Request, res: Response) => {
           round(avg(COALESCE(a.sentiment_polarity, 0))::numeric, 4)      AS avg_polarity
         FROM articles a
         WHERE a.topic = $1
+          AND ${ACTIVE_ARTICLES}
           AND COALESCE(a.published_at, a.scraped_at) >= NOW() - ($2 || ' days')::interval
         GROUP BY 1
         ORDER BY 1

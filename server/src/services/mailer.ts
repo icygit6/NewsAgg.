@@ -35,13 +35,15 @@ function publicClientUrl(): string {
   return process.env.PUBLIC_CLIENT_URL || firstOrigin || 'http://localhost:5173'
 }
 
-// Minimal branded HTML wrapper (cyan→pink gradient button), inlined so no
-// template engine or asset pipeline is needed.
+// Minimal branded HTML wrapper using the canonical NewsAgg navy→blue palette
+// from client/src/styles/tokens.css. background-color is deliberately listed
+// before the gradient so Gmail clients that strip gradients retain the brand
+// blue rather than rendering a transparent CTA.
 function wrap(heading: string, body: string, ctaLabel: string, ctaUrl: string): string {
   return `<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#0f172a">
   <h1 style="font-size:20px;margin:0 0 12px">${heading}</h1>
   <p style="font-size:14px;line-height:1.6;color:#475569;margin:0 0 20px">${body}</p>
-  <a href="${ctaUrl}" style="display:inline-block;background:linear-gradient(90deg,#06b6d4,#ec4899);color:#fff;text-decoration:none;font-weight:600;padding:12px 22px;border-radius:12px">${ctaLabel}</a>
+  <a href="${ctaUrl}" style="display:inline-block;background-color:#2563eb;background-image:linear-gradient(90deg,#173a63 0%,#2563eb 100%);color:#fff;text-decoration:none;font-weight:700;padding:12px 22px;border-radius:12px;box-shadow:0 6px 16px rgba(37,99,235,.24)">${ctaLabel}</a>
   <p style="font-size:12px;color:#94a3b8;margin:20px 0 0;word-break:break-all">Or paste this link into your browser:<br>${ctaUrl}</p>
 </div>`
 }

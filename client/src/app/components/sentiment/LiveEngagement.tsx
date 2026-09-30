@@ -1,3 +1,4 @@
+import { useUiText } from '../../i18n/uiText';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { Users } from 'lucide-react';
@@ -20,6 +21,7 @@ const sentimentPillClass: Record<SentimentType, string> = {
 };
 
 export function LiveEngagement() {
+  const ui = useUiText();
   const { t, isDark, selectedCategory } = useApp();
   const [tick, setTick] = useState(Date.now());
 
@@ -46,9 +48,7 @@ export function LiveEngagement() {
         <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
           <Users size={13} className="text-white" />
         </div>
-        <h3 className={`font-poppins text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>
-          Live Engagement
-        </h3>
+        <h3 className={`font-poppins text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>{ui("Live Engagement")} </h3>
       </div>
 
       <div className="space-y-2.5">
@@ -69,15 +69,15 @@ export function LiveEngagement() {
               </div>
               <div className="grid grid-cols-3 gap-2 mt-2 text-xs">
                 <div>
-                  <p style={{ color: mutedColor }}>Views</p>
+                  <p style={{ color: mutedColor }}>{ui("Views")}</p>
                   <p className="font-semibold" style={{ color: textColor }}>{formatCount(item.views)}</p>
                 </div>
                 <div>
-                  <p style={{ color: mutedColor }}>Likes</p>
+                  <p style={{ color: mutedColor }}>{ui("Likes")}</p>
                   <p className="font-semibold" style={{ color: textColor }}>{formatCount(item.likes)}</p>
                 </div>
                 <div>
-                  <p style={{ color: mutedColor }}>Interactions</p>
+                  <p style={{ color: mutedColor }}>{ui("Interactions")}</p>
                   <p className="font-semibold" style={{ color: textColor }}>{formatCount(item.interactions)}</p>
                 </div>
               </div>
@@ -88,7 +88,7 @@ export function LiveEngagement() {
 
       <div className="flex items-center gap-2 mt-3">
         <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-        <span className="text-xs" style={{ color: mutedColor }}>Updates every 12 seconds</span>
+        <span className="text-xs" style={{ color: mutedColor }}>{ui("Updates every 12 seconds")}</span>
       </div>
     </div>
   );

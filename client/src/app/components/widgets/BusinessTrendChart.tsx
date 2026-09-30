@@ -1,12 +1,4 @@
-import {
-  Bar,
-  ComposedChart,
-  Line,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { Bar, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useApp } from '../../contexts/AppContext';
 import { useBusinessTrend } from '../../hooks/useStats';
 import { ChartFrame } from '../ui/ChartFrame';
@@ -30,7 +22,9 @@ export function BusinessTrendChart() {
       }`}
     >
       <div className="flex items-baseline justify-between mb-2">
-        <h3 className={`font-poppins text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+        <h3
+          className={`font-poppins text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}
+        >
           {t.businessTrend}
         </h3>
         <span className={`text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
@@ -38,7 +32,7 @@ export function BusinessTrendChart() {
         </span>
       </div>
       <ChartFrame className="h-[140px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 320, height: 140 }}>
           <ComposedChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -22 }}>
             <XAxis
               dataKey="day"
@@ -67,7 +61,7 @@ export function BusinessTrendChart() {
               yAxisId="count"
               dataKey="articles"
               name={t.articlesPerDay}
-              fill="var(--brand, #06b6d4)"
+              fill="var(--brand, #2563eb)"
               opacity={0.75}
               radius={[3, 3, 0, 0]}
             />

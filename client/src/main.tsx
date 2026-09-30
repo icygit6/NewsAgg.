@@ -1,21 +1,20 @@
 import { createRoot } from "react-dom/client";
-import { GoogleOAuthProvider } from '@react-oauth/google';
 import App from "./app/App.tsx";
+import { RouteFallback } from "./app/components/RouteFallback";
 import { initSentry } from "./app/lib/sentry";
 import { loadRuntimeConfig } from "./app/lib/runtimeConfig";
 import "./styles/index.css";
 
-initSentry();
+void initSentry();
 
 async function bootstrap() {
-  const { googleClientId } = await loadRuntimeConfig();
   const root = createRoot(document.getElementById("root")!);
+  // Paint useful structure immediately while runtime auth/captcha configuration
+  // is fetched. This avoids a blank screen on slow or temporarily unavailable APIs.
+  root.render(<RouteFallback />);
+  await loadRuntimeConfig();
   root.render(
-    googleClientId ? (
-      <GoogleOAuthProvider clientId={googleClientId}><App /></GoogleOAuthProvider>
-    ) : (
-      <App />
-    )
+    <App />
   );
 }
 

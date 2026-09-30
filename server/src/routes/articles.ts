@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express'
 import { logger } from '../lib/logger'
 import { query } from '../db/client'
-import { TtlCache } from '../lib/ttlCache'
+import { PublicationCache } from '../lib/publicationCache'
 
 // GET /api/articles/:id — single full article (joined with source + author).
 // The legacy client located articles by scanning the entire /api/news-from-db
@@ -12,7 +12,7 @@ export const articlesRouter = Router()
 // Live DB article ids are sha256(canonical_url)[:16] — 16 lowercase hex chars.
 const ID_RE = /^[0-9a-f]{16}$/
 
-const articleCache = new TtlCache<any | null>(5 * 60 * 1000, 500)
+const articleCache = new PublicationCache<any | null>(5 * 60 * 1000, 500)
 
 articlesRouter.get('/:id', async (req: Request, res: Response) => {
   const id = String(req.params.id || '').toLowerCase()
@@ -21,6 +21,7 @@ articlesRouter.get('/:id', async (req: Request, res: Response) => {
   }
 
   try {
+    res.set('Cache-Control', 'no-store')
     const article = await articleCache.wrap(id, async () => {
       const result = await query(
         `SELECT

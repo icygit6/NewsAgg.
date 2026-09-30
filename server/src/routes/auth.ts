@@ -1,10 +1,9 @@
 import { Router, Request, Response } from 'express'
 import bcrypt from 'bcryptjs'
-import jwt from 'jsonwebtoken'
 import { query } from '../db/client'
-import { JWT_SECRET } from '../config'
 import { logger } from '../lib/logger'
-import { authMiddleware } from '../middleware/auth'
+import { authMiddleware, optionalAuth } from '../middleware/auth'
+import { clearSessionCookie, createSession, setSessionCookie } from '../lib/session'
 import {
   validateBody,
   registerSchema,
@@ -21,8 +20,10 @@ import {
   VERIFY_TOKEN_TTL_MS,
 } from '../lib/tokens'
 import { sendPasswordResetEmail, sendVerificationEmail } from '../services/mailer'
+import { verifyGoogleIdToken } from '../services/googleIdentity'
 import {
   requireCaptcha,
+  requireConfiguredCaptcha,
   loginCaptchaGate,
   loginNeedsCaptcha,
   recordLoginFailure,
@@ -34,10 +35,6 @@ import {
 // Error responses now carry a correct 4xx/5xx status (they used to all be 200).
 export const authRouter = Router()
 
-function signToken(userId: number | string) {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: '7d' } as jwt.SignOptions)
-}
-
 // Single source of truth for the user object the client receives. `emailVerified`
 // is surfaced (camelCase) so the client can show a soft "verify your email" banner.
 function shapeUser(row: any) {
@@ -46,7 +43,16 @@ function shapeUser(row: any) {
     username: row.username,
     email: row.email,
     avatar: row.avatar,
+    profileBackground: row.profile_background ?? 0,
+    profileBackgroundImage: row.profile_background_image ?? null,
+    displayName: row.display_name,
+    bio: row.bio,
     emailVerified: row.email_verified ?? false,
+    googleLinked: Boolean(row.google_id),
+    hasPassword: Boolean(row.password),
+    preferredLanguage: row.preferred_language ?? 'en',
+    emailUpdates: row.email_updates ?? false,
+    termsAccepted: Boolean(row.terms_accepted_at),
   }
 }
 
@@ -74,9 +80,9 @@ authRouter.post(
   validateBody(registerSchema),
   async (req: Request, res: Response) => {
   try {
-    const { email, username, password } = req.body
+    const { email, username, password, emailUpdates, preferredLanguage } = req.body
 
-    const userCheck = await query('SELECT id FROM users WHERE email = $1 OR username = $2', [
+    const userCheck = await query('SELECT id FROM users WHERE email = $1 OR lower(username) = lower($2)', [
       email,
       username,
     ])
@@ -86,8 +92,11 @@ authRouter.post(
 
     const hashedPassword = await bcrypt.hash(password, 10)
     const result = await query(
-      'INSERT INTO users (email, username, password, last_login) VALUES ($1, $2, $3, now()) RETURNING id, email, username, avatar, email_verified',
-      [email, username, hashedPassword]
+      `INSERT INTO users (email, username, password, last_login, preferred_language, email_updates, terms_accepted_at)
+       VALUES ($1, $2, $3, now(), $4, $5, now())
+       RETURNING id, email, username, display_name, bio, avatar, email_verified, google_id, password,
+                 preferred_language, email_updates, terms_accepted_at`,
+      [email, username, hashedPassword, preferredLanguage, emailUpdates]
     )
 
     const user = result.rows[0]
@@ -97,8 +106,9 @@ authRouter.post(
       .then((raw) => sendVerificationEmail(user.email, raw))
       .catch((err) => logger.error({ err }, 'verification email on register failed'))
 
-    const token = signToken(user.id)
-    res.status(201).json({ success: true, token, user: shapeUser(user) })
+    const token = await createSession(user.id, req)
+    setSessionCookie(req, res, token)
+    res.status(201).json({ success: true, user: shapeUser(user) })
   } catch (error: any) {
     // 23505 = unique violation: closes the check-then-insert race when two
     // registers with the same email/username land concurrently.
@@ -123,7 +133,9 @@ authRouter.post(
       const { email, password } = req.body
 
       const result = await query(
-        'SELECT id, email, username, password, avatar, email_verified FROM users WHERE email = $1',
+        `SELECT id, email, username, display_name, bio, password, avatar, profile_background,
+                profile_background_image, email_verified, google_id, preferred_language,
+                email_updates, terms_accepted_at FROM users WHERE email = $1`,
         [email]
       )
       if (result.rows.length === 0) {
@@ -151,8 +163,9 @@ authRouter.post(
 
       clearLoginFailures(req)
       query('UPDATE users SET last_login = now() WHERE id = $1', [user.id]).catch(() => {})
-      const token = signToken(user.id)
-      res.json({ success: true, token, user: shapeUser(user) })
+      const token = await createSession(user.id, req)
+      setSessionCookie(req, res, token)
+      res.json({ success: true, user: shapeUser(user) })
     } catch (error: any) {
       logger.error({ err: error }, 'Login error')
       res.status(500).json({ success: false, error: 'Login failed' })
@@ -217,6 +230,7 @@ authRouter.post(
         userId,
       ])
       await query('DELETE FROM auth_tokens WHERE user_id = $1 AND used_at IS NULL', [userId])
+      await query('UPDATE account_sessions SET revoked_at = now() WHERE user_id = $1', [userId])
       res.json({ success: true, message: 'Your password has been reset. You can now sign in.' })
     } catch (error: any) {
       logger.error({ err: error }, 'reset-password error')
@@ -276,9 +290,9 @@ authRouter.post('/resend-verification', authMiddleware, async (req: any, res: Re
 })
 
 // POST /auth/google
-authRouter.post('/google', validateBody(googleAuthSchema), async (req: Request, res: Response) => {
+authRouter.post('/google', requireConfiguredCaptcha, validateBody(googleAuthSchema), async (req: Request, res: Response) => {
   try {
-    const { token } = req.body
+    const { token, termsAccepted, emailUpdates, preferredLanguage } = req.body
 
     const clientId = process.env.GOOGLE_CLIENT_ID
     if (!clientId) {
@@ -288,14 +302,11 @@ authRouter.post('/google', validateBody(googleAuthSchema), async (req: Request, 
         .json({ success: false, error: 'Google sign-in is not configured on the server' })
     }
 
-    const { OAuth2Client } = await import('google-auth-library')
-    const googleClient = new OAuth2Client(clientId)
     let payload
     try {
       // Throws on an expired token, a bad signature, or an audience mismatch
       // (the token was issued for a different GOOGLE_CLIENT_ID than the server's).
-      const ticket = await googleClient.verifyIdToken({ idToken: token, audience: clientId })
-      payload = ticket.getPayload()
+      payload = await verifyGoogleIdToken(token)
     } catch (verifyErr) {
       logger.warn({ err: verifyErr }, 'Google ID token verification failed')
       return res.status(401).json({
@@ -322,11 +333,23 @@ authRouter.post('/google', validateBody(googleAuthSchema), async (req: Request, 
     const username = payload.name || email.split('@')[0]
 
     const userResult = await query(
-      'SELECT id, email, username, avatar, email_verified, google_id FROM users WHERE email = $1',
+      `SELECT id, email, username, display_name, bio, avatar, profile_background,
+              profile_background_image, email_verified, google_id, password,
+              preferred_language, email_updates, terms_accepted_at
+       FROM users WHERE email = $1`,
       [email]
     )
 
     if (userResult.rows.length === 0) {
+      if (!termsAccepted) {
+        return res.status(409).json({
+          success: false,
+          needsSignup: true,
+          email,
+          username,
+          error: 'Accept the Terms of Service to create your account',
+        })
+      }
       // First Google sign-in: create the account on the spot, passwordless.
       // Google already verified the email, so email_verified starts true.
       const localPart = email.split('@')[0]
@@ -338,12 +361,17 @@ authRouter.post('/google', validateBody(googleAuthSchema), async (req: Request, 
           attempt === 0 ? base : `${base}${Math.floor(1000 + Math.random() * 9000)}`.slice(0, 30)
         try {
           const created = await query(
-            'INSERT INTO users (email, username, google_id, email_verified, last_login) VALUES ($1, $2, $3, true, now()) RETURNING id, email, username, avatar, email_verified',
-            [email, candidate, payload.sub]
+            `INSERT INTO users (email, username, google_id, email_verified, last_login,
+                                preferred_language, email_updates, terms_accepted_at)
+             VALUES ($1, $2, $3, true, now(), $4, $5, now())
+             RETURNING id, email, username, display_name, bio, avatar, email_verified, google_id,
+                       password, preferred_language, email_updates, terms_accepted_at`,
+            [email, candidate, payload.sub, preferredLanguage, emailUpdates]
           )
           const newUser = created.rows[0]
-          const newToken = signToken(newUser.id)
-          return res.json({ success: true, token: newToken, user: shapeUser(newUser) })
+          const newToken = await createSession(newUser.id, req)
+          setSessionCookie(req, res, newToken)
+          return res.json({ success: true, user: shapeUser(newUser) })
         } catch (e: any) {
           // 23505 = unique violation (username taken) → retry with a suffix.
           if (e?.code !== '23505') throw e
@@ -376,14 +404,25 @@ authRouter.post('/google', validateBody(googleAuthSchema), async (req: Request, 
     // Signing in with Google proves control of the email, so mark it verified.
     // payload.sub comes from the server-verified token, never the client;
     // COALESCE keeps an already-linked id untouched.
-    query(
+    await query(
       'UPDATE users SET last_login = now(), google_id = COALESCE(google_id, $2), email_verified = true WHERE id = $1',
       [user.id, payload.sub]
-    ).catch(() => {})
-    const authToken = signToken(user.id)
-    res.json({ success: true, token: authToken, user: shapeUser({ ...user, email_verified: true }) })
+    )
+    const authToken = await createSession(user.id, req)
+    setSessionCookie(req, res, authToken)
+    res.json({ success: true, user: shapeUser({ ...user, email_verified: true }) })
   } catch (err: any) {
     logger.error({ err }, 'Google auth error')
     res.status(401).json({ success: false, error: 'Google authentication failed' })
   }
+})
+
+// Cookie sessions need an explicit server response so browsers can expire the
+// HttpOnly cookie; no server-side token state is retained.
+authRouter.post('/logout', optionalAuth, async (req: any, res: Response) => {
+  if (req.sessionHash) {
+    await query('UPDATE account_sessions SET revoked_at = now() WHERE token_hash = $1', [req.sessionHash])
+  }
+  clearSessionCookie(req, res)
+  res.json({ success: true })
 })

@@ -40,11 +40,16 @@ def main() -> None:
                     help="enrich only; do not write to the database")
     ap.add_argument("--target", type=int, default=None,
                     help="articles to keep per category (default: config)")
+    ap.add_argument('--category', choices=list(config.CATEGORY_LABELS), help='Limit to one category for a canary test')
     ap.add_argument("--json", default=None,
                     help="also write the collected records to this JSON file")
     args = ap.parse_args()
 
     spec = get_spec(args.source)
+    if args.category:
+        if args.category not in spec.categories:
+            ap.error('This source does not cover the requested category')
+        spec.categories = {args.category: spec.categories[args.category]}
     if args.target is not None:
         spec.target_per_category = args.target
 

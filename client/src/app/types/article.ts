@@ -29,15 +29,15 @@ export interface NewsImage {
 
 export interface NewsToxicity {
   label: string;
-  score: number;
+  score: number | null;
 }
 
 export interface NewsReadability {
   wordCount: number;
   readingTimeMin: number;
-  fleschScore: number;
-  fleschKincaid: number;
-  smogIndex: number;
+  fleschScore: number | null;
+  fleschKincaid: number | null;
+  smogIndex: number | null;
 }
 
 export interface NewsOpenGraph {
@@ -50,6 +50,10 @@ export interface NewsOpenGraph {
 }
 
 export interface NewsArticle {
+  contentBlocks?: Array<{ type: 'paragraph' | 'heading' | 'quote' | 'caption' | 'list'; text?: string; items?: string[]; ordered?: boolean }>;
+  contentHash?: string | null;
+  summaryMethod?: string | null;
+  qualityVerified?: boolean;
   id: string;
   canonicalUrl: string | null;
   source: NewsSource;

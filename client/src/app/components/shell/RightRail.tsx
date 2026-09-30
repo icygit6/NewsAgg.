@@ -3,11 +3,9 @@ import { lazy, Suspense, useState } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { FooterCompact } from './Footer';
 
-const PulseRail = lazy(() =>
-  import('../posts/PulseRail').then((m) => ({ default: m.PulseRail }))
-);
+const PulseRail = lazy(() => import('../posts/PulseRail').then((m) => ({ default: m.PulseRail })));
 const InsightsRail = lazy(() =>
-  import('./InsightsRail').then((m) => ({ default: m.InsightsRail }))
+  import('./InsightsRail').then((m) => ({ default: m.InsightsRail })),
 );
 
 type RailTab = 'pulse' | 'insights';
@@ -27,7 +25,7 @@ export function RightRail() {
             ? 'text-slate-400 hover:text-slate-200'
             : 'text-slate-500 hover:text-slate-800'
       }`}
-      style={tab === key ? { background: 'var(--brand-grad, #06b6d4)' } : undefined}
+      style={tab === key ? { background: 'var(--brand-grad, #2563eb)' } : undefined}
     >
       {label}
     </button>
@@ -35,9 +33,10 @@ export function RightRail() {
 
   return (
     <aside
-      className={`hidden lg:flex flex-col flex-1 min-w-[300px] max-w-[560px] border-l ${
+      className={`hidden lg:flex flex-col shrink-0 border-l ${
         isDark ? 'border-slate-800' : 'border-slate-200'
       }`}
+      style={{ width: '30%' }}
     >
       {/* Tab header — sibling to scroll container, mirrors FeedHeader structure */}
       <div
@@ -58,9 +57,7 @@ export function RightRail() {
 
       {/* Scrollable content — independent scroll container */}
       <div className="flex-1 overflow-y-auto px-4 pb-6" style={{ scrollbarWidth: 'none' }}>
-        <Suspense
-          fallback={<PanelSkeleton />}
-        >
+        <Suspense fallback={<PanelSkeleton />}>
           {tab === 'pulse' ? <PulseRail /> : <InsightsRail />}
         </Suspense>
         <div className={`mt-6 pt-4 border-t ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>

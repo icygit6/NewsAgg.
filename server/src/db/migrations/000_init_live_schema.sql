@@ -92,6 +92,9 @@ CREATE TABLE IF NOT EXISTS users (
   avatar     TEXT,
   google_id  TEXT,
   role       TEXT DEFAULT 'user',
+  preferred_language TEXT NOT NULL DEFAULT 'en' CHECK (preferred_language IN ('en', 'zhTW')),
+  email_updates BOOLEAN NOT NULL DEFAULT false,
+  terms_accepted_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   last_login TIMESTAMPTZ
 );

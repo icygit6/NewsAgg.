@@ -14,7 +14,10 @@
   --brand-2: #173a63;
   --brand-hover: #1d4ed8;
   --brand-grad: linear-gradient(90deg, #173a63 0%, #2563eb 100%);
+  --brand-grad-hover: linear-gradient(90deg, #102f52 0%, #1d4ed8 100%);
   --brand-ring: rgba(37, 99, 235, 0.38);
+  --brand-soft: rgba(37, 99, 235, 0.1);
+  --brand-soft-strong: rgba(37, 99, 235, 0.18);
   --positive: #168c5b;
   --neutral: #d99a1b;
   --negative: #d64545;
@@ -33,4 +36,18 @@
   --border: rgba(148, 163, 184, 0.15);
   --text-primary: #f1f5f9;
   --text-secondary: #94a3b8;
+}
+
+@layer components {
+  .brand-gradient {
+    background: var(--brand-grad);
+  }
+
+  .brand-gradient:hover {
+    background: var(--brand-grad-hover);
+  }
+
+  .brand-shadow {
+    box-shadow: 0 10px 24px var(--brand-ring);
+  }
 }

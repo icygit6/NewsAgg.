@@ -74,8 +74,11 @@ RATE_DELAY = 1.2
 RATE_LIMIT: dict[str, float] = defaultdict(float)
 
 # ── Crawl / enrich tuning ───────────────────────────────────────────
-MAX_AGE_DAYS = 60            # reject articles older than this (None = no limit)
-TARGET_PER_CATEGORY = 50     # articles to keep per category per source
+MAX_AGE_DAYS = 30            # hard admission window; never substitute scrape time
+TARGET_PER_CATEGORY = 15     # per-source ceiling; balanced global runner fills deficits
+# Operator safety budget, NOT a claim about the provider's plan entitlement.
+STORAGE_BUDGET_BYTES = int(os.getenv('SCRAPER_STORAGE_BUDGET_MB', '400')) * 1024 * 1024
+STORAGE_HEADROOM_BYTES = 60 * 1024 * 1024
 CRAWL_MULT = 3               # crawl this many times the target, then filter down
 MIN_TEXT_LEN = 300           # minimum article body length (chars)
 MIN_WORDS_EN = 80            # minimum body words for English sources (zh exempt —
@@ -120,7 +123,7 @@ MODELS = {
     "sentiment_finance": "ProsusAI/finbert",
     "zero_shot": "MoritzLaurer/mDeBERTa-v3-base-mnli-xnli",
     "ner": "Davlan/xlm-roberta-base-ner-hrl",
-    "summarizer": "facebook/bart-large-cnn",
+    "embeddings": "BAAI/bge-m3",
     "toxicity": "unitary/toxic-bert",
 }
 

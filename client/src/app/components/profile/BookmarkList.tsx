@@ -1,108 +1,38 @@
-import { ListSkeleton } from '../ui/ContentSkeleton';
+import { useUiText } from '../../i18n/uiText';
+import { useTitleTranslations } from '../../hooks/useTitleTranslations';
+import { useState } from 'react';
 import { Link } from 'react-router';
-import { Bookmark, AlertCircle } from 'lucide-react';
+import { AlertCircle, Archive, Bookmark as BookmarkIcon, Check, ExternalLink, RotateCcw, Trash2 } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
-import { useBookmarks } from '../../hooks/useBookmarks';
+import { useBookmarkActions, useBookmarkList } from '../../hooks/useBookmarks';
 
-interface BookmarkListProps {
-  /** Single column for narrow containers (profile tab); 2-up grid otherwise. */
-  compact?: boolean;
-}
-
-/** The signed-in bookmark grid (loading/error/empty states included) —
- * shared by BookmarksPage and the /profile Bookmarks tab. */
-export function BookmarkList({ compact = false }: BookmarkListProps) {
-  const { isDark, t, user } = useApp();
-  const { bookmarks, isLoading, isError, remove } = useBookmarks();
-  const loading = Boolean(user) && isLoading;
-
-  if (loading) return <ListSkeleton label={t.loading} />;
-
-  if (isError) {
-    return (
-      <div className={`p-4 rounded-lg flex items-start gap-3 ${isDark ? 'bg-red-900/30 border border-red-700/50 text-red-300' : 'bg-red-50 border border-red-200 text-red-700'}`}>
-        <AlertCircle size={20} className="flex-shrink-0 mt-0.5" />
-        <p className="font-semibold">Error loading bookmarks</p>
-      </div>
-    );
-  }
-
-  if (bookmarks.length === 0) {
-    return (
-      <div className={`text-center py-16 px-6 rounded-2xl ${isDark ? 'bg-slate-900/50 border border-slate-700' : 'bg-gray-50 border border-gray-200'}`}>
-        <Bookmark size={48} className={`mx-auto mb-4 ${isDark ? 'text-slate-500' : 'text-gray-400'}`} />
-        <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>
-          No bookmarks yet
-        </h2>
-        <p className={`mb-6 ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>
-          Start bookmarking articles to keep them organized and easy to find
-        </p>
-        <Link
-          to="/"
-          className="inline-block px-6 py-3 rounded-lg bg-gradient-to-r from-cyan-500 to-pink-500 text-white font-semibold hover:from-cyan-600 hover:to-pink-600 transition-all"
-        >
-          Explore Articles
-        </Link>
-      </div>
-    );
-  }
-
-  return (
-    <div className={`grid grid-cols-1 gap-6 ${compact ? '' : 'sm:grid-cols-2'}`}>
-      {bookmarks.map((bookmark) => (
-        <div
-          key={bookmark.id}
-          className={`rounded-2xl overflow-hidden border shadow-md hover:shadow-lg transition-all flex flex-col ${isDark ? 'bg-slate-800/80 border-slate-700/50 backdrop-blur-md hover:border-slate-500' : 'bg-white/85 border-white/60 backdrop-blur-md hover:border-cyan-200'}`}
-        >
-          {bookmark.url_to_image && (
-            <div className="relative h-40 overflow-hidden">
-              <img
-                src={bookmark.url_to_image}
-                alt={bookmark.article_title || 'Article'}
-                className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-            </div>
-          )}
-
-          <div className="flex flex-col flex-1 p-4">
-            {bookmark.topic && (
-              <div className={`inline-flex items-center gap-2 mb-2 w-fit px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wide ${isDark ? 'bg-cyan-500/20 text-cyan-300' : 'bg-cyan-100 text-cyan-700'}`}>
-                {bookmark.topic}
-              </div>
-            )}
-
-            <h3 className={`font-poppins font-semibold leading-snug mb-3 line-clamp-2 ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>
-              {bookmark.article_title || 'Untitled'}
-            </h3>
-
-            <div className={`flex items-center justify-between gap-2 mt-auto pt-3 border-t ${isDark ? 'border-slate-700 text-slate-400' : 'border-gray-200 text-gray-500'}`}>
-              <div className="flex items-center gap-1 text-xs flex-1 min-w-0">
-                {bookmark.source_name && <span className="truncate font-medium">{bookmark.source_name}</span>}
-              </div>
-
-              <div className="flex items-center gap-2">
-                {bookmark.article_url && (
-                  <a
-                    href={bookmark.article_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`px-2 py-1 rounded text-xs font-semibold transition ${isDark ? 'hover:bg-slate-700' : 'hover:bg-gray-100'}`}
-                  >
-                    Read
-                  </a>
-                )}
-                <button
-                  onClick={() => remove.mutate(bookmark.id)}
-                  className={`px-2 py-1 rounded text-xs font-semibold transition ${isDark ? 'text-red-400 hover:bg-red-900/30' : 'text-red-600 hover:bg-red-50'}`}
-                >
-                  Remove
-                </button>
-              </div>
-            </div>
+export function BookmarkList({ compact=false, filters={} }: { compact?:boolean; filters?:Record<string,string> }) {
+  const ui = useUiText();
+  const { isDark }=useApp(); const q=useBookmarkList(filters); const {update,remove,restore}=useBookmarkActions();
+  const [removed,setRemoved]=useState<number|null>(null); const items=q.data?.pages.flatMap((p:any)=>p.bookmarks)??[];
+  const titles = useTitleTranslations(items.map((b:any) => ({ id: String(b.article_id), title: b.article_title || '', language: b.article_language })));
+  if(q.isLoading) return <p className="py-8 text-center">{ui("Loading bookmarks…")}</p>;
+  if(q.isError) return <div role="alert" className="p-4 rounded-xl border border-red-300 text-red-600 flex gap-2"><AlertCircle size={18}/>{ui("Could not load bookmarks.")} <button onClick={()=>q.refetch()} className="underline">{ui("Retry")}</button></div>;
+  if(!items.length) return <div className={`text-center py-14 rounded-2xl border ${isDark?'border-slate-700':'border-slate-200'}`}><BookmarkIcon className="mx-auto mb-3 opacity-50"/><h2 className="font-bold">{ui("No matching bookmarks")}</h2><Link to="/" className="text-cyan-500 text-sm">{ui("Explore articles")}</Link></div>;
+  return <>
+    {removed!==null&&<div role="status" className="mb-3 p-3 rounded-xl bg-cyan-500/10 flex justify-between">{ui("Bookmark removed")}<button className="font-semibold text-cyan-600" onClick={()=>restore.mutate(removed,{onSuccess:()=>setRemoved(null)})}><RotateCcw size={14} className="inline"/> {ui("Undo")}</button></div>}
+    <div className={`grid grid-cols-1 gap-4 ${compact?'':'sm:grid-cols-2'}`}>{items.map((b:any,index:number)=><article key={b.id} className={`rounded-2xl border overflow-hidden ${isDark?'bg-slate-900 border-slate-700':'bg-white border-slate-200'}`}>
+      {b.url_to_image&&<img loading="lazy" src={b.url_to_image} alt="" className="w-full h-36 object-cover"/>}
+      <div className="p-4 space-y-3">
+        <div className="flex gap-2 text-xs"><span className="rounded-full px-2 py-1 bg-cyan-500/10 text-cyan-600">{b.collection_name}</span>{b.topic&&<span className="px-2 py-1">{b.topic}</span>}</div>
+        <Link to={`/article/${b.article_id}`} className="font-semibold leading-snug line-clamp-2 hover:text-cyan-500">{titles[index]?.title||ui('Untitled article')}</Link>
+        <input aria-label={`Collection for ${b.article_title}`} defaultValue={b.collection_name} onBlur={e=>{if(e.target.value.trim()&&e.target.value!==b.collection_name)update.mutate({id:b.id,collectionName:e.target.value.trim()})}} className={`w-full text-xs rounded-lg border px-2 py-1.5 bg-transparent ${isDark?'border-slate-700':'border-slate-200'}`}/>
+        <textarea aria-label={`Notes for ${b.article_title}`} defaultValue={b.notes||''} placeholder={ui("Add a private note…")} maxLength={1000} onBlur={e=>update.mutate({id:b.id,notes:e.target.value||null})} className={`w-full text-xs rounded-lg border p-2 bg-transparent resize-none ${isDark?'border-slate-700':'border-slate-200'}`}/>
+        <div className="flex items-center justify-between text-xs">
+          <span className="opacity-60">{ui("Saved")} {new Date(b.created_at).toLocaleDateString()}</span>
+          <div className="flex gap-1">
+            <button aria-label={`${b.is_read?'Mark unread':'Mark read'}: ${b.article_title}`} onClick={()=>update.mutate({id:b.id,isRead:!b.is_read})} className="p-2 rounded-lg hover:bg-cyan-500/10"><Check size={15}/></button>
+            <button aria-label={`Archive ${b.article_title}`} onClick={()=>update.mutate({id:b.id,archived:true})} className="p-2 rounded-lg hover:bg-cyan-500/10"><Archive size={15}/></button>
+            {b.article_url&&<a href={b.article_url} target="_blank" rel="noopener noreferrer" aria-label={`Open original article: ${b.article_title}`} className="p-2"><ExternalLink size={15}/></a>}
+            <button aria-label={`Remove bookmark: ${b.article_title}`} onClick={()=>remove.mutate(b.id,{onSuccess:()=>setRemoved(b.id)})} className="p-2 text-rose-500"><Trash2 size={15}/></button>
           </div>
         </div>
-      ))}
-    </div>
-  );
+      </div></article>)}</div>
+    {q.hasNextPage&&<button onClick={()=>q.fetchNextPage()} disabled={q.isFetchingNextPage} className="mt-5 w-full rounded-xl border py-2">{q.isFetchingNextPage?'Loading…':ui("Load more")}</button>}
+  </>;
 }

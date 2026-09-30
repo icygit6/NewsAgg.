@@ -62,6 +62,12 @@ export interface Translations {
   currentPassword: string;
   newPassword: string;
   passwordChanged: string;
+  googleAccount: string;
+  googleLinked: string;
+  googleNotLinked: string;
+  linkGoogle: string;
+  disconnectGoogle: string;
+  googleDisconnectWarning: string;
   showPassword: string;
   hidePassword: string;
   deleteAccount: string;
@@ -102,6 +108,11 @@ export interface Translations {
   byCategory: string;
   bySource: string;
   bySentiment: string;
+  sort: string;
+  topStories: string;
+  newestFirst: string;
+  oldestFirst: string;
+  mostRelevant: string;
   allSources: string;
   allSentiment: string;
   clearFilters: string;
@@ -227,10 +238,18 @@ export const translations: Record<Language, Translations> = {
     currentPassword: 'Current password',
     newPassword: 'New password',
     passwordChanged: 'Password changed',
+    googleAccount: 'Google account',
+    googleLinked: 'Connected for sign-in',
+    googleNotLinked: 'Not connected',
+    linkGoogle: 'Link Google account',
+    disconnectGoogle: 'Disconnect Google account',
+    googleDisconnectWarning:
+      'You will sign in with your NewsAgg email and password after disconnecting.',
     showPassword: 'Show password',
     hidePassword: 'Hide password',
     deleteAccount: 'Delete account',
-    deleteAccountWarning: 'This permanently deletes your account, bookmarks and posts. This cannot be undone.',
+    deleteAccountWarning:
+      'This permanently deletes your account, bookmarks and posts. This cannot be undone.',
     confirmDelete: 'Yes, delete my account',
     memberSince: 'Joined',
     lastActive: 'Last active',
@@ -267,23 +286,34 @@ export const translations: Record<Language, Translations> = {
     byCategory: 'By Category',
     bySource: 'By Source',
     bySentiment: 'By Sentiment',
+    sort: 'Sort',
+    topStories: 'Top stories',
+    newestFirst: 'Newest first',
+    oldestFirst: 'Oldest first',
+    mostRelevant: 'Most relevant',
     allSources: 'All Sources',
     allSentiment: 'All Sentiment',
     clearFilters: 'Clear',
     sources: 'Sources',
     metricsGlossaryTitle: 'Understanding these metrics',
     aiConfidenceTerm: 'AI confidence',
-    aiConfidenceDesc: 'How sure the classification model is that this article belongs to its detected topic, from 0 to 100%. Higher means a clearer topic match.',
+    aiConfidenceDesc:
+      'How sure the classification model is that this article belongs to its detected topic, from 0 to 100%. Higher means a clearer topic match.',
     toxicityTerm: 'Toxicity score',
-    toxicityDesc: 'Likelihood that the text contains rude, disrespectful, or harmful language, scored 0 to 100% by a moderation model. Most news sits very low.',
+    toxicityDesc:
+      'Likelihood that the text contains rude, disrespectful, or harmful language, scored 0 to 100% by a moderation model. Most news sits very low.',
     readingGradeTerm: 'Reading grade (Flesch–Kincaid)',
-    readingGradeDesc: 'The US school grade level needed to read the text easily. 8 means a typical 8th-grader can follow it; higher numbers are harder.',
+    readingGradeDesc:
+      'The US school grade level needed to read the text easily. 8 means a typical 8th-grader can follow it; higher numbers are harder.',
     fleschTerm: 'Flesch reading ease',
-    fleschDesc: 'A 0–100 readability score — higher is easier. 60–70 is plain English; below 30 is dense and academic.',
+    fleschDesc:
+      'A 0–100 readability score — higher is easier. 60–70 is plain English; below 30 is dense and academic.',
     smogTerm: 'SMOG index',
-    smogDesc: 'Estimates the years of education needed to understand the text, based on sentence length and complex words. Lower is more accessible.',
+    smogDesc:
+      'Estimates the years of education needed to understand the text, based on sentence length and complex words. Lower is more accessible.',
     sentimentMathTitle: 'How sentiment is decided',
-    sentimentMathDesc: 'A RoBERTa model scores each article for positive, neutral, and negative probability. Polarity is the positive minus negative score, and the gradient bar plots it. The label is chosen by these rules:',
+    sentimentMathDesc:
+      'A RoBERTa model scores each article for positive, neutral, and negative probability. Polarity is the positive minus negative score, and the gradient bar plots it. The label is chosen by these rules:',
     posts: 'Posts',
     pulse: 'Pulse',
     insights: 'Insights',
@@ -316,7 +346,7 @@ export const translations: Record<Language, Translations> = {
     businessTrend: 'Business pulse — 14 days',
     articlesPerDay: 'Articles/day',
     avgTone: 'Avg tone',
-    footerTagline: 'AI-Powered News Intelligence',
+    footerTagline: 'Multilingual News Aggregation, Sentiment Analysis and Trustworthy Publication System',
     navigate: 'Navigate',
     newsSources: 'Sources',
     legalInfo: 'Legal & Info',
@@ -387,10 +417,17 @@ export const translations: Record<Language, Translations> = {
     currentPassword: 'Kata sandi saat ini',
     newPassword: 'Kata sandi baru',
     passwordChanged: 'Kata sandi berhasil diganti',
+    googleAccount: 'Akun Google',
+    googleLinked: 'Terhubung untuk masuk',
+    googleNotLinked: 'Belum terhubung',
+    linkGoogle: 'Hubungkan akun Google',
+    disconnectGoogle: 'Putuskan akun Google',
+    googleDisconnectWarning: 'Setelah diputuskan, masuklah dengan email dan kata sandi NewsAgg.',
     showPassword: 'Tampilkan kata sandi',
     hidePassword: 'Sembunyikan kata sandi',
     deleteAccount: 'Hapus akun',
-    deleteAccountWarning: 'Ini menghapus permanen akun, bookmark, dan postingan Anda. Tidak bisa dibatalkan.',
+    deleteAccountWarning:
+      'Ini menghapus permanen akun, bookmark, dan postingan Anda. Tidak bisa dibatalkan.',
     confirmDelete: 'Ya, hapus akun saya',
     memberSince: 'Bergabung',
     lastActive: 'Terakhir aktif',
@@ -427,23 +464,34 @@ export const translations: Record<Language, Translations> = {
     byCategory: 'Per Kategori',
     bySource: 'Per Sumber',
     bySentiment: 'Per Sentimen',
+    sort: 'Urutkan',
+    topStories: 'Berita utama',
+    newestFirst: 'Terbaru dahulu',
+    oldestFirst: 'Terlama dahulu',
+    mostRelevant: 'Paling relevan',
     allSources: 'Semua Sumber',
     allSentiment: 'Semua Sentimen',
     clearFilters: 'Hapus',
     sources: 'Sumber',
     metricsGlossaryTitle: 'Memahami metrik ini',
     aiConfidenceTerm: 'Keyakinan AI',
-    aiConfidenceDesc: 'Seberapa yakin model klasifikasi bahwa artikel ini termasuk topik yang terdeteksi, dari 0 hingga 100%. Semakin tinggi, semakin jelas kecocokan topiknya.',
+    aiConfidenceDesc:
+      'Seberapa yakin model klasifikasi bahwa artikel ini termasuk topik yang terdeteksi, dari 0 hingga 100%. Semakin tinggi, semakin jelas kecocokan topiknya.',
     toxicityTerm: 'Skor toksisitas',
-    toxicityDesc: 'Kemungkinan teks mengandung bahasa kasar, tidak sopan, atau berbahaya, dinilai 0 hingga 100% oleh model moderasi. Sebagian besar berita sangat rendah.',
+    toxicityDesc:
+      'Kemungkinan teks mengandung bahasa kasar, tidak sopan, atau berbahaya, dinilai 0 hingga 100% oleh model moderasi. Sebagian besar berita sangat rendah.',
     readingGradeTerm: 'Tingkat baca (Flesch–Kincaid)',
-    readingGradeDesc: 'Tingkat kelas sekolah yang dibutuhkan untuk membaca teks dengan mudah. 8 berarti siswa kelas 8 dapat memahaminya; angka lebih tinggi lebih sulit.',
+    readingGradeDesc:
+      'Tingkat kelas sekolah yang dibutuhkan untuk membaca teks dengan mudah. 8 berarti siswa kelas 8 dapat memahaminya; angka lebih tinggi lebih sulit.',
     fleschTerm: 'Kemudahan baca Flesch',
-    fleschDesc: 'Skor keterbacaan 0–100 — semakin tinggi semakin mudah. 60–70 adalah bahasa sederhana; di bawah 30 padat dan akademis.',
+    fleschDesc:
+      'Skor keterbacaan 0–100 — semakin tinggi semakin mudah. 60–70 adalah bahasa sederhana; di bawah 30 padat dan akademis.',
     smogTerm: 'Indeks SMOG',
-    smogDesc: 'Memperkirakan tahun pendidikan yang dibutuhkan untuk memahami teks, berdasarkan panjang kalimat dan kata kompleks. Lebih rendah lebih mudah diakses.',
+    smogDesc:
+      'Memperkirakan tahun pendidikan yang dibutuhkan untuk memahami teks, berdasarkan panjang kalimat dan kata kompleks. Lebih rendah lebih mudah diakses.',
     sentimentMathTitle: 'Bagaimana sentimen ditentukan',
-    sentimentMathDesc: 'Model RoBERTa menilai setiap artikel untuk probabilitas positif, netral, dan negatif. Polaritas adalah skor positif dikurangi negatif, dan bilah gradien menampilkannya. Label dipilih dengan aturan ini:',
+    sentimentMathDesc:
+      'Model RoBERTa menilai setiap artikel untuk probabilitas positif, netral, dan negatif. Polaritas adalah skor positif dikurangi negatif, dan bilah gradien menampilkannya. Label dipilih dengan aturan ini:',
     posts: 'Postingan',
     pulse: 'Pulse',
     insights: 'Wawasan',
@@ -476,7 +524,7 @@ export const translations: Record<Language, Translations> = {
     businessTrend: 'Denyut bisnis — 14 hari',
     articlesPerDay: 'Artikel/hari',
     avgTone: 'Tone rata-rata',
-    footerTagline: 'Intelijen Berita Bertenaga AI',
+    footerTagline: 'Sistem Agregasi Berita Multibahasa, Analisis Sentimen, dan Publikasi Tepercaya',
     navigate: 'Navigasi',
     newsSources: 'Sumber',
     legalInfo: 'Hukum & Info',
@@ -547,6 +595,12 @@ export const translations: Record<Language, Translations> = {
     currentPassword: '当前密码',
     newPassword: '新密码',
     passwordChanged: '密码已修改',
+    googleAccount: 'Google 账号',
+    googleLinked: '已连接用于登录',
+    googleNotLinked: '未连接',
+    linkGoogle: '关联 Google 账号',
+    disconnectGoogle: '断开 Google 账号',
+    googleDisconnectWarning: '断开后，请使用 NewsAgg 邮箱和密码登录。',
     showPassword: '显示密码',
     hidePassword: '隐藏密码',
     deleteAccount: '删除账户',
@@ -587,15 +641,22 @@ export const translations: Record<Language, Translations> = {
     byCategory: '按分类',
     bySource: '按来源',
     bySentiment: '按情感',
+    sort: '排序',
+    topStories: '热门报道',
+    newestFirst: '最新优先',
+    oldestFirst: '最早优先',
+    mostRelevant: '最相关',
     allSources: '所有来源',
     allSentiment: '所有情感',
     clearFilters: '清除',
     sources: '来源',
     metricsGlossaryTitle: '了解这些指标',
     aiConfidenceTerm: 'AI 置信度',
-    aiConfidenceDesc: '分类模型判定该文章属于所检测主题的把握程度，范围 0 到 100%。数值越高，主题匹配越明确。',
+    aiConfidenceDesc:
+      '分类模型判定该文章属于所检测主题的把握程度，范围 0 到 100%。数值越高，主题匹配越明确。',
     toxicityTerm: '毒性评分',
-    toxicityDesc: '文本包含粗鲁、不敬或有害语言的可能性，由审核模型评为 0 到 100%。大多数新闻都非常低。',
+    toxicityDesc:
+      '文本包含粗鲁、不敬或有害语言的可能性，由审核模型评为 0 到 100%。大多数新闻都非常低。',
     readingGradeTerm: '阅读年级（Flesch–Kincaid）',
     readingGradeDesc: '轻松阅读该文本所需的美国年级水平。8 表示八年级学生即可理解；数字越高越难。',
     fleschTerm: 'Flesch 易读度',
@@ -603,7 +664,8 @@ export const translations: Record<Language, Translations> = {
     smogTerm: 'SMOG 指数',
     smogDesc: '根据句子长度和复杂词汇，估算理解文本所需的受教育年数。越低越易懂。',
     sentimentMathTitle: '情感如何判定',
-    sentimentMathDesc: 'RoBERTa 模型为每篇文章评出积极、中立和消极的概率。极性为积极减去消极的分数，渐变条即按此绘制。标签依据以下规则确定：',
+    sentimentMathDesc:
+      'RoBERTa 模型为每篇文章评出积极、中立和消极的概率。极性为积极减去消极的分数，渐变条即按此绘制。标签依据以下规则确定：',
     posts: '帖子',
     pulse: '动态',
     insights: '洞察',
@@ -636,7 +698,7 @@ export const translations: Record<Language, Translations> = {
     businessTrend: '商业脉搏 — 14 天',
     articlesPerDay: '每日文章',
     avgTone: '平均情绪',
-    footerTagline: 'AI 驱动的新闻智能',
+    footerTagline: '多语新闻聚合、情感分析与可信发布系统',
     navigate: '导航',
     newsSources: '来源',
     legalInfo: '法律与信息',
@@ -707,6 +769,12 @@ export const translations: Record<Language, Translations> = {
     currentPassword: '目前密碼',
     newPassword: '新密碼',
     passwordChanged: '密碼已修改',
+    googleAccount: 'Google 帳戶',
+    googleLinked: '已連結用於登入',
+    googleNotLinked: '尚未連結',
+    linkGoogle: '連結 Google 帳戶',
+    disconnectGoogle: '中斷 Google 帳戶連結',
+    googleDisconnectWarning: '中斷後，請使用 NewsAgg 電子郵件與密碼登入。',
     showPassword: '顯示密碼',
     hidePassword: '隱藏密碼',
     deleteAccount: '刪除帳戶',
@@ -747,15 +815,22 @@ export const translations: Record<Language, Translations> = {
     byCategory: '按分類',
     bySource: '按來源',
     bySentiment: '按情感',
+    sort: '排序',
+    topStories: '熱門報導',
+    newestFirst: '最新優先',
+    oldestFirst: '最早優先',
+    mostRelevant: '最相關',
     allSources: '所有來源',
     allSentiment: '所有情感',
     clearFilters: '清除',
     sources: '來源',
     metricsGlossaryTitle: '了解這些指標',
     aiConfidenceTerm: 'AI 信心度',
-    aiConfidenceDesc: '分類模型判定該文章屬於所偵測主題的把握程度，範圍 0 到 100%。數值越高，主題匹配越明確。',
+    aiConfidenceDesc:
+      '分類模型判定該文章屬於所偵測主題的把握程度，範圍 0 到 100%。數值越高，主題匹配越明確。',
     toxicityTerm: '毒性評分',
-    toxicityDesc: '文字包含粗魯、不敬或有害語言的可能性，由審核模型評為 0 到 100%。大多數新聞都非常低。',
+    toxicityDesc:
+      '文字包含粗魯、不敬或有害語言的可能性，由審核模型評為 0 到 100%。大多數新聞都非常低。',
     readingGradeTerm: '閱讀年級（Flesch–Kincaid）',
     readingGradeDesc: '輕鬆閱讀該文字所需的美國年級水準。8 表示八年級學生即可理解；數字越高越難。',
     fleschTerm: 'Flesch 易讀度',
@@ -763,7 +838,8 @@ export const translations: Record<Language, Translations> = {
     smogTerm: 'SMOG 指數',
     smogDesc: '根據句子長度和複雜詞彙，估算理解文字所需的受教育年數。越低越易懂。',
     sentimentMathTitle: '情感如何判定',
-    sentimentMathDesc: 'RoBERTa 模型為每篇文章評出積極、中立和消極的機率。極性為積極減去消極的分數，漸層條即按此繪製。標籤依據以下規則確定：',
+    sentimentMathDesc:
+      'RoBERTa 模型為每篇文章評出積極、中立和消極的機率。極性為積極減去消極的分數，漸層條即按此繪製。標籤依據以下規則確定：',
     posts: '貼文',
     pulse: '動態',
     insights: '洞察',
@@ -796,7 +872,7 @@ export const translations: Record<Language, Translations> = {
     businessTrend: '商業脈搏 — 14 天',
     articlesPerDay: '每日文章',
     avgTone: '平均情緒',
-    footerTagline: 'AI 驅動的新聞智能',
+    footerTagline: '多語新聞聚合、情感分析與可信發布系統',
     navigate: '導覽',
     newsSources: '來源',
     legalInfo: '法律與資訊',

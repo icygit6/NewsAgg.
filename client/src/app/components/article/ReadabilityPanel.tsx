@@ -1,0 +1,26 @@
+import { useUiText } from '../../i18n/uiText';
+import type { NewsArticle } from '../../types/article';
+import { panelBaseClass, mutedTextClass } from './helpers';
+
+export function ReadabilityPanel({ article, isDark }: { article: NewsArticle; isDark: boolean }) {
+  const ui = useUiText();
+  const english = /^en(?:[-_]|$)/i.test(article.language || article.source.language || '');
+  const metrics = article.readability;
+  const value = (score: number | null, smog = false) => {
+    if (!english) return ui('Not applicable');
+    if (score === null || !Number.isFinite(score) || (smog && score <= 0)) return ui('Unavailable');
+    return score.toFixed(1);
+  };
+  return <section className={`rounded-2xl border p-5 ${panelBaseClass(isDark)}`}>
+    <h3 className="text-sm font-semibold mb-3">{ui("Readability")}</h3>
+    <dl className="space-y-3 text-sm">
+      <div className="flex justify-between gap-3"><dt>{ui("Reading grade")}</dt><dd>{value(metrics.fleschKincaid)}</dd></div>
+      <div className="flex justify-between gap-3"><dt>{ui("Flesch score")}</dt><dd>{value(metrics.fleschScore)}</dd></div>
+      <div className="flex justify-between gap-3"><dt>{ui("SMOG index")}</dt><dd>{value(metrics.smogIndex, true)}</dd></div>
+    </dl>
+    <p className={`mt-3 text-xs leading-relaxed ${mutedTextClass(isDark)}`}>
+      {english ? ui("Calculated from the original English text, not its translation. Grade scores refer to US school levels; a higher Flesch score means easier reading. SMOG requires at least 30 sentences here. Missing scores are not zero.")
+        : ui("These English-language formulas do not apply to this article’s original language. Reading time remains available.")}
+    </p>
+  </section>;
+}

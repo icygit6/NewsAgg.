@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Camera, Loader2 } from 'lucide-react';
+import { Camera, Loader2, Trash2 } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { authService } from '../../services/authService';
 
@@ -17,7 +17,7 @@ export function AvatarEditor({ isDark }: AvatarEditorProps) {
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
 
-  const upload = async (dataUrl: string) => {
+  const upload = async (dataUrl: string | null) => {
     setSaving(true);
     setError('');
     setSaved(false);
@@ -30,7 +30,7 @@ export function AvatarEditor({ isDark }: AvatarEditorProps) {
       }
       setSaved(true);
     } else {
-      setError(res.error || 'Upload failed');
+      setError(res.error || 'Photo update failed');
     }
     setSaving(false);
   };
@@ -42,6 +42,10 @@ export function AvatarEditor({ isDark }: AvatarEditorProps) {
     if (!file) return;
     if (!file.type.startsWith('image/')) {
       setError(t.avatarInvalid);
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Choose an image smaller than 10 MB.');
       return;
     }
     const reader = new FileReader();
@@ -87,8 +91,9 @@ export function AvatarEditor({ isDark }: AvatarEditorProps) {
         </button>
         <input ref={fileInputRef} type="file" name="avatar" accept="image/*" onChange={handleFile} className="hidden" />
       </div>
-      {error && <p className="mt-2 text-xs text-rose-500">{error}</p>}
-      {saved && !error && <p className="mt-2 text-xs text-emerald-500">{t.avatarUpdated}</p>}
+      {user?.avatar && <button type="button" disabled={saving} onClick={() => void upload(null)} className={`mt-2 inline-flex items-center gap-1 text-xs font-medium ${isDark ? 'text-slate-400 hover:text-red-300' : 'text-slate-500 hover:text-red-600'}`}><Trash2 size={12} />{t.removePhoto}</button>}
+      {error && <p role="alert" className="mt-2 text-xs text-rose-500">{error}</p>}
+      {saved && !error && <p role="status" aria-live="polite" className="mt-2 text-xs text-emerald-500">{t.avatarUpdated}</p>}
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { useUiText } from '../../i18n/uiText';
 import { Link } from 'react-router';
 import { useApp } from '../../contexts/AppContext';
 import { POSTS_ENABLED, SOURCES } from '../../constants';
@@ -20,16 +21,13 @@ export function FooterCompact() {
         isDark ? 'text-slate-600' : 'text-slate-400'
       }`}
     >
-      {/* Static labels until real terms/privacy pages exist — anchors with
-       * placeholder hrefs would hijack scroll position when clicked. */}
       <p className="flex flex-wrap items-center gap-x-2">
-        <span>{t.termsOfService}</span>
+        <Link to="/terms" className="hover:underline">{t.termsOfService}</Link>
         <span aria-hidden>·</span>
-        <span>{t.privacyPolicy}</span>
+        <Link to="/privacy" className="hover:underline">{t.privacyPolicy}</Link>
       </p>
       <p>
-        © {new Date().getFullYear()} NewsAgg ·{' '}
-        {SOURCES.map((s) => s.name).join(' · ')}
+        © {new Date().getFullYear()} NewsAgg · {SOURCES.map((s) => s.name).join(' · ')}
       </p>
     </div>
   );
@@ -41,6 +39,7 @@ export function FooterCompact() {
  * `handle.hideFooter`; there the rail's FooterCompact takes over. Four-column
  * responsive grid (1 col mobile → 4 col desktop) + a bottom copyright bar. */
 export function Footer({ hiddenOnMobile = false }: { hiddenOnMobile?: boolean }) {
+  const ui = useUiText();
   const { t, isDark } = useApp();
 
   const heading = `font-poppins font-semibold text-sm mb-3 ${
@@ -49,8 +48,6 @@ export function Footer({ hiddenOnMobile = false }: { hiddenOnMobile?: boolean })
   const link = `text-sm transition-colors ${
     isDark ? 'text-slate-400 hover:text-slate-100' : 'text-slate-500 hover:text-slate-900'
   }`;
-  const body = `text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`;
-
   const navLinks: FooterLink[] = [
     { label: t.home, to: '/' },
     { label: t.bookmarks, to: '/bookmarks' },
@@ -66,7 +63,7 @@ export function Footer({ hiddenOnMobile = false }: { hiddenOnMobile?: boolean })
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
         {/* Column 1 — Brand */}
         <div>
-          <Link to="/" className="flex items-center gap-2" aria-label="NewsAgg home">
+          <Link to="/" className="flex items-center gap-2" aria-label={ui("NewsAgg home")}>
             <BrandLogo
               markClassName="w-9 h-9"
               wordmarkClassName={`text-xl ${isDark ? 'text-slate-100' : 'text-slate-900'}`}
@@ -111,19 +108,17 @@ export function Footer({ hiddenOnMobile = false }: { hiddenOnMobile?: boolean })
         {/* Column 4 — Legal & Info */}
         <div>
           <h3 className={heading}>{t.legalInfo}</h3>
-          {/* Static labels until real terms/privacy pages exist — anchors with
-           * placeholder hrefs would hijack scroll position when clicked. */}
           <ul className="flex flex-col gap-2">
             <li>
-              <span className={body}>{t.termsOfService}</span>
+              <Link className={link} to="/terms">{t.termsOfService}</Link>
             </li>
             <li>
-              <span className={body}>{t.privacyPolicy}</span>
+              <Link className={link} to="/privacy">{t.privacyPolicy}</Link>
             </li>
           </ul>
           <span
             className="inline-block mt-4 text-xs font-medium px-2.5 py-1 rounded-full"
-            style={{ color: 'var(--brand, #06b6d4)', background: 'rgba(6, 182, 212, 0.12)' }}
+            style={{ color: 'var(--brand, #2563eb)', background: 'var(--brand-soft)' }}
           >
             {t.poweredByNLP}
           </span>

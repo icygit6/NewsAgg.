@@ -12,11 +12,7 @@ import type {
   NewsArticle,
   LiveEngagementItem,
 } from '../types/article';
-import type {
-  SentimentType,
-  NewsSentimentProbabilities,
-  NewsSentiment,
-} from '../types/sentiment';
+import type { SentimentType, NewsSentimentProbabilities, NewsSentiment } from '../types/sentiment';
 import type { RawNewsData } from '../types/api';
 
 export const SUPPORTED_TOPICS = Object.values(CATEGORY_TOPIC_MAP) as NewsTopic[];
@@ -59,8 +55,7 @@ const numOrNull = (value: unknown): number | null => {
   return Number.isFinite(n) ? n : null;
 };
 
-const asBoolean = (value: unknown): boolean | null =>
-  typeof value === 'boolean' ? value : null;
+const asBoolean = (value: unknown): boolean | null => (typeof value === 'boolean' ? value : null);
 
 const asStringArray = (value: unknown): string[] => {
   if (!Array.isArray(value)) return [];
@@ -72,7 +67,7 @@ const asNumberRecord = (value: unknown): Record<string, number> => {
   return Object.fromEntries(
     Object.entries(raw)
       .map(([key, item]) => [key, asNumber(item)])
-      .filter((entry): entry is [string, number] => entry[1] !== null)
+      .filter((entry): entry is [string, number] => entry[1] !== null),
   );
 };
 
@@ -184,17 +179,24 @@ const normalizeEntities = (value: unknown): NewsEntities => {
 
 const normalizeToxicity = (value: unknown): NewsToxicity => {
   const raw = asRecord(value);
-  return { label: pickString(raw.label) ?? 'unknown', score: clampUnit(pickNumber(raw.score) ?? 0) };
+  const score = numOrNull(raw.score);
+  return {
+    label: pickString(raw.label) ?? 'unknown',
+    score: score === null ? null : clampUnit(score),
+  };
 };
 
 const normalizeReadability = (value: unknown): NewsReadability => {
   const raw = asRecord(value);
   return {
     wordCount: Math.max(0, Math.round(pickNumber(raw.word_count, raw.wordCount) ?? 0)),
-    readingTimeMin: Math.max(0, Math.round(pickNumber(raw.reading_time_min, raw.readingTimeMin) ?? 0)),
-    fleschScore: pickNumber(raw.flesch_score, raw.fleschScore) ?? 0,
-    fleschKincaid: pickNumber(raw.flesch_kincaid, raw.fleschKincaid) ?? 0,
-    smogIndex: pickNumber(raw.smog_index, raw.smogIndex) ?? 0,
+    readingTimeMin: Math.max(
+      0,
+      Math.round(pickNumber(raw.reading_time_min, raw.readingTimeMin) ?? 0),
+    ),
+    fleschScore: numOrNull(raw.flesch_score ?? raw.fleschScore),
+    fleschKincaid: numOrNull(raw.flesch_kincaid ?? raw.fleschKincaid),
+    smogIndex: numOrNull(raw.smog_index ?? raw.smogIndex),
   };
 };
 
@@ -236,7 +238,7 @@ const normalizeArticle = (article: unknown): NewsArticle | null => {
     domain: raw.source_domain,
     country: raw.source_country,
     language: raw.source_language,
-    logo: raw.source_logo || raw.logo_url
+    logo: raw.source_logo || raw.logo_url,
   };
   const source = normalizeSource(sourceInput);
 
@@ -250,20 +252,20 @@ const normalizeArticle = (article: unknown): NewsArticle | null => {
       neutral: numOrNull(raw.sentiment_neu) ?? (raw.sentiment_type === 'neutral' ? 1 : 0),
       negative: numOrNull(raw.sentiment_neg) ?? (raw.sentiment_type === 'negative' ? 1 : 0),
     },
-    model: raw.sentiment_model || 'general'
+    model: raw.sentiment_model || 'general',
   };
 
   const toxicityInput = raw.toxicity || {
     label: raw.toxicity_label,
-    score: Number(raw.toxicity_score) || 0
+    score: raw.toxicity_score,
   };
 
   const readabilityInput = raw.readability || {
     wordCount: Number(raw.word_count) || 0,
     readingTimeMin: Number(raw.reading_time_min) || 0,
-    fleschScore: Number(raw.flesch_score) || 0,
-    fleschKincaid: Number(raw.flesch_kincaid) || 0,
-    smogIndex: Number(raw.smog_index) || 0
+    fleschScore: raw.flesch_score,
+    fleschKincaid: raw.flesch_kincaid,
+    smogIndex: raw.smog_index,
   };
 
   const canonicalUrl = pickString(raw.canonical_url, raw.canonicalUrl);
@@ -285,6 +287,10 @@ const normalizeArticle = (article: unknown): NewsArticle | null => {
     scrapedAt: pickString(raw.scraped_at, raw.scrapedAt),
     content: pickString(raw.content),
     aiSummary: pickString(raw.ai_summary, raw.aiSummary),
+    contentHash: pickString(raw.content_hash, raw.contentHash),
+    summaryMethod: pickString(raw.summary_method, raw.summaryMethod),
+    qualityVerified: raw.extraction_version === undefined ? undefined : raw.extraction_version === 'structured-v3' && raw.feed_eligible !== false,
+    contentBlocks: Array.isArray(raw.content_blocks) ? raw.content_blocks.filter((b: any) => b && ['paragraph', 'heading', 'quote', 'caption', 'list'].includes(b.type) && (typeof b.text === 'string' || (Array.isArray(b.items) && b.items.every((s: unknown) => typeof s === 'string')))) : [],
     urlToImage: pickString(raw.url_to_image, raw.urlToImage),
     images: normalizeImages(raw.images),
     videoUrl: pickString(raw.video_url, raw.videoUrl),
@@ -313,7 +319,7 @@ const normalizeArticle = (article: unknown): NewsArticle | null => {
       pickNumber(raw.aiConfidence, raw.aiRelevance) ??
       undefined,
     classificationSource:
-      Object.keys(asNumberRecord(raw.ai_label_scores ?? raw.aiLabelScores ?? {})).length > 0
+      (pickString(raw.category_model, asRecord(raw.quality_metadata).category_model) || Object.keys(asNumberRecord(raw.ai_label_scores ?? raw.aiLabelScores ?? {})).length > 0)
         ? 'model'
         : 'source-section',
     aiTopLabel: pickString(raw.ai_top_label, raw.aiTopLabel),
@@ -329,7 +335,6 @@ const normalizeArticle = (article: unknown): NewsArticle | null => {
 };
 
 // ─── Stable hash (unchanged) ─────────────────────────────────────────────────
-
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 // All reads go through the paginated endpoint or the stats endpoints; the old
@@ -347,10 +352,12 @@ export interface ArticlesPageParams {
   sources?: string[];
   sentiment?: SentimentType | 'all' | '';
   q?: string;
-  sort?: 'latest' | 'rank' | 'top';
+  sort?: ArticleSort;
   sinceHours?: number;
   pageSize?: number;
 }
+
+export type ArticleSort = 'top' | 'latest' | 'oldest' | 'rank';
 
 export interface ArticlesPage {
   articles: NewsArticle[];
@@ -364,7 +371,7 @@ export interface ArticlesPage {
 
 export const fetchArticlesPage = async (
   params: ArticlesPageParams,
-  page = 1
+  page = 1,
 ): Promise<ArticlesPage> => {
   const pageSize = params.pageSize ?? 20;
   const sp = new URLSearchParams();
@@ -398,7 +405,7 @@ export const fetchArticlesPage = async (
     scrapedAt: pickString(raw.scrapedAt),
     categories: asStringArray(raw.categories),
     aiModels: Object.fromEntries(
-      Object.entries(asRecord(raw.aiModels)).map(([key, value]) => [key, String(value)])
+      Object.entries(asRecord(raw.aiModels)).map(([key, value]) => [key, String(value)]),
     ),
   };
 };
@@ -421,6 +428,5 @@ export const fetchArticleById = async (articleId: string): Promise<NewsArticle |
 export const buildLiveEngagement = (
   _articles: NewsArticle[],
   _timestamp = Date.now(),
-  _limit = 8
+  _limit = 8,
 ): LiveEngagementItem[] => [];
-

@@ -1,59 +1,69 @@
-"""AI summary: BART abstractive teaser with an extractive fallback.
-
-The summariser pipeline is optional — some transformers builds drop the
-``summarization`` task, and CPU-only environments may not want to load BART.
-On any failure we fall back to the first few sentences. Lazy-loaded.
-"""
+"""Full-document, evidence-preserving extractive summaries (no invented facts)."""
 from __future__ import annotations
-
-import logging
+import math
 import re
-from functools import lru_cache
-from typing import Optional
+from collections import Counter
+from core import semantic
 
-from core import config
-from core import nlp
+STOP = set('the a an and or of to in is are was were for on with as at by from that this it be has have will said says'.split())
 
-_log = logging.getLogger(__name__)
+def sentences(text):
+    # Keep decimals, honorifics and closing quotation marks attached.
+    rows, start = [], 0
+    for match in re.finditer(r'[。！？]|[.!?][\u201d\u2019"\']?(?=\s)|\n{2,}', text):
+        end = match.end()
+        prefix = text[start:end]
+        if re.search(r'\b(?:Dr|Mr|Mrs|Ms|Prof|Sr|Jr|St|vs|No|e\.g|i\.e|U\.S)\.$', prefix, re.I) or re.search(r'\b[A-Z]\.$', prefix):
+            continue
+        rows.append(prefix.strip())
+        start = end
+    rows.append(text[start:].strip())
+    return list(dict.fromkeys(s for s in rows if len(s) >= 25 and not re.match(r'^(Image caption,|Courtesy of|Photo credit:)', s, re.I)))
 
+def tokens(text):
+    return [w for w in re.findall(r'[a-z]{2,}|[\u3400-\u9fff]', text.lower()) if w not in STOP]
 
-@lru_cache(maxsize=1)
-def _summariser():
-    """Load BART once; return None (cached) if the task is unavailable."""
-    try:
-        from transformers import pipeline
-        return pipeline("summarization", model=config.MODELS["summarizer"],
-                        truncation=True, device=nlp.device())
-    except Exception as e:                         # noqa: BLE001
-        _log.warning("Summariser unavailable, using extractive fallback: %s", e)
-        return None
+def summarize(text, language='en', title=''):
+    rows = sentences(text)
+    if len(rows) > 160:
+        rows = [rows[round(i * (len(rows) - 1) / 159)] for i in range(160)]
+    if not rows:
+        return {'text': None, 'method': 'unavailable', 'evidence': []}
+    counts = [Counter(tokens(s)) for s in rows]
+    df = Counter(w for c in counts for w in c)
+    vectors = [{w: n * (1 + math.log((len(rows) + 1) / (df[w] + 1))) for w, n in c.items()} for c in counts]
+    norms = [math.sqrt(sum(v*v for v in c.values())) or 1 for c in vectors]
+    def similarity(i, j):
+        return sum(v * vectors[j].get(w, 0) for w, v in vectors[i].items()) / (norms[i] * norms[j])
+    method = 'extractive-tfidf-mmr-v4'
+    embeddings = semantic.embed(rows)
+    if embeddings:
+        norms_e = [math.sqrt(sum(v*v for v in row)) or 1 for row in embeddings]
+        def similarity(i, j):
+            return sum(a*b for a,b in zip(embeddings[i], embeddings[j])) / (norms_e[i] * norms_e[j])
+        method = 'extractive-bge-m3-mmr-v4'
+    sims = [[similarity(i,j) for j in range(len(rows))] for i in range(len(rows))]
+    title_words = set(tokens(title))
+    relevance = [sum(sims[i]) / len(rows) + .15 * len(title_words & set(counts[i])) / max(1, len(title_words)) for i in range(len(rows))]
+    chosen, used = [], 0
+    limit = 600 if language.startswith('zh') else 1100
+    # Anchor the excerpts with the opening context, then select diverse
+    # evidence from across the document rather than four isolated quotes.
+    if len(rows[0]) <= limit // 2:
+        chosen, used = [0], len(rows[0]) + 1
+    while len(chosen) < min(4, len(rows)):
+        available = [i for i in range(len(rows)) if i not in chosen and used + len(rows[i]) + 1 <= limit]
+        if not available:
+            break
+        def score(i):
+            redundancy = max((sims[i][j] for j in chosen), default=0)
+            new_section = not any(min(2, i*3//len(rows)) == min(2, j*3//len(rows)) for j in chosen)
+            return relevance[i] - .5 * redundancy + (.12 if new_section else 0)
+        best = max(available, key=score)
+        chosen.append(best)
+        used += len(rows[best]) + 1
+    evidence = [rows[i] for i in sorted(chosen)]
+    return {'text': '\n'.join(evidence) or None, 'method': method if evidence else 'unavailable', 'evidence': evidence}
 
-
-def build_ai_summary(text: str, language: str = "en") -> Optional[str]:
-    """BART abstractive teaser for English; extractive first sentences for
-    everything else (BART emits garbage on non-EN, and CJK text has no
-    whitespace words — the old word-count gate silently skipped zh entirely)."""
-    # Let the tokenizer apply its own 1,024-token limit rather than imposing a
-    # much shorter 1,024-character limit before tokenization.
-    chunk = text[:4000]
-    is_en = (language or "en").startswith("en")
-
-    if is_en:
-        if len(chunk.split()) <= 50:
-            return None
-        pipe = _summariser()
-        if pipe is not None:
-            try:
-                out = pipe(chunk, max_length=80, min_length=30, do_sample=False)
-                return out[0]["summary_text"]
-            except Exception:
-                pass
-    elif len(chunk) <= 80:        # CJK gate by characters, not words
-        return None
-
-    # Extractive fallback — first 3 sentences (CJK-aware split), capped.
-    sentences = [s for s in re.split(r"(?<=[.!?。！？])\s*", chunk.strip()) if s]
-    fallback = " ".join(sentences[:3]).strip()
-    if len(fallback) > 420:
-        fallback = fallback[:420].rsplit(" ", 1)[0] + "..."
-    return fallback or None
+def build_ai_summary(text, language='en'):
+    return summarize(text, language)['text']

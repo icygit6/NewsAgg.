@@ -6,9 +6,6 @@ import { useApp } from '../../contexts/AppContext';
 const MarketsWidget = lazy(() =>
   import('./MarketsWidget').then((m) => ({ default: m.MarketsWidget }))
 );
-const BusinessTrendChart = lazy(() =>
-  import('./BusinessTrendChart').then((m) => ({ default: m.BusinessTrendChart }))
-);
 
 /** Business-only analytics pinned to the top of the Insights area: the markets
  * snapshot (stocks / FX / crypto) and the 14-day business pulse, sitting above
@@ -20,7 +17,6 @@ export function BusinessInsights() {
   return (
     <Suspense fallback={null}>
       <MarketsWidget />
-      <BusinessTrendChart />
     </Suspense>
   );
 }

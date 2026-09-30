@@ -1,8 +1,8 @@
 """Yahoo TW (tw.news.yahoo.com) — zh-TW, JS-rendered (Playwright).
 
 CLAUDE.md feature 4. Yahoo TW renders content client-side, so this source sets
-``use_playwright=True``. Sections come pre-categorised, so we trust the
-section -> topic mapping and skip the zero-shot relevance filter.
+``use_playwright=True``. Section candidates are validated using multilingual
+classification because recommendation links may belong to another category.
 
 Topic mapping: CLAUDE.md specifies lowercase EN topics (政治->politics, ...),
 but the LIVE DB stores Title-case topics shared with CNN/BBC/AJ
@@ -63,7 +63,7 @@ SPEC = SourceSpec(
     language="zh-TW",
     categories=_build_categories(),
     use_playwright=True,
-    skip_zero_shot=True,
+    skip_zero_shot=False,
     content_selectors=[".caas-body"],     # Yahoo's article body container
     boilerplate_extra=_YAHOO_BOILERPLATE,
 )

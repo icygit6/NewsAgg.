@@ -1,3 +1,4 @@
+import { useUiText } from '../i18n/uiText';
 import { useApp } from '../contexts/AppContext';
 import { GradientBarWithPointer } from './ui/GradientBarWithPointer';
 import type { NewsArticle } from '../types/article';
@@ -28,6 +29,7 @@ const clampUnit = (value: number): number => Math.max(0, Math.min(1, value));
 const clampSignedUnit = (value: number): number => Math.max(-1, Math.min(1, value));
 
 export function ArticleSentimentPanel({ article, isDark }: ArticleSentimentPanelProps) {
+  const ui = useUiText();
     const { t } = useApp();
 
     const panelBase = isDark
@@ -79,8 +81,7 @@ export function ArticleSentimentPanel({ article, isDark }: ArticleSentimentPanel
                     className="my-1"
                 />
 
-                <p className={`text-xs ${mutedText}`}>
-                    Confidence: {(confidence * 100).toFixed(1)}%
+                <p className={`text-xs ${mutedText}`}>{ui("Confidence:")} {(confidence * 100).toFixed(1)}%
                 </p>
             </div>
 

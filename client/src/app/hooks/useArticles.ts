@@ -19,6 +19,11 @@ export function useArticles(params: ArticlesPageParams) {
   };
   return useInfiniteQuery({
     queryKey: ['articles', key],
+    // Preserve the loaded list when returning from an article. A fresh visit
+    // or explicit refresh can obtain new publications without shifting Back.
+    staleTime: 120_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
     queryFn: ({ pageParam }) => fetchArticlesPage(params, pageParam),
     initialPageParam: 1,
     getNextPageParam: (last: ArticlesPage) =>

@@ -13,6 +13,7 @@ SPEC = SourceSpec(
     key="cnn",
     name="CNN",
     language="en",
+    content_selectors=['.article__content', '.article__main'],
     categories={
         "Sport":         ["https://edition.cnn.com/sport"],
         "Health":        ["https://edition.cnn.com/health"],

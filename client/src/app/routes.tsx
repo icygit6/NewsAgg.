@@ -51,6 +51,21 @@ export const router = createBrowserRouter([
         handle: { hideRightRail: true, mobileFooter: true },
         lazy: async () => ({ Component: (await import('./pages/ArticlePage')).ArticlePage }),
       },
+      {
+        path: 'profile/:username',
+        handle: { hideRightRail: true, mobileFooter: true },
+        lazy: async () => ({ Component: (await import('./pages/PublicProfilePage')).PublicProfilePage }),
+      },
+      {
+        path: 'terms',
+        handle: { hideRightRail: true, mobileFooter: true },
+        lazy: async () => ({ Component: (await import('./pages/LegalPages')).TermsPage }),
+      },
+      {
+        path: 'privacy',
+        handle: { hideRightRail: true, mobileFooter: true },
+        lazy: async () => ({ Component: (await import('./pages/LegalPages')).PrivacyPage }),
+      },
       { path: '*', lazy: async () => ({ Component: (await import('./pages/NotFound')).NotFound }) },
     ],
   },

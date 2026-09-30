@@ -71,12 +71,12 @@ export function PulseRail() {
       {POSTS_ENABLED ? (
         isAuthenticated ? (
           <Link to="/posts?compose=1" className={teaserClasses}>
-            <PenSquare size={16} className="shrink-0 text-[var(--brand,#06b6d4)]" />
+            <PenSquare size={16} className="shrink-0 text-[var(--brand,#2563eb)]" />
             {t.whatsHappening}
           </Link>
         ) : (
           <button onClick={() => setSidebarOpen(true)} className={teaserClasses}>
-            <PenSquare size={16} className="shrink-0 text-[var(--brand,#06b6d4)]" />
+            <PenSquare size={16} className="shrink-0 text-[var(--brand,#2563eb)]" />
             {t.signInToPost}
           </button>
         )
@@ -92,7 +92,7 @@ export function PulseRail() {
       {POSTS_ENABLED && (
         <Link
           to="/posts"
-          className="text-sm font-medium px-2 py-1 text-[var(--brand,#06b6d4)] hover:underline"
+          className="text-sm font-medium px-2 py-1 text-[var(--brand,#2563eb)] hover:underline"
         >
           {t.viewAllPosts}
         </Link>

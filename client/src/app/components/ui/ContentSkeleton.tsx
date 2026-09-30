@@ -1,3 +1,4 @@
+import { useUiText } from '../../i18n/uiText';
 /** Content-shaped loading placeholders; decorative blocks stay hidden from AT. */
 export function SkeletonBlock({ className = '' }: { className?: string }) {
   return <div aria-hidden="true" className={`rounded-lg bg-slate-200/80 dark:bg-slate-700/60 motion-safe:animate-pulse ${className}`} />;
@@ -8,18 +9,19 @@ export function FeedSkeleton({ count = 6, hero = false, label = 'Loading article
     <div role="status" aria-label={label} className="w-full py-4">
       <span className="sr-only">{label}</span>
       {hero && <SkeletonBlock className="mb-8 h-52 sm:h-72 w-full rounded-2xl" />}
-      <div aria-hidden="true" className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
+      <div aria-hidden="true" className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         {Array.from({ length: count }, (_, index) => (
-          <div key={index} className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-            <SkeletonBlock className="h-36 lg:h-44 rounded-none" />
-            <div className="space-y-4 p-4">
+          <div key={index} className="min-h-[500px] overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+            <SkeletonBlock className="h-52 rounded-none sm:h-56 lg:h-60" />
+            <div className="space-y-5 p-5">
               <div className="flex items-center gap-2">
-                <SkeletonBlock className="h-8 w-8 rounded-full" />
+                <SkeletonBlock className="h-9 w-9 rounded-full" />
                 <SkeletonBlock className="h-3 w-24" />
               </div>
-              <div className="space-y-2">
-                <SkeletonBlock className="h-5 w-full" />
-                <SkeletonBlock className="h-5 w-3/4" />
+              <div className="space-y-2.5">
+                <SkeletonBlock className="h-6 w-full" />
+                <SkeletonBlock className="h-6 w-full" />
+                <SkeletonBlock className="h-6 w-2/3" />
               </div>
               <div className="flex gap-2"><SkeletonBlock className="h-5 w-16" /><SkeletonBlock className="h-5 w-20" /></div>
               <div className="flex justify-between border-t border-slate-100 pt-3 dark:border-slate-800">
@@ -48,9 +50,10 @@ export function ListSkeleton({ count = 3, label = 'Loading content' }: { count?:
 }
 
 export function PanelSkeleton() {
+  const ui = useUiText();
   return (
-    <div role="status" aria-label="Loading insights" className="space-y-4 py-4">
-      <span className="sr-only">Loading insights</span>
+    <div role="status" aria-label={ui("Loading insights")} className="space-y-4 py-4">
+      <span className="sr-only">{ui("Loading insights")}</span>
       {[0, 1].map(index => (
         <div key={index} aria-hidden="true" className="space-y-4 rounded-2xl border border-slate-200 p-5 dark:border-slate-800">
           <SkeletonBlock className="h-5 w-1/2" />

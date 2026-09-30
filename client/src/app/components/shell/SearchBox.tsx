@@ -1,3 +1,4 @@
+import { useUiText } from '../../i18n/uiText';
 import { Search, X } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useApp } from '../../contexts/AppContext';
@@ -5,6 +6,7 @@ import { useApp } from '../../contexts/AppContext';
 /** Global search input (moved from the old Header into the right rail / top
  * bar). Typing filters the feed server-side via the debounced `q` param. */
 export function SearchBox() {
+  const ui = useUiText();
   const { t, isDark, searchQuery, setSearchQuery } = useApp();
   const navigate = useNavigate();
 
@@ -33,7 +35,7 @@ export function SearchBox() {
         <button
           onClick={() => setSearchQuery('')}
           className={`rounded-full p-0.5 ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}
-          aria-label="Clear search"
+          aria-label={ui("Clear search")}
         >
           <X size={14} />
         </button>

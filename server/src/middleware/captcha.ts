@@ -86,6 +86,23 @@ export async function requireCaptcha(req: Request, res: Response, next: NextFunc
   next()
 }
 
+/** Strict CAPTCHA gate for federated sign-in. Unlike the opt-in gates used by
+ * local email flows, this fails closed when the site has Google enabled but no
+ * Turnstile secret, so a deployment can never silently expose unprotected
+ * Google authentication. */
+export async function requireConfiguredCaptcha(req: Request, res: Response, next: NextFunction) {
+  if (!captchaConfigured()) {
+    return res.status(503).json({
+      success: false,
+      error: 'Google sign-in requires CAPTCHA configuration',
+      captchaRequired: true,
+    })
+  }
+  const ok = await verifyTurnstile(req.body?.captchaToken, req.ip)
+  if (!ok) return rejectCaptcha(res)
+  next()
+}
+
 /** Adaptive gate for login: only demands a CAPTCHA once this IP has tripped the
  * failed-login threshold. Below it, sign-in stays frictionless. */
 export async function loginCaptchaGate(req: Request, res: Response, next: NextFunction) {

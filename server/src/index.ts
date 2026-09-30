@@ -21,12 +21,14 @@ import { authRouter } from './routes/auth'
 import { accountRouter } from './routes/account'
 import { postsRouter } from './routes/posts'
 import { bookmarksRouter } from './routes/bookmarks'
+import { profilesRouter } from './routes/profiles'
 import { userRouter } from './routes/user'
 import { quotesRouter } from './routes/quotes'
 import { translateRouter } from './routes/translate'
 import { chatRouter } from './routes/chat'
 import { apiLimiter, authLimiter } from './middleware/rateLimit'
 import { mailerConfigured } from './services/mailer'
+import { requireTrustedOrigin } from './middleware/trustedOrigin'
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -46,10 +48,11 @@ app.use(
 )
 
 app.use(helmet())
-app.use(cors({ origin: CORS_ORIGINS }))
+app.use(cors({ origin: CORS_ORIGINS, credentials: true }))
 app.use(compression())
 app.use(express.json({ limit: '200kb' }))
 app.use(express.urlencoded({ extended: true, limit: '200kb' }))
+app.use(requireTrustedOrigin)
 
 app.use(apiLimiter)
 
@@ -79,6 +82,7 @@ app.use('/api/user', userRouter)
 app.use('/api/account', accountRouter)
 app.use('/api/posts', postsRouter)
 app.use('/api/bookmarks', bookmarksRouter)
+app.use('/api/profiles', profilesRouter)
 app.use('/auth', authLimiter, authRouter)
 // Backward-compatible direct-Docker API path. New clients use
 // /api/bookmarks so IIS can reserve /bookmarks for the React page.
@@ -94,6 +98,7 @@ app.get('/health', async (_req, res) => {
       db: 'up',
       integrations: {
         googleAuth: Boolean(process.env.GOOGLE_CLIENT_ID),
+        captcha: Boolean(process.env.TURNSTILE_SECRET),
         smtp: mailerConfigured,
         translation: Boolean(process.env.GEMINI_API_KEY),
         chat: Boolean(process.env.GROQ_API_KEY),

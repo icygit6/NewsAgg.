@@ -39,7 +39,7 @@ describe('article chat route', () => {
     mockQuery.mockResolvedValue({
       rows: [{ title: 'Stored title', description: 'Stored deck', content: 'Stored body' }],
     })
-    const token = jwt.sign({ userId: 7 }, process.env.SECRET_KEY || process.env.JWT_SECRET || 'dev-secret')
+    const token = jwt.sign({ userId: 7, sessionId: 'test-session' }, process.env.SECRET_KEY || process.env.JWT_SECRET || 'dev-secret')
     const response = await request(app())
       .post('/api/chat')
       .set('Authorization', `Bearer ${token}`)

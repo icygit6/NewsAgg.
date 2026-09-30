@@ -1,13 +1,14 @@
 import { SkeletonBlock } from './ui/ContentSkeleton';
+import { useUiText } from '../i18n/uiText';
+import { useTitleTranslations } from '../hooks/useTitleTranslations';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { ChevronLeft, ChevronRight, Clock3, TrendingUp } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { TOPIC_BADGE_CLASS } from '../constants';
 import { getArticleId } from '../services/newsAPI';
 import { useRankedHeadlines } from '../hooks/useArticles';
-import { usePreviewTranslations } from '../hooks/usePreviewTranslations';
 import { ImageWithFallback } from './utils/ImageWithFallback';
 import type { SentimentType } from '../types/sentiment';
 
@@ -16,6 +17,7 @@ interface SentimentBadgeProps {
 }
 
 function SentimentBadge({ sentiment }: SentimentBadgeProps) {
+  const { t } = useApp();
   const colors = {
     positive: 'bg-emerald-500/90 text-white',
     neutral: 'bg-gray-500/90 text-white',
@@ -23,7 +25,7 @@ function SentimentBadge({ sentiment }: SentimentBadgeProps) {
   };
   return (
     <span className={`px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wide ${colors[sentiment as keyof typeof colors]}`}>
-      {sentiment}
+      {t[sentiment]}
     </span>
   );
 }
@@ -32,7 +34,9 @@ function SentimentBadge({ sentiment }: SentimentBadgeProps) {
 const HERO_HEIGHT = 'h-[300px] sm:h-[360px] md:h-[420px]';
 
 export function HeroCarousel() {
+  const ui = useUiText();
   const { t, isDark, selectedCategory, selectedSources, selectedSentiment } = useApp();
+  const shouldReduceMotion = useReducedMotion();
   const [current, setCurrent] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
 
@@ -44,19 +48,19 @@ export function HeroCarousel() {
     sources: selectedSources,
     sentiment: selectedSentiment,
   });
-  const headlines = data?.articles ?? [];
-  const { data: previewTranslations = {} } = usePreviewTranslations(headlines);
+  const headlines = useTitleTranslations(data?.articles ?? []);
 
   // Restart from the first slide whenever the filtered set changes.
   useEffect(() => setCurrent(0), [data]);
 
   useEffect(() => {
-    if (isHovered || headlines.length === 0) return;
+    if (isHovered || shouldReduceMotion || headlines.length === 0) return;
     const interval = setInterval(() => {
+      if (document.hidden) return;
       setCurrent(p => (p + 1) % headlines.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, [isHovered, headlines.length]);
+  }, [isHovered, shouldReduceMotion, headlines.length]);
 
   const prev = () => setCurrent(p => (p - 1 + headlines.length) % headlines.length);
   const next = () => setCurrent(p => (p + 1) % headlines.length);
@@ -78,35 +82,29 @@ export function HeroCarousel() {
 
   // Clamp: a filter change can shrink the list before the reset effect runs.
   const idx = current % headlines.length;
-  const rawArticle = headlines[idx];
-  const translated = previewTranslations[rawArticle.id];
-  const article = translated && translated.provider !== 'none'
-    ? { ...rawArticle, title: translated.title ?? rawArticle.title, description: translated.description ?? rawArticle.description, aiSummary: translated.aiSummary ?? rawArticle.aiSummary }
-    : rawArticle;
-  const preview = article.aiSummary || article.description || 'No summary available';
+  const article = headlines[idx];
   const topicClass = TOPIC_BADGE_CLASS[article.topic];
 
   return (
     <div
-      className={`${HERO_HEIGHT} relative overflow-hidden transition-all duration-300 ease-out rounded-2xl border shadow-lg`}
+      className={`${HERO_HEIGHT} relative overflow-hidden transition-[border-color,box-shadow] duration-200 ease-out rounded-2xl border shadow-lg`}
       style={{
         overflowAnchor: 'none',
         borderColor: isDark ? 'rgba(51, 65, 85, 0.5)' : 'rgba(255, 255, 255, 0.6)',
         backgroundColor: isDark ? 'rgba(15, 23, 42, 0.4)' : 'rgba(255, 255, 255, 0.4)',
-        backdropFilter: 'blur(8px)'
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Background images — initial={false} paints the first slide at full opacity
           (no fade-in) so the LCP image isn't held at opacity:0; later slides still cross-fade. */}
-      <AnimatePresence mode="wait" initial={false}>
+      <AnimatePresence initial={false}>
         <motion.div
           key={idx}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: shouldReduceMotion ? 0 : 0.35 }}
           className="absolute inset-0"
         >
           <ImageWithFallback
@@ -131,27 +129,24 @@ export function HeroCarousel() {
       </div>
 
       {/* Content */}
-      <AnimatePresence mode="wait">
+      <AnimatePresence initial={false}>
         <motion.div
           key={`content-${idx}`}
-          initial={{ opacity: 0, y: 20 }}
+          initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.7 }}
+          exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
+          transition={{ duration: shouldReduceMotion ? 0 : 0.3 }}
           className="absolute bottom-0 left-0 right-0 p-4 md:p-5 z-10"
         >
           <Link to={`/article/${getArticleId(article)}`} className="block group">
             <div className="flex items-center gap-1.5 mb-2 flex-wrap">
               <SentimentBadge sentiment={article.sentiment.type} />
-              <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${topicClass}`}>{article.topic}</span>
+              <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${topicClass}`}>{ui(article.topic)}</span>
               <span className="text-white/70 text-[11px] truncate">{article.source.name}</span>
             </div>
             <h2 className="font-poppins text-white text-xl md:text-2xl lg:text-3xl font-semibold leading-tight mb-1.5 group-hover:text-blue-200 transition-colors line-clamp-2">
               {article.title}
             </h2>
-            <p className="text-white/70 text-xs md:text-sm line-clamp-1 mb-2 max-w-2xl hidden sm:block">
-              {preview}
-            </p>
             <div className="flex items-center gap-3 text-white/60 text-[10px] md:text-xs flex-wrap">
               <span className="truncate">{formatDate(article.publishedAt)}</span>
               <span className="text-white/40">•</span>
@@ -201,15 +196,17 @@ export function HeroCarousel() {
       </div>
 
       {/* Progress bar */}
-      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white/15 z-10 rounded-b-2xl overflow-hidden">
-        <motion.div
-          key={idx}
-          initial={{ width: '0%' }}
-          animate={{ width: '100%' }}
-          transition={{ duration: 5, ease: 'linear' }}
-              className="h-full bg-blue-400"
-        />
-      </div>
+      {!shouldReduceMotion && (
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white/15 z-10 rounded-b-2xl overflow-hidden">
+          <motion.div
+            key={idx}
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: 1 }}
+            transition={{ duration: 5, ease: 'linear' }}
+            className="h-full origin-left bg-blue-400"
+          />
+        </div>
+      )}
     </div>
   );
 }

@@ -14,6 +14,7 @@ export interface StatsOverview {
   scrapedAt: string | null;
   categories: string[];
   aiModels: Record<string, string>;
+  nlpModels?: Array<{ id: string; role: string }>;
 }
 
 export interface TrendingStat {

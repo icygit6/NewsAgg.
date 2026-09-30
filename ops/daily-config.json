@@ -1,0 +1,24 @@
+{
+  "timeZone": "Asia/Taipei",
+  "startTime": "17:00",
+  "freezeTime": "04:30",
+  "maxScrapeMinutes": 210,
+  "scrapeDeadline": "04:25",
+  "sendTime": "04:40",
+  "sendDeadline": "04:55",
+  "targetPerSourceCategory": 15,
+  "maxAgeHours": 48,
+  "minimumArticles": 8,
+  "minimumSources": 2,
+  "sourceCategories": {
+    "bbc": ["Sport","Health","Business","World","Politics","Lifestyle","Science","Climate"],
+    "cnn": ["Sport","Health","Business","World","Politics","Lifestyle","Science","Climate"],
+    "aljazeera": ["Sport","Health","Business","World","Science","Climate"],
+    "yahoo_tw": ["Sport","Business","World","Politics","Lifestyle","Science"]
+  },
+  "recipients": [
+    "01257166@email.ntou.edu.tw",
+    "01257168@email.ntou.edu.tw",
+    "01257169@email.ntou.edu.tw"
+  ]
+}

@@ -25,6 +25,8 @@ def device() -> int:
     """0 = first CUDA GPU, -1 = CPU. Detected once."""
     try:
         import torch
+        # Laptop CPU inference: avoid oversubscribing every core per tiny batch.
+        torch.set_num_threads(2)
         if torch.cuda.is_available():
             print(f"[nlp] GPU: {torch.cuda.get_device_name(0)}")
             return 0
@@ -36,19 +38,19 @@ def device() -> int:
 
 @lru_cache(maxsize=1)
 def ensure_nltk() -> None:
-    import nltk
-    for pkg in ("punkt", "punkt_tab", "stopwords"):
-        try:
-            nltk.download(pkg, quiet=True)
-        except Exception as e:                    # noqa: BLE001
-            _log.warning("nltk download %s failed: %s", pkg, e)
+    # Runtime scraping must never block on an unbounded NLTK data download.
+    # The pipeline uses regex sentence boundaries and a bundled stopword fallback.
+    return None
 
 
 @lru_cache(maxsize=1)
 def stop_words() -> set[str]:
     ensure_nltk()
     from nltk.corpus import stopwords
-    return set(stopwords.words("english"))
+    try:
+        return set(stopwords.words("english"))
+    except LookupError:
+        return set('the and for from with this that these those their they them were was are has have had been being will would should could into onto about after before between because through over under more most some such only than then when where what which while whom how why not but all any can did does each few his her its our your out too very'.split())
 
 
 # ── Lazy model pipelines ────────────────────────────────────────────
@@ -69,7 +71,10 @@ def _sentiment_finance():
 @lru_cache(maxsize=1)
 def _classifier():
     from transformers import pipeline
-    kwargs = {"device": device()}
+    import torch
+    # Transformers 5 defaults to the checkpoint's dtype (FP16 here).
+    # mDeBERTa's author explicitly states FP16 is unsupported; force FP32.
+    kwargs = {"device": device(), "dtype": torch.float32}
     tok = config.hf_token()
     if tok:
         kwargs["token"] = tok
@@ -158,7 +163,7 @@ def analyze_sentiment(text: str, topic: str, language: str = "en") -> dict:
     model_key = resolve_sentiment_key(topic, language)
     cleaned = (text or "").strip()
     window = 1400
-    candidates = [cleaned[i:i + window] for i in range(0, min(len(cleaned), window * 8), window)]
+    candidates = [cleaned[i:i + window] for i in range(0, len(cleaned), window)]
     if len(candidates) > 3:
         candidates = [candidates[0], candidates[len(candidates) // 2], candidates[-1]]
     candidates = [chunk for chunk in candidates if chunk.strip()]
@@ -193,7 +198,9 @@ def run_ner(text: str) -> dict:
     entities = {"persons": [], "organizations": [], "locations": [], "misc": []}
     type_map = {"PER": "persons", "ORG": "organizations", "LOC": "locations", "MISC": "misc"}
     try:
-        chunks = [text[i:i + 1400] for i in range(0, min(len(text), 4200), 1400)]
+        chunks = [text[i:i + 1400] for i in range(0, len(text), 1400)]
+        if len(chunks) > 3:
+            chunks = [chunks[0], chunks[len(chunks)//2], chunks[-1]]
         for chunk in chunks:
             raw = _ner()(chunk)
             for ent in raw:
@@ -211,14 +218,21 @@ def run_toxicity(text: str, language: str = "en") -> dict:
     """toxic-bert is English-only: non-EN articles get NULLs instead of
     garbage scores (a multilingual replacement is ~2.2GB for a low-value
     signal on news prose — deliberately skipped)."""
-    if not (language or "en").startswith("en"):
+    if not (language or "en").lower().startswith("en") or not text.strip():
         return {"label": None, "score": None}
-    label, score = "non-toxic", 0.0
+    label, score = None, None
     try:
-        tox = _toxicity()(text[:512])
-        if isinstance(tox, list) and tox:
-            label = tox[0].get("label", "non-toxic").lower()
-            score = round(float(tox[0].get("score", 0.0)), 4)
+        # toxic-bert is multilabel. The top label may be "obscene" or "insult";
+        # the displayed toxicity score must specifically use its "toxic" output.
+        tox = _toxicity()(text[:512], top_k=None)
+        if isinstance(tox, list) and tox and isinstance(tox[0], list):
+            tox = tox[0]
+        result = next((item for item in tox if item.get("label", "").lower() == "toxic"), None)
+        if result is not None and result.get("score") is not None:
+            probability = float(result["score"])
+            if 0 <= probability <= 1:
+                score = round(probability, 4)
+                label = "toxic" if probability > 0.5 else "non-toxic"
     except Exception as e:                         # noqa: BLE001
         _log.debug("toxicity failed: %s", e)
     return {"label": label, "score": score}
@@ -232,44 +246,87 @@ def zero_shot_filter(candidates: list[dict], threshold: float = config.ZS_THRESH
     Adds ai_relevance_score / ai_top_label / ai_label_scores to survivors.
     """
     from core.cleaner import PHOTO_RE
+    from core.taxonomy import LOCAL_LABELS, VERSION, classification_context, needs_focus_review
     if not candidates:
         return []
     valid, titles = [], []
     for item in candidates:
         t = item["title_hint"]
-        if not PHOTO_RE.search(t) and len(t) >= 15:
+        if not PHOTO_RE.search(t) and len(t) >= (8 if re.search(r'[\u3400-\u9fff]', t) else 15):
             valid.append(item)
-            titles.append(t)
+            context = item.get('content_hint', '')
+            cjk = len(re.findall(r'[\u3400-\u9fff]', context)) > len(context) * .2
+            # Keep all three excerpts within the local model's token window;
+            # CJK consumes substantially more tokens per character than English.
+            titles.append(t[:160] + '\n' + classification_context(context, 300 if cjk else 900))
     if not valid:
         return []
-    labels = config.CATEGORY_LABELS[valid[0]["topic"]]
+    labels = list(LOCAL_LABELS.values())
+    topic_by_label = {description: topic for topic, description in LOCAL_LABELS.items()}
     try:
-        out = _classifier()(titles, candidate_labels=labels, multi_label=True)
+        out = _classifier()(titles, candidate_labels=labels, multi_label=False, hypothesis_template='This news is about {}.')
         if isinstance(out, dict):
             out = [out]
         result = []
         for item, res in zip(valid, out):
-            if res["scores"][0] >= threshold:
-                item["ai_relevance_score"] = round(res["scores"][0], 4)
-                item["ai_top_label"] = res["labels"][0]
-                item["ai_label_scores"] = dict(zip(res["labels"][:5], [round(s, 4) for s in res["scores"][:5]]))
+            res = {**res, 'labels': [topic_by_label.get(label, label) for label in res['labels']]}
+            scores = dict(zip(res['labels'], res['scores']))
+            margin = res['scores'][0] - (res['scores'][1] if len(res['scores']) > 1 else 0)
+            # A shared publisher feed is not proof of category membership.
+            # Keep only positive evidence for the requested category; report
+            # deficits instead of accepting ambiguous cross-category stories.
+            if res['labels'][0] != item['topic'] or scores.get(item['topic'], 0) < threshold or margin < .12 or needs_focus_review(item['title_hint'], item['topic']):
+                # A confident competing topic does not need an API call. Keep
+                # the bounded hosted budget for genuinely ambiguous candidates.
+                if res['labels'][0] != item['topic'] and res['scores'][0] >= .65 and res['scores'][0] - scores.get(item['topic'], 0) >= .25:
+                    item['rejection'] = 'category_mismatch'
+                    continue
+                from core.category import second_opinion
+                diagnostic = {}
+                opinion = second_opinion(item['title_hint'], classification_context(item.get('content_hint', '')),
+                                         requested_topic=item['topic'], source=item.get('source_key'), diagnostic=diagnostic)
+                if not opinion or opinion['category'] != item['topic']:
+                    item['rejection'] = ('category_unverified' + ('_' + diagnostic['reason'] if diagnostic.get('reason') else '')) if not opinion else 'category_mismatch'
+                    continue
+                # LLM category decisions have no calibrated numerical score.
+                item['ai_relevance_score'] = None
+                item['ai_top_label'] = opinion['category']
+                item['ai_label_scores'] = {}
+                item['category_model'] = opinion['model']
+                item['category_taxonomy'] = VERSION
                 result.append(item)
+                continue
+            item['ai_relevance_score'] = round(scores.get(item['topic'], 0), 4)
+            item['ai_top_label'] = res['labels'][0]
+            item['ai_label_scores'] = {k: round(v, 4) for k,v in scores.items()}
+            item['category_model'] = config.MODELS['zero_shot']
+            item['category_taxonomy'] = VERSION
+            if res['labels'][0] != item['topic']:
+                item['ai_top_label'] = None
+                item['ai_label_scores'] = {}
+            result.append(item)
         return result
     except Exception as e:                         # noqa: BLE001
         print(f"  zero-shot filter error: {e}")
-        return valid
+        return []
 
 
 # ── Keywords / readability / language ───────────────────────────────
 def _keyword_ok(tok: str, sw: set[str]) -> bool:
     """Keep only meaningful keyword tokens: ≥4 chars, no digits, not a
     stopword (NLTK + the project's news-prose stoplist)."""
-    return len(tok) > 3 and tok not in sw and not any(c.isdigit() for c in tok)
+    return 3 < len(tok) <= 40 and tok not in sw and not any(c.isdigit() for c in tok)
 
 
 def extract_keywords(text: str, np_kw: list, entities: dict,
                      top_n: int = config.KEYWORDS_TOP_N) -> list[str]:
     sw = stop_words() | config.KEYWORD_STOPWORDS
+    if len(re.findall(r'[\u3400-\u9fff]', text)) > len(text) * .2:
+        try:
+            import jieba.analyse
+            return [w for w in jieba.analyse.extract_tags(text, topK=top_n*2) if 2 <= len(w) <= 12][:top_n]
+        except ImportError:
+            return list(dict.fromkeys(e for values in entities.values() for e in values if 2 <= len(e) <= 12))[:top_n]
     combined: dict[str, int] = {}
     for kw in np_kw:
         k = kw.lower().strip()
@@ -296,15 +353,23 @@ def extract_keywords(text: str, np_kw: list, entities: dict,
     return result
 
 
-def reading_metrics(text: str) -> dict:
+def reading_metrics(text: str, language: str = 'en') -> dict:
     import textstat
     words = len(text.split())
+    cjk = len(re.findall(r'[\u3400-\u9fff]', text))
+    is_cjk = cjk > len(text) * .2
+    if not text.strip() or is_cjk or not (language or '').lower().startswith('en'):
+        count = cjk if is_cjk else words
+        return {'word_count': count, 'reading_time_min': max(1, round(count / (400 if is_cjk else 200))) if count else 0, 'flesch_score': None, 'flesch_kincaid': None, 'smog_index': None}
+    textstat.set_lang('en_US')
     return {
         "word_count": words,
         "reading_time_min": max(1, round(words / 200)),
         "flesch_score": round(textstat.flesch_reading_ease(text), 2),
         "flesch_kincaid": round(textstat.flesch_kincaid_grade(text), 2),
-        "smog_index": round(textstat.smog_index(text), 2),
+        # SMOG was normed on 30-sentence samples. Do not present a library's
+        # short-text zero or statistically unsupported estimate as a grade.
+        "smog_index": round(textstat.smog_index(text), 2) if textstat.sentence_count(text) >= 30 else None,
     }
 
 

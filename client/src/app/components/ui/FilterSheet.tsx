@@ -1,17 +1,19 @@
+import { useUiText } from '../../i18n/uiText';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Check, LayoutGrid, Newspaper, Gauge } from 'lucide-react';
+import { X, Check, LayoutGrid, Newspaper, Gauge, ArrowUpDown } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { CATEGORIES, CATEGORY_LABELS, SOURCES, sourceLogoUrl } from '../../constants';
 import { ImageWithFallback } from '../utils/ImageWithFallback';
 import type { SentimentType } from '../../types/sentiment';
+import type { ArticleSort } from '../../services/newsAPI';
 
 interface FilterSheetProps {
   open: boolean;
   onClose: () => void;
 }
 
-type FilterTab = 'category' | 'source' | 'sentiment';
+type FilterTab = 'category' | 'source' | 'sentiment' | 'sort';
 
 const SENTIMENT_OPTIONS: SentimentType[] = ['positive', 'neutral', 'negative'];
 
@@ -20,7 +22,7 @@ const SENTIMENT_OPTIONS: SentimentType[] = ['positive', 'neutral', 'negative'];
 function useIsDesktop(): boolean {
   const query = '(min-width: 768px)';
   const [isDesktop, setIsDesktop] = useState(
-    () => typeof window !== 'undefined' && window.matchMedia(query).matches
+    () => typeof window !== 'undefined' && window.matchMedia(query).matches,
   );
   useEffect(() => {
     const mq = window.matchMedia(query);
@@ -32,6 +34,7 @@ function useIsDesktop(): boolean {
 }
 
 export function FilterSheet({ open, onClose }: FilterSheetProps) {
+  const ui = useUiText();
   const {
     t,
     isDark,
@@ -41,6 +44,8 @@ export function FilterSheet({ open, onClose }: FilterSheetProps) {
     setSelectedSources,
     selectedSentiment,
     setSelectedSentiment,
+    selectedSort,
+    setSelectedSort,
   } = useApp();
   const [tab, setTab] = useState<FilterTab>('category');
   const isDesktop = useIsDesktop();
@@ -49,7 +54,7 @@ export function FilterSheet({ open, onClose }: FilterSheetProps) {
     setSelectedSources(
       selectedSources.includes(id)
         ? selectedSources.filter((s) => s !== id)
-        : [...selectedSources, id]
+        : [...selectedSources, id],
     );
   };
 
@@ -57,12 +62,20 @@ export function FilterSheet({ open, onClose }: FilterSheetProps) {
     setSelectedCategory('all');
     setSelectedSources([]);
     setSelectedSentiment('all');
+    setSelectedSort('latest');
   };
 
   const activeCount =
     (selectedCategory !== 'all' ? 1 : 0) +
     selectedSources.length +
-    (selectedSentiment !== 'all' ? 1 : 0);
+    (selectedSentiment !== 'all' ? 1 : 0) +
+    (selectedSort !== 'latest' ? 1 : 0);
+
+  const sortOptions: Array<{ value: ArticleSort; label: string }> = [
+    { value: 'top', label: t.topStories },
+    { value: 'latest', label: t.newestFirst },
+    { value: 'oldest', label: t.oldestFirst },
+  ];
 
   const sentimentLabel: Record<SentimentType, string> = {
     positive: t.positive,
@@ -108,7 +121,7 @@ export function FilterSheet({ open, onClose }: FilterSheetProps) {
           )}
           <button
             onClick={onClose}
-            aria-label="Close filters"
+            aria-label={ui("Close filters")}
             className={`p-1.5 rounded-md transition-colors ${
               isDark
                 ? 'text-slate-400 hover:text-slate-100 hover:bg-slate-700'
@@ -127,6 +140,7 @@ export function FilterSheet({ open, onClose }: FilterSheetProps) {
             { key: 'category', label: t.byCategory, icon: LayoutGrid },
             { key: 'source', label: t.bySource, icon: Newspaper },
             { key: 'sentiment', label: t.bySentiment, icon: Gauge },
+            { key: 'sort', label: t.sort, icon: ArrowUpDown },
           ] as const
         ).map(({ key, label, icon: Icon }) => {
           const active = tab === key;
@@ -138,8 +152,8 @@ export function FilterSheet({ open, onClose }: FilterSheetProps) {
                 active
                   ? 'bg-cyan-500 text-white'
                   : isDark
-                  ? 'text-slate-300 hover:bg-slate-700'
-                  : 'text-gray-600 hover:bg-gray-100'
+                    ? 'text-slate-300 hover:bg-slate-700'
+                    : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
               <Icon size={15} />
@@ -162,7 +176,7 @@ export function FilterSheet({ open, onClose }: FilterSheetProps) {
             {CATEGORIES.map((cat) => (
               <CategoryChip
                 key={cat}
-                label={CATEGORY_LABELS[cat]}
+                label={ui(CATEGORY_LABELS[cat])}
                 active={selectedCategory === cat}
                 isDark={isDark}
                 onClick={() => setSelectedCategory(cat)}
@@ -185,6 +199,18 @@ export function FilterSheet({ open, onClose }: FilterSheetProps) {
                 isDark={isDark}
                 tone={s}
                 onClick={() => setSelectedSentiment(s)}
+              />
+            ))}
+          </div>
+        ) : tab === 'sort' ? (
+          <div className="grid grid-cols-1 gap-2">
+            {sortOptions.map((option) => (
+              <SortOption
+                key={option.value}
+                label={option.label}
+                selected={selectedSort === option.value}
+                isDark={isDark}
+                onClick={() => setSelectedSort(option.value)}
               />
             ))}
           </div>
@@ -245,7 +271,7 @@ export function FilterSheet({ open, onClose }: FilterSheetProps) {
               className={`fixed left-0 right-0 z-50 rounded-t-2xl border-t shadow-2xl ${
                 isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-100'
               }`}
-              style={{ bottom: 'calc(env(safe-area-inset-bottom) + 56px)' }}
+              style={{ bottom: 'calc(env(safe-area-inset-bottom) + 72px)' }}
             >
               {/* Grab handle */}
               <div className="flex justify-center pt-2.5 pb-1">
@@ -258,6 +284,32 @@ export function FilterSheet({ open, onClose }: FilterSheetProps) {
           </>
         ))}
     </AnimatePresence>
+  );
+}
+
+interface SortOptionProps {
+  label: string;
+  selected: boolean;
+  isDark: boolean;
+  onClick: () => void;
+}
+
+function SortOption({ label, selected, isDark, onClick }: SortOptionProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors ${
+        selected
+          ? 'bg-cyan-500 text-white'
+          : isDark
+            ? 'bg-slate-700/60 text-slate-200 hover:bg-slate-700'
+            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+      }`}
+    >
+      {label}
+      {selected && <Check size={15} />}
+    </button>
   );
 }
 
@@ -285,8 +337,8 @@ function CategoryChip({ label, active, isDark, onClick, tone }: CategoryChipProp
         active
           ? activeClass
           : isDark
-          ? 'bg-slate-700/60 text-slate-200 hover:bg-slate-700'
-          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            ? 'bg-slate-700/60 text-slate-200 hover:bg-slate-700'
+            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
       }`}
     >
       {label}
@@ -310,8 +362,8 @@ function SourceRow({ name, logo, selected, isDark, onClick }: SourceRowProps) {
         selected
           ? 'bg-cyan-500/10 ring-1 ring-cyan-500/40'
           : isDark
-          ? 'hover:bg-slate-700/60'
-          : 'hover:bg-gray-100'
+            ? 'hover:bg-slate-700/60'
+            : 'hover:bg-gray-100'
       }`}
     >
       {logo ? (
@@ -339,8 +391,8 @@ function SourceRow({ name, logo, selected, isDark, onClick }: SourceRowProps) {
           selected
             ? 'bg-cyan-500 border-cyan-500 text-white'
             : isDark
-            ? 'border-slate-600'
-            : 'border-gray-300'
+              ? 'border-slate-600'
+              : 'border-gray-300'
         }`}
       >
         {selected && <Check size={13} />}

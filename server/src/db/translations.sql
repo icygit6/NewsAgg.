@@ -24,3 +24,22 @@ CREATE TABLE IF NOT EXISTS translations (
 );
 
 CREATE INDEX IF NOT EXISTS idx_translations_article ON translations(article_id);
+
+-- Feed cards use a separate cache so preview-only translations cannot replace
+-- a full article translation with NULL content.
+CREATE TABLE IF NOT EXISTS article_preview_translations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  article_id TEXT NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
+  lang VARCHAR(10) NOT NULL,
+  title TEXT,
+  description TEXT,
+  ai_summary TEXT,
+  source_hash VARCHAR(64) NOT NULL,
+  provider VARCHAR(32) NOT NULL,
+  model_version VARCHAR(128) NOT NULL,
+  translated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(article_id, lang)
+);
+
+CREATE INDEX IF NOT EXISTS idx_preview_translations_article
+  ON article_preview_translations(article_id);

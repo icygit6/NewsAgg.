@@ -1,20 +1,22 @@
+import { useUiText } from '../../i18n/uiText';
 import { Link } from 'react-router';
 import { Sun, Moon } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { BrandLogo } from '../ui/BrandLogo';
 import { SearchBox } from './SearchBox';
 
-/** Mobile top bar (hidden ≥md): brand, search and theme toggle. Filters live
+/** Mobile/tablet top bar (hidden ≥lg): brand, search and theme toggle. Filters live
  * in the FeedHeader; navigation lives in the BottomTabBar. */
 export function TopBar() {
+  const ui = useUiText();
   const { isDark, toggleTheme } = useApp();
 
   return (
     <div
-      className={`md:hidden sticky top-0 z-40 flex items-center gap-3 px-4 py-2.5 border-b backdrop-blur-xl
-        ${isDark ? 'bg-slate-950/90 border-slate-800' : 'bg-white/90 border-slate-200'}`}
+      className={`sticky top-0 z-40 flex items-center gap-3 border-b px-4 py-2.5 backdrop-blur-xl lg:hidden
+        ${isDark ? 'border-slate-800 bg-slate-950/95' : 'border-slate-200 bg-white/95'}`}
     >
-      <Link to="/" className="shrink-0" aria-label="NewsAgg home">
+      <Link to="/" className="shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500" aria-label={ui("NewsAgg home")}>
         <BrandLogo showWordmark={false} markClassName="w-8 h-8" />
       </Link>
       <div className="flex-1 min-w-0">
@@ -22,8 +24,8 @@ export function TopBar() {
       </div>
       <button
         onClick={toggleTheme}
-        className={`shrink-0 p-2 rounded-full ${isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-100'}`}
-        aria-label="Toggle theme"
+        className={`shrink-0 rounded-full p-2 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-100'}`}
+        aria-label={ui("Toggle theme")}
       >
         {isDark ? <Sun size={18} /> : <Moon size={18} />}
       </button>

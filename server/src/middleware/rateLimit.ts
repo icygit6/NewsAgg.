@@ -27,11 +27,33 @@ export const chatLimiter = rateLimit({
 export const postLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
+  keyGenerator: (req: any) => `user:${req.userId}`,
   message: { success: false, message: 'Too many posts — try again later', error: 'Too many posts — try again later' }
+})
+
+export const commentLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  keyGenerator: (req: any) => `user:${req.userId}`,
+  message: { success: false, error: 'Too many comments — try again later' },
+})
+
+export const likeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 120,
+  keyGenerator: (req: any) => `user:${req.userId}`,
+  message: { success: false, error: 'Too many reactions — try again later' },
 })
 
 export const translateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 30,
   message: { success: false, message: 'Too many translation requests — try again later' }
+})
+
+export const accountWriteLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  keyGenerator: (req: any) => `user:${req.userId}`,
+  message: { success: false, error: 'Too many account changes — try again later' },
 })

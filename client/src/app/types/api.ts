@@ -21,6 +21,7 @@ export interface DatasetSnapshot {
   scrapedAt: string | null;
   categories: NewsTopic[];
   aiModels: Record<string, string>;
+  nlpModels?: Array<{ id: string; role: string }>;
   sourceCount: number;
 }
 

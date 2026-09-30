@@ -5,24 +5,57 @@
 @theme {
   --font-sans: 'Nunito', 'Noto Sans TC', 'Noto Sans SC', ui-sans-serif, system-ui, sans-serif;
   --font-poppins: 'Nunito', 'Noto Sans TC', 'Noto Sans SC', ui-sans-serif, system-ui, sans-serif;
+
+  /* Keep legacy cyan/pink/violet utility classes on the current navy/blue
+     identity so every screen shares one accent system. */
+  --color-cyan-50: #eff6ff;
+  --color-cyan-100: #dbeafe;
+  --color-cyan-200: #bfdbfe;
+  --color-cyan-300: #93c5fd;
+  --color-cyan-400: #60a5fa;
+  --color-cyan-500: #2563eb;
+  --color-cyan-600: #1d4ed8;
+  --color-cyan-700: #1e40af;
+  --color-cyan-800: #1e3a8a;
+  --color-cyan-900: #172554;
+  --color-pink-50: #eff6ff;
+  --color-pink-100: #dbeafe;
+  --color-pink-200: #bfdbfe;
+  --color-pink-300: #93c5fd;
+  --color-pink-400: #3b82f6;
+  --color-pink-500: #173a63;
+  --color-pink-600: #102f52;
+  --color-pink-700: #0b2948;
+  --color-pink-800: #09223c;
+  --color-pink-900: #071b30;
+  --color-violet-50: #eff6ff;
+  --color-violet-100: #dbeafe;
+  --color-violet-200: #bfdbfe;
+  --color-violet-300: #93c5fd;
+  --color-violet-400: #60a5fa;
+  --color-violet-500: #1e40af;
+  --color-violet-600: #1e3a8a;
+  --color-violet-700: #172554;
+  --color-violet-800: #142047;
+  --color-violet-900: #101936;
 }
 
 :root {
   --font-size: 16px;
-  --background: #f7f4ee;
+  --background: #f3f6fa;
   --foreground: oklch(0.145 0 0);
-  --card: #fffdfa;
+  --card: #ffffff;
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: #030213;
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.95 0.0058 264.53);
-  --secondary-foreground: #030213;
-  --muted: #ececf0;
-  --muted-foreground: #717182;
-  --accent: #e9ebef;
-  --accent-foreground: #030213;
+  --primary: var(--brand);
+  --primary-foreground: #ffffff;
+  --secondary: #e8eef8;
+  --secondary-foreground: #173a63;
+  --muted: #edf1f6;
+  --muted-foreground: #64748b;
+  --accent: #e4ecf8;
+  --accent-foreground: #173a63;
   --destructive: #d4183d;
   --destructive-foreground: #ffffff;
   --border: rgba(0, 0, 0, 0.1);
@@ -31,7 +64,7 @@
   --switch-background: #cbced4;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --ring: oklch(0.708 0 0);
+  --ring: var(--brand);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -40,12 +73,12 @@
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: #030213;
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar-primary: var(--brand);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e8eef8;
+  --sidebar-accent-foreground: #173a63;
+  --sidebar-border: #d8dee6;
+  --sidebar-ring: var(--brand);
 }
 
 .dark {
@@ -55,19 +88,19 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.145 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
+  --primary: #60a5fa;
+  --primary-foreground: #0f172a;
+  --secondary: #1e293b;
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
+  --accent: #24344d;
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.396 0.141 25.723);
   --destructive-foreground: oklch(0.637 0.237 25.331);
   --border: oklch(0.269 0 0);
   --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
+  --ring: #60a5fa;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
   --chart-1: oklch(0.488 0.243 264.376);
@@ -77,12 +110,12 @@
   --chart-5: oklch(0.645 0.246 16.439);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-primary: #2563eb;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #24344d;
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+  --sidebar-ring: #60a5fa;
 }
 
 @theme inline {
@@ -134,6 +167,18 @@
   body {
     @apply bg-background text-foreground;
     overflow-anchor: auto;
+  }
+
+  /* Skip layout and paint work for feed cards that are well outside the
+     viewport. The intrinsic size keeps the scrollbar stable as cards enter. */
+  .content-auto-card {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 500px;
+  }
+
+  .main-scroll-performance {
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
   }
 
   /**
@@ -200,5 +245,20 @@
     font-size: var(--text-base);
     font-weight: var(--font-weight-normal);
     line-height: 1.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
   }
 }

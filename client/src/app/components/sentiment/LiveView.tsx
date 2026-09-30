@@ -1,3 +1,5 @@
+import { useUiText } from '../../i18n/uiText';
+import { useTitleTranslations } from '../../hooks/useTitleTranslations';
 import { Link } from 'react-router';
 import { Clock3 } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
@@ -32,6 +34,8 @@ const sentimentTextClass: Record<SentimentType, string> = {
 };
 
 export function LiveView({ articles, categoryLabel }: LiveViewProps) {
+  const displayArticles = useTitleTranslations(articles);
+  const ui = useUiText();
   const { t, isDark } = useApp();
   const mutedColor = chartMutedColor(isDark);
   const textColor = chartTextColor(isDark);
@@ -43,24 +47,20 @@ export function LiveView({ articles, categoryLabel }: LiveViewProps) {
           <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center">
             <Clock3 size={13} className="text-white" />
           </div>
-          <h3 className={`font-poppins text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>
-            Live View
-          </h3>
+          <h3 className={`font-poppins text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>{ui("Live View")} </h3>
         </div>
         <span className={`text-[11px] px-2 py-0.5 rounded-full ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-gray-100 text-gray-600'}`}>
-          {articles.length} articles
-        </span>
+          {articles.length} {ui("articles")} </span>
       </div>
 
-      <p className="text-[11px] mb-2" style={{ color: mutedColor }}>
-        Category: {categoryLabel}
+      <p className="text-[11px] mb-2" style={{ color: mutedColor }}>{ui("Category:")} {categoryLabel}
       </p>
 
       <div className="space-y-2.5 max-h-[320px] overflow-y-auto pr-1">
         {articles.length === 0 ? (
           <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{t.noResults}</p>
         ) : (
-          articles.map((article) => (
+          displayArticles.map((article) => (
             <Link
               key={article.url}
               to={`/article/${getArticleId(article)}`}
@@ -70,11 +70,11 @@ export function LiveView({ articles, categoryLabel }: LiveViewProps) {
                 {article.title}
               </p>
               <div className="flex items-center gap-2 mt-1.5 text-xs flex-wrap">
-                <span style={{ color: mutedColor }}>{formatRelativeTime(article.publishedAt)}</span>
+                <span style={{ color: mutedColor }}>{ui(formatRelativeTime(article.publishedAt))}</span>
                 <span className={`${isDark ? 'text-slate-400' : 'text-gray-500'}`}>•</span>
-                <span style={{ color: textColor }}>{article.topic}</span>
+                <span style={{ color: textColor }}>{ui(article.topic)}</span>
                 <span className={`${isDark ? 'text-slate-400' : 'text-gray-500'}`}>•</span>
-                <span className={sentimentTextClass[article.sentiment.type]}>{article.sentiment.type}</span>
+                <span className={sentimentTextClass[article.sentiment.type]}>{t[article.sentiment.type]}</span>
               </div>
             </Link>
           ))

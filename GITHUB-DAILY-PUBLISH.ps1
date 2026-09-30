@@ -2,16 +2,50 @@
 param(
     [switch]$SkipScrape,
     [switch]$ValidateOnly,
+    [switch]$DryRun,
+    [switch]$RotateTunnel,
+    [switch]$ForceEmail,
+    [string]$TestEmailTo = '',
     [string]$ScrapeStatusOverride = ''
 )
 
 $ErrorActionPreference = 'Stop'
+if (-not $DryRun -and -not $ValidateOnly -and -not $TestEmailTo -and (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'logs\daily\primary-enabled.json'))) {
+    throw 'Legacy daily delivery is disabled. NewsAgg Daily Pipeline owns scraper-to-email ordering and deduplication.'
+}
+if ($TestEmailTo) {
+    $parsedRecipient = [System.Net.Mail.MailAddress]::new($TestEmailTo.Trim())
+    if ($parsedRecipient.Address -ne $TestEmailTo.Trim() -or $TestEmailTo -match '[,;\r\n]') {
+        throw 'TestEmailTo must be one plain email address.'
+    }
+    if ($RotateTunnel -or $ForceEmail) { throw 'TestEmailTo cannot rotate the tunnel or force a daily delivery.' }
+    # Process-local override only: never modify the scheduled recipient list.
+    $env:REPORT_EMAIL_TO = $parsedRecipient.Address
+}
 Set-Location -LiteralPath $PSScriptRoot
 
 $logDirectory = Join-Path $PSScriptRoot 'logs'
 New-Item -ItemType Directory -Force -Path $logDirectory | Out-Null
 $runStamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $logFile = Join-Path $logDirectory "daily-publish-$runStamp.log"
+$deliveryStamp = Join-Path $logDirectory 'last-daily-email-date.txt'
+
+function Import-LocalMailEnvironment {
+    # The self-hosted runner and the 05:00 Windows task share this machine.
+    # Prefer the local, gitignored SMTP configuration so a stale GitHub secret
+    # cannot break delivery. Values are never printed to the workflow log.
+    $envFile = Join-Path $PSScriptRoot 'server\.env'
+    if (-not (Test-Path -LiteralPath $envFile)) { return }
+    $allowed = @('SMTP_HOST', 'SMTP_PORT', 'SMTP_SECURE', 'SMTP_USER', 'SMTP_PASS', 'MAIL_FROM')
+    foreach ($line in Get-Content -LiteralPath $envFile) {
+        if ($line -match '^\s*([^#=]+)=(.*)$') {
+            $name = $matches[1].Trim()
+            if ($allowed -contains $name) {
+                [Environment]::SetEnvironmentVariable($name, $matches[2], 'Process')
+            }
+        }
+    }
+}
 
 function Write-RunLog {
     param([string]$Message)
@@ -96,7 +130,7 @@ function Get-PublicUrl {
         Start-Sleep -Seconds 3
         $previousPreference = $ErrorActionPreference
         $ErrorActionPreference = 'Continue'
-        $logs = (& docker compose logs --no-color --tail 200 tunnel 2>&1 | Out-String)
+        $logs = (& docker compose logs --no-color tunnel 2>&1 | Select-String -Pattern 'https://[a-z0-9-]+\.trycloudflare\.com' | Out-String)
         $ErrorActionPreference = $previousPreference
         $matches = @([regex]::Matches($logs, 'https://[a-z0-9-]+\.trycloudflare\.com') |
             ForEach-Object { $_.Value } |
@@ -186,14 +220,15 @@ function Send-DailyEmail {
     $generatedAt = Get-Date -Format 'dd MMMM yyyy, HH:mm'
     $subjectZh = [System.Net.WebUtility]::HtmlDecode('&#27599;&#26085;&#26032;&#32862;&#25688;&#35201;')
     $subject = "NewsAgg Daily Brief | $subjectZh - $freshCount fresh stories"
+    if ($TestEmailTo) { $subject = "[TEST] $subject" }
     $body = @"
 <!doctype html><html><body style="margin:0;background:#eef2ff;font-family:Segoe UI,Arial,sans-serif;color:#172554">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:28px 12px;background:#eef2ff"><tr><td align="center">
 <table role="presentation" width="640" cellspacing="0" cellpadding="0" style="max-width:640px;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 12px 30px rgba(30,64,175,.12)">
-<tr><td style="padding:30px;background:linear-gradient(135deg,#123c88,#2563eb);color:#fff"><div style="font-size:12px;letter-spacing:1.8px;text-transform:uppercase;opacity:.8">Daily intelligence brief &middot; &#27599;&#26085;&#26032;&#32862;&#24773;&#22577;</div><h1 style="margin:8px 0 4px;font-size:30px">NewsAgg is live</h1><div style="opacity:.88">Updated $generatedAt &middot; &#26356;&#26032;&#26178;&#38291; $generatedAt</div></td></tr>
+<tr><td style="padding:30px;background-color:#2563eb;background-image:linear-gradient(135deg,#173a63 0%,#2563eb 100%);color:#fff"><div style="font-size:12px;letter-spacing:1.8px;text-transform:uppercase;opacity:.8">Daily intelligence brief &middot; &#27599;&#26085;&#26032;&#32862;&#24773;&#22577;</div><h1 style="margin:8px 0 4px;font-size:30px">NewsAgg is live</h1><div style="opacity:.88">Updated $generatedAt &middot; &#26356;&#26032;&#26178;&#38291; $generatedAt</div></td></tr>
 <tr><td style="padding:28px">
 <p style="margin-top:0;line-height:1.6">Your new public link is ready. This briefing is generated directly from the latest scraped coverage.<br>&#26032;&#30340;&#20844;&#38283;&#36899;&#32080;&#24050;&#24314;&#31435;&#65292;&#26412;&#25688;&#35201;&#30452;&#25509;&#26681;&#25818;&#26368;&#26032;&#25847;&#21462;&#30340;&#26032;&#32862;&#20839;&#23481;&#29986;&#29983;&#12290;</p>
-<p style="text-align:center;margin:26px 0"><a href="$safeUrl" style="display:inline-block;padding:14px 26px;border-radius:999px;background:#2563eb;color:#fff;text-decoration:none;font-weight:700">Open NewsAgg &middot; &#38283;&#21855; NewsAgg</a></p>
+<p style="text-align:center;margin:26px 0"><a href="$safeUrl" style="display:inline-block;padding:14px 26px;border-radius:999px;background-color:#2563eb;background-image:linear-gradient(90deg,#173a63 0%,#2563eb 100%);color:#fff;text-decoration:none;font-weight:700;box-shadow:0 6px 16px rgba(37,99,235,.24)">Open NewsAgg &middot; &#38283;&#21855; NewsAgg</a></p>
 <p style="text-align:center;font-size:12px;color:#64748b;word-break:break-all">$safeUrl</p>
 <table role="presentation" width="100%" cellspacing="8" cellpadding="0"><tr>
 <td style="padding:16px;background:#eff6ff;border-radius:12px;text-align:center"><div style="font-size:26px;font-weight:800;color:#1d4ed8">$DatabaseTotal</div><div style="font-size:12px;color:#64748b">Database stories<br>&#36039;&#26009;&#24235;&#26032;&#32862;</div></td>
@@ -224,6 +259,7 @@ function Send-DailyEmail {
 
         $client = [System.Net.Mail.SmtpClient]::new($smtpHost, $smtpPort)
         try {
+            $client.Timeout = 30000
             $client.EnableSsl = $true
             $client.UseDefaultCredentials = $false
             $smtpPassword = $env:SMTP_PASS -replace '\s', ''
@@ -240,15 +276,54 @@ function Send-DailyEmail {
 
 try {
     Write-RunLog 'Starting the NewsAgg daily publish workflow.'
+    Import-LocalMailEnvironment
+
+    $today = Get-Date -Format 'yyyy-MM-dd'
+    if (-not $TestEmailTo -and -not $ValidateOnly -and -not $DryRun -and -not $ForceEmail -and (Test-Path -LiteralPath $deliveryStamp)) {
+        $lastDelivery = (Get-Content -LiteralPath $deliveryStamp -Raw).Trim()
+        if ($lastDelivery -eq $today) {
+            Write-RunLog "Daily email was already delivered on $today; skipping duplicate run."
+            exit 0
+        }
+    }
     Wait-DockerEngine
 
-    if ($ValidateOnly) {
+    if ($ValidateOnly -or $DryRun) {
         if ((Invoke-Docker -Arguments @('compose', 'config', '--quiet')) -ne 0) {
             throw 'Docker Compose configuration is invalid.'
         }
         Wait-NewsApi
         $validationSnapshot = Get-NewsSnapshot
+        if ($DryRun) {
+            $validationDigest = Get-DigestSnapshot
+            Write-RunLog "Dry-run: digest has $($validationDigest.totalCount) fresh stories; SMTP configuration is present: $([bool]($env:SMTP_USER -and $env:SMTP_PASS)). No email sent and no tunnel rotation."
+        }
         Write-RunLog "Validation passed: API is healthy with $($validationSnapshot.totalCount) articles. Tunnel and email were not changed."
+        exit 0
+    }
+
+    if ($TestEmailTo) {
+        # Exercise the real digest and SMTP path, without scraping, rebuilding,
+        # rotating tunnels, or suppressing the next scheduled daily delivery.
+        Wait-NewsApi
+        $testUrl = $env:NEWSAGG_STABLE_URL
+        if (-not $testUrl -and (Test-Path -LiteralPath '.env')) {
+            $stableLine = Get-Content -LiteralPath '.env' | Where-Object { $_ -match '^NEWSAGG_STABLE_URL=' } | Select-Object -Last 1
+            if ($stableLine) { $testUrl = ($stableLine -split '=', 2)[1].Trim().Trim('"').Trim("'") }
+        }
+        if (-not $testUrl) { throw 'Configure NEWSAGG_STABLE_URL before sending a test email.' }
+        $testOrigin = [Uri]$testUrl
+        if ($testOrigin.Scheme -ne 'https' -or $testOrigin.AbsolutePath -ne '/' -or $testOrigin.UserInfo -or $testOrigin.Query -or $testOrigin.Fragment -or -not $testOrigin.IsDefaultPort) {
+            throw 'Test email URL must be a bare HTTPS origin.'
+        }
+        $publicHealth = Invoke-WebRequest -UseBasicParsing -Uri "$($testUrl.TrimEnd('/'))/health" -TimeoutSec 20
+        if ($publicHealth.StatusCode -ne 200) { throw 'Public site health check failed.' }
+        $testSnapshot = Get-NewsSnapshot
+        $testDigest = Get-DigestSnapshot
+        $lastRun = (Invoke-RestMethod -Uri 'http://127.0.0.1:3000/api/stats/scraper-status' -TimeoutSec 10).data
+        $testStatus = if ($lastRun) { "$($lastRun.status) (latest run)" } else { 'No recorded run' }
+        Send-DailyEmail -PublicUrl $testUrl -Snapshot $testDigest -DatabaseTotal ([int]$testSnapshot.totalCount) -ScrapeStatus $testStatus
+        Write-RunLog "SMTP accepted one test email to $env:REPORT_EMAIL_TO. Inbox delivery is not yet confirmed. Daily delivery stamp and scheduled recipients were not changed."
         exit 0
     }
 
@@ -262,7 +337,7 @@ try {
     $scrapeStatus = if ($ScrapeStatusOverride) { $ScrapeStatusOverride } else { 'Skipped' }
     if (-not $SkipScrape) {
         Write-RunLog 'Running the scraper.'
-        $scrapeExit = Invoke-Docker -Arguments @('compose', '--profile', 'scraper', 'run', '--rm', 'scraper')
+        $scrapeExit = Invoke-Docker -Arguments @('compose', '--profile', 'scraper', 'run', '--build', '--rm', 'scraper')
         $scrapeStatus = if ($scrapeExit -eq 0) { 'Completed' } else { "Failed ($scrapeExit)" }
     }
 
@@ -274,13 +349,35 @@ try {
     $after = Get-NewsSnapshot
     $databaseTotal = [int]$after.totalCount
     $digest = Get-DigestSnapshot
+    if (-not $ScrapeStatusOverride -and $scrapeStatus -notlike 'Failed*') {
+        try {
+            $lastRun = (Invoke-RestMethod -Uri 'http://127.0.0.1:3000/api/stats/scraper-status' -TimeoutSec 10).data
+            $scrapeStatus = if ($lastRun) { "$($lastRun.status) (latest run)" } else { 'No recorded run' }
+        } catch { $scrapeStatus = 'Latest run status unavailable' }
+    }
 
-    Write-RunLog 'Rotating the free temporary Cloudflare Quick Tunnel.'
-    if ((Invoke-Docker -Arguments @('compose', 'up', '-d', '--force-recreate', '--no-deps', 'tunnel')) -ne 0) {
-        throw 'Failed to rotate the temporary Cloudflare Quick Tunnel.'
+    Write-RunLog 'Ensuring the Cloudflare Quick Tunnel is running; preserve its URL by default.'
+    $tunnelArguments = @('compose', 'up', '-d', '--no-deps', 'tunnel')
+    if ($RotateTunnel) { $tunnelArguments += '--force-recreate' }
+    if ((Invoke-Docker -Arguments $tunnelArguments) -ne 0) {
+        throw 'Failed to start the temporary Cloudflare Quick Tunnel.'
     }
     $publicUrl = Get-PublicUrl
     Write-RunLog "Public URL: $publicUrl"
+    # Optional stable free workers.dev front door; no new hostname is sent to
+    # Google on each Quick Tunnel change. Requires one-time owner setup.
+    $stableUrl = $env:NEWSAGG_STABLE_URL
+    if (-not $stableUrl -and (Test-Path -LiteralPath '.env')) {
+        $stableLine = Get-Content -LiteralPath '.env' | Where-Object { $_ -match '^NEWSAGG_STABLE_URL=' } | Select-Object -First 1
+        if ($stableLine) { $stableUrl = ($stableLine -split '=', 2)[1].Trim().Trim('"').Trim("'") }
+    }
+    if ($stableUrl) {
+        $parsedStable = [Uri]$stableUrl
+        if ($parsedStable.Scheme -ne 'https' -or $parsedStable.AbsolutePath -ne '/' -or $parsedStable.Query -or $parsedStable.UserInfo) { throw 'NEWSAGG_STABLE_URL must be a bare HTTPS origin.' }
+        & (Join-Path $PSScriptRoot 'UPDATE-STABLE-ORIGIN.ps1') -TunnelUrl $publicUrl
+        $publicUrl = $stableUrl.TrimEnd('/')
+        Write-RunLog "Stable public URL: $publicUrl"
+    }
 
     # Account verification/reset messages must point at the current temporary
     # hostname. Shell variables override the localhost defaults from .env for
@@ -293,6 +390,7 @@ try {
     Wait-NewsApi
 
     Send-DailyEmail -PublicUrl $publicUrl -Snapshot $digest -DatabaseTotal $databaseTotal -ScrapeStatus $scrapeStatus
+    Set-Content -LiteralPath $deliveryStamp -Value $today -Encoding ASCII
     Write-RunLog "Email delivered to $env:REPORT_EMAIL_TO"
 
     if ($scrapeStatus -like 'Failed*') { exit 2 }

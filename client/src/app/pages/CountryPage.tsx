@@ -59,8 +59,8 @@ export function CountryPage() {
 
       {articles.length > 0 ? (
         <div className="grid grid-cols-1 gap-5">
-          {articles.map((article, i) => (
-            <NewsCard key={article.url} article={article} index={i} />
+          {articles.map((article) => (
+            <NewsCard key={article.url} article={article} />
           ))}
         </div>
       ) : (

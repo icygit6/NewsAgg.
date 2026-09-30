@@ -1,11 +1,7 @@
 name: Scraper
 
 on:
-  schedule:
-    # GitHub cron is UTC. 19:00 UTC = 03:00 Asia/Taipei (next day).
-    - cron: "0 19 * * *"
-    # Weekly cleanup: Sunday 04:00 Asia/Taipei.
-    - cron: "0 20 * * 6"
+  # Nightly ingestion is owned exclusively by Windows Task Scheduler.
   workflow_dispatch:
     inputs:
       job:
@@ -14,9 +10,9 @@ on:
         options: [scrape, cleanup, backfill-lang]
         default: scrape
       target:
-        description: "Articles per category per source (default 20)"
+        description: "Articles per category per source (default 10)"
         type: number
-        default: 20
+        default: 10
 
 concurrency:
   group: newsagg-scraper
@@ -26,31 +22,26 @@ concurrency:
 # for the private repository and reuses locally cached Docker images and models.
 jobs:
   scrape:
-    if: >-
-      (github.event_name == 'schedule' && github.event.schedule == '0 19 * * *') ||
-      (github.event_name == 'workflow_dispatch' && inputs.job == 'scrape')
+    if: github.event_name == 'workflow_dispatch' && inputs.job == 'scrape'
     runs-on: [self-hosted, Windows, X64]
     timeout-minutes: 360
     steps:
-      - name: Scrape all sources on the server laptop
+      - name: Check pipeline (ingestion is owned by Windows)
         shell: powershell
         run: |
           & powershell.exe -NoProfile -ExecutionPolicy Bypass `
-            -File 'D:\Website\RUN-SCRAPER.ps1' `
-            -Target ${{ inputs.target || 20 }}
+            -File 'D:\Website\RUN-NEWSAGG-DAILY.ps1' -DryRun
 
   cleanup:
-    if: >-
-      (github.event_name == 'schedule' && github.event.schedule == '0 20 * * 6') ||
-      (github.event_name == 'workflow_dispatch' && inputs.job == 'cleanup')
+    if: github.event_name == 'workflow_dispatch' && inputs.job == 'cleanup'
     runs-on: [self-hosted, Windows, X64]
     timeout-minutes: 30
     steps:
-      - name: Delete stale articles and vacuum
+      - name: Preview stale articles (no deletion)
         shell: powershell
         run: |
           Set-Location -LiteralPath 'D:\Website'
-          docker compose --profile scraper run --rm scraper python cleanup.py --days 45 --commit --vacuum
+          docker compose --profile scraper run --rm scraper python cleanup.py --days 45
           if ($LASTEXITCODE -ne 0) { throw "Cleanup failed with exit code $LASTEXITCODE." }
 
   backfill-lang:

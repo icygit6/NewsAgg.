@@ -62,3 +62,14 @@ export async function getPersonalizedTopics(userId: string): Promise<string[]> {
     return []
   }
 }
+
+export async function clearUserInterests(userId: string): Promise<void> {
+  if (!process.env.MEM0_API_KEY) return
+  try {
+    const mem0 = await getClient()
+    await mem0.deleteAll({ user_id: userId })
+  } catch (err: any) {
+    logger.error({ err: err?.message }, '[mem0.clearUserInterests]')
+    throw err
+  }
+}

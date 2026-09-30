@@ -42,5 +42,7 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 # 告知 Docker 此容器會使用 80 port
 EXPOSE 80
 
+# Static config needs no package-manifest lookup or runtime templating.
+ENTRYPOINT []
 # 啟動 Nginx
 CMD ["nginx", "-g", "daemon off;"]

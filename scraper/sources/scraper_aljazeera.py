@@ -16,6 +16,7 @@ SPEC = SourceSpec(
     key="aljazeera",
     name="Al Jazeera",
     language="en",
+    content_selectors=['.wysiwyg'],
     categories={
         "Sport":    ["https://www.aljazeera.com/sports/"],
         "Health":   ["https://www.aljazeera.com/tag/health/"],

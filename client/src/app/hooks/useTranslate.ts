@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { Language } from '../i18n/translations';
 import { useApp } from '../contexts/AppContext';
 import type { NewsArticle } from '../types/article';
 import {
@@ -17,6 +18,8 @@ export interface UseTranslateResult {
   isAutoTranslated: boolean;
   error: string | null;
   retry: () => void;
+  selectedLanguage: Language;
+  setSelectedLanguage: (language: Language) => void;
 }
 
 // Module-level cache so revisiting an article in a language already fetched is
@@ -25,8 +28,8 @@ const cache = new Map<string, ArticleTranslation>();
 
 // Best-effort: is the article already written in the target language? Mirrors
 // the backend's normalizeStoredLang so we can skip a needless request.
-function articleMatchesLang(article: NewsArticle, target: ApiLang): boolean {
-  const l = (article.language ?? '').trim().toLowerCase();
+export function articleMatchesLang(article: { language?: string | null; source?: { language?: string | null } }, target: ApiLang): boolean {
+  const l = (article.language || article.source?.language || '').trim().toLowerCase();
   if (!l) return false;
   if (target === 'en') return l === 'en' || l.startsWith('en-');
   if (target === 'id') return l === 'id' || l.startsWith('id-');
@@ -37,12 +40,15 @@ function articleMatchesLang(article: NewsArticle, target: ApiLang): boolean {
 
 /**
  * Returns the article's effective (possibly translated) text fields.
- * When translateMode is off — or the article is already in the selected
- * language — the originals are returned untouched.
+ * Defaults to the website language. A pill override belongs only to this article;
+ * navigating to another article or changing the website language resets it.
  */
 export function useTranslate(article: NewsArticle | null): UseTranslateResult {
-  const { language, translateMode } = useApp();
-  const target = LANGUAGE_API_CODE[language];
+  const { language } = useApp();
+  const [selection, setSelection] = useState<{ articleId: string; siteLanguage: Language; language: Language } | null>(null);
+  const selectedLanguage = selection?.articleId === article?.id && selection?.siteLanguage === language ? selection.language : language;
+  const target = LANGUAGE_API_CODE[selectedLanguage];
+  useEffect(() => setSelection(null), [article?.id, language]);
 
   const [override, setOverride] = useState<ArticleTranslation | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -52,13 +58,13 @@ export function useTranslate(article: NewsArticle | null): UseTranslateResult {
   useEffect(() => {
     setError(null);
 
-    if (!article || !translateMode || articleMatchesLang(article, target)) {
+    if (!article || articleMatchesLang(article, target)) {
       setOverride(null);
       setIsLoading(false);
       return;
     }
 
-    const key = `${article.id}:${target}`;
+    const key = `${article.id}:${article.contentHash || article.modifiedAt || article.scrapedAt}:${target}`;
     const cached = cache.get(key);
     if (cached) {
       setOverride(cached);
@@ -74,12 +80,14 @@ export function useTranslate(article: NewsArticle | null): UseTranslateResult {
         if (!active) return;
         if (result && result.autoTranslated) {
           cache.set(key, result);
+          if (cache.size > 100) cache.delete(cache.keys().next().value!);
           setOverride(result);
         } else {
-          if (!result) setError('translation_failed');
+          setError('translation_failed');
           setOverride(null);
         }
       })
+      .catch(() => { if (active) { setError('translation_failed'); setOverride(null); } })
       .finally(() => {
         if (active) setIsLoading(false);
       });
@@ -87,11 +95,17 @@ export function useTranslate(article: NewsArticle | null): UseTranslateResult {
     return () => {
       active = false;
     };
-  }, [article, translateMode, target, attempt]);
+  }, [article, target, attempt]);
 
   const retry = () => setAttempt((value) => value + 1);
+  const controls = {
+    selectedLanguage,
+    setSelectedLanguage: (next: Language) => {
+      if (article) setSelection({ articleId: article.id, siteLanguage: language, language: next });
+    },
+  };
 
-  if (override && override.autoTranslated) {
+  if (override?.autoTranslated && override.articleId === article?.id && override.lang === target && article && !articleMatchesLang(article, target)) {
     return {
       title: override.title ?? article?.title ?? '',
       description: override.description ?? article?.description ?? null,
@@ -101,6 +115,7 @@ export function useTranslate(article: NewsArticle | null): UseTranslateResult {
       isAutoTranslated: true,
       error,
       retry,
+      ...controls,
     };
   }
 
@@ -113,5 +128,6 @@ export function useTranslate(article: NewsArticle | null): UseTranslateResult {
     isAutoTranslated: false,
     error,
     retry,
+    ...controls,
   };
 }

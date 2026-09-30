@@ -1,23 +1,30 @@
 import { Outlet } from 'react-router';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { AppShell } from '../components/shell/AppShell';
-import { ProfileSidebar } from '../components/ProfileSidebar';
 import { ScrollToTop } from '../components/ScrollToTop';
 import { VerifyEmailBanner } from '../components/auth/VerifyEmailBanner';
 
+const ProfileSidebar = lazy(() =>
+  import('../components/ProfileSidebar').then((module) => ({ default: module.ProfileSidebar })),
+);
+
 export function Root() {
-  const { isDark } = useApp();
+  const { isDark, sidebarOpen } = useApp();
+  const [hasOpenedSidebar, setHasOpenedSidebar] = useState(sidebarOpen);
+
+  useEffect(() => {
+    if (sidebarOpen) setHasOpenedSidebar(true);
+  }, [sidebarOpen]);
 
   return (
     <div
-      className={`min-h-screen font-sans ${isDark ? 'text-slate-100' : 'text-slate-900'}`}
+      className={`h-dvh flex flex-col overflow-hidden font-sans ${isDark ? 'text-slate-100' : 'text-slate-900'}`}
       style={{
-        // Brand background: subtle cyan/pink (light) and cyan/violet (dark)
-        // radial blobs over the base surface — the old NewsAgg identity.
+        // Quiet neutral canvas; local components provide the hierarchy.
         background: isDark
-          ? 'radial-gradient(ellipse at 10% 20%, rgba(6, 182, 212, 0.08) 0%, transparent 50%), radial-gradient(ellipse at 85% 15%, rgba(139, 92, 246, 0.10) 0%, transparent 50%), #0a0f1e'
-          : 'radial-gradient(ellipse at 10% 15%, rgba(6, 182, 212, 0.18) 0%, transparent 45%), radial-gradient(ellipse at 85% 10%, rgba(236, 72, 153, 0.12) 0%, transparent 45%), #f0fafb',
-        backgroundAttachment: 'fixed',
+          ? 'linear-gradient(180deg, #0b1220 0%, #0f172a 100%)'
+          : 'linear-gradient(180deg, #f8fafc 0%, #f3f6fa 100%)',
       }}
     >
       <VerifyEmailBanner />
@@ -27,7 +34,11 @@ export function Root() {
       </AppShell>
 
       {/* Global overlays */}
-      <ProfileSidebar />
+      {hasOpenedSidebar && (
+        <Suspense fallback={null}>
+          <ProfileSidebar />
+        </Suspense>
+      )}
       <ScrollToTop />
     </div>
   );

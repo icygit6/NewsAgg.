@@ -3,6 +3,12 @@
 server/.env
 .newsagg-mail.json
 .newsagg-mail-credential.xml
+**/.wrangler/
+**/.dev.vars
+server/.hf.env
+baogao/
+.codex_tmp/
+*.png
 
 # Local dependency/build/cache output
 client/node_modules/

@@ -1,5 +1,6 @@
+import { useUiText } from '../i18n/uiText';
 import { ListSkeleton } from '../components/ui/ContentSkeleton';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { MessageSquareQuote } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
@@ -10,14 +11,16 @@ import { PostCard } from '../components/posts/PostCard';
 /** Full posts feed (/posts): composer on top for signed-in users, infinite
  * list below. Supports ?compose=1&attach=<articleId> from "Quote this". */
 export function PostsPage() {
+  const ui = useUiText();
   const { t, isDark, isAuthenticated, setSidebarOpen } = useApp();
   const [searchParams, setSearchParams] = useSearchParams();
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const [category, setCategory] = useState('all');
 
   const compose = searchParams.get('compose') === '1';
   const attachId = searchParams.get('attach') ?? undefined;
 
-  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = usePosts({});
+  const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = usePosts({ sort: 'latest', category });
   const posts = data?.pages.flatMap((p) => p.posts) ?? [];
 
   useEffect(() => {
@@ -28,7 +31,7 @@ export function PostsPage() {
       (entries) => {
         if (entries[0]?.isIntersecting && !isFetchingNextPage) fetchNextPage();
       },
-      { rootMargin: '200px' }
+      { rootMargin: '200px' },
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
@@ -38,9 +41,19 @@ export function PostsPage() {
 
   return (
     <div className="px-4 md:px-6 py-6 space-y-4">
-      <h1 className={`font-poppins text-2xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+      <h1
+        className={`font-poppins text-2xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}
+      >
         {t.posts}
       </h1>
+      <div className="flex gap-2 items-center">
+        <span className="text-sm">{ui("Newest first")}</span>
+        <select aria-label={ui("Filter posts by category")} value={category} onChange={e => setCategory(e.target.value)} className="rounded-lg border p-2 text-sm bg-transparent">
+          <option value="all">{ui("All categories")}</option>
+          {['General','Sport','Health','Business','World','Politics','Lifestyle','Science','Climate'].map(c => <option key={c} value={c}>{ui(c)}</option>)}
+        </select>
+        <button onClick={()=>refetch()} className="ml-auto text-sm text-cyan-500">{ui("Refresh")}</button>
+      </div>
 
       {isAuthenticated ? (
         <PostComposer attachId={attachId} onAttachClear={clearAttach} autoFocus={compose} />
@@ -53,15 +66,19 @@ export function PostsPage() {
               : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
           }`}
         >
-          <MessageSquareQuote size={16} className="shrink-0 text-[var(--brand,#06b6d4)]" />
+          <MessageSquareQuote size={16} className="shrink-0 text-[var(--brand,#2563eb)]" />
           {t.signInToPost}
         </button>
       )}
 
       {isLoading && <ListSkeleton label={t.loading} />}
 
-      {!isLoading && posts.length === 0 && (
-        <div className={`text-center py-16 rounded-2xl border ${isDark ? 'border-slate-800 text-slate-400' : 'border-slate-200 text-slate-500'}`}>
+      {isError && <div role="alert" className="rounded-xl border border-rose-300 p-4 text-rose-500">{ui("Could not load posts.")} <button onClick={()=>refetch()} className="underline">{ui("Retry")}</button></div>}
+
+      {!isLoading && !isError && posts.length === 0 && (
+        <div
+          className={`text-center py-16 rounded-2xl border ${isDark ? 'border-slate-800 text-slate-400' : 'border-slate-200 text-slate-500'}`}
+        >
           <MessageSquareQuote size={40} className="mx-auto mb-3 opacity-50" />
           <p className="text-sm">{t.noPostsYet}</p>
         </div>
@@ -74,7 +91,9 @@ export function PostsPage() {
       </div>
 
       {hasNextPage && (
-        <div ref={sentinelRef} className="min-h-4">{isFetchingNextPage && <ListSkeleton count={2} label={t.loading} />}</div>
+        <div ref={sentinelRef} className="min-h-4">
+          {isFetchingNextPage && <ListSkeleton count={2} label={t.loading} />}
+        </div>
       )}
     </div>
   );

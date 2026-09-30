@@ -9,13 +9,16 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000                      # operational override; .env has no PORT
-      CLIENT_URL: "${CLIENT_URL:-http://localhost:8080}"   # comma-separated CORS origins
-      PUBLIC_CLIENT_URL: "${PUBLIC_CLIENT_URL:-http://localhost:8080}"
+      CLIENT_URL: "${NEWSAGG_STABLE_URL:-${CLIENT_URL:-http://localhost:8080}}"
+      PUBLIC_CLIENT_URL: "${NEWSAGG_STABLE_URL:-${PUBLIC_CLIENT_URL:-http://localhost:8080}}"
       TRUST_PROXY: "${TRUST_PROXY:-1}"
       GEMINI_TRANSLATE_MODEL: "${GEMINI_TRANSLATE_MODEL:-gemini-3.5-flash-lite}"
       GROQ_CHAT_MODEL: "${GROQ_CHAT_MODEL:-openai/gpt-oss-120b}"
-      GROQ_CHAT_FALLBACK_MODEL: "${GROQ_CHAT_FALLBACK_MODEL:-llama-3.3-70b-versatile}"
+      GROQ_CHAT_FALLBACK_MODEL: "${GROQ_CHAT_FALLBACK_MODEL:-openai/gpt-oss-20b}"
       TWELVE_DATA_API_KEY: "${TWELVE_DATA_API_KEY:-}"
+      TURNSTILE_SECRET: "${TURNSTILE_SECRET:-}"
+      TURNSTILE_SITE_KEY: "${TURNSTILE_SITE_KEY:-}"
+      LOCAL_AI_URL: http://local-ai:8090
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
       interval: 15s
@@ -27,6 +30,8 @@ services:
       - market_cache:/app/.cache
 
   client:
+    entrypoint: ["nginx", "-g", "daemon off;"]
+    command: []
     build:
       context: ./client
       dockerfile: Dockerfile
@@ -52,12 +57,40 @@ services:
   # Free temporary Quick Tunnel. The public trycloudflare.com URL changes when
   # this container is recreated; no Cloudflare account or custom domain needed.
   tunnel:
-    image: cloudflare/cloudflared:latest
-    command: tunnel --no-autoupdate --url http://client:80
+    # Pinned for reproducible deploys. Quick Tunnels remain a free preview
+    # service; a named tunnel can be supplied later without changing the app.
+    image: cloudflare/cloudflared:2026.9.0
+    command: tunnel --no-autoupdate --retries 3 --metrics 0.0.0.0:2000 --url http://client:80
     depends_on:
       client:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "cloudflared", "tunnel", "--metrics", "0.0.0.0:2000", "ready"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     restart: unless-stopped
+
+  local-ai:
+    build:
+      context: ./scraper
+      dockerfile: Dockerfile.ai
+    command: ["python", "local_ai.py"]
+    env_file:
+      - path: ./server/.hf.env
+        required: false
+    environment:
+      AI_CPU_THREADS: "2"
+    volumes:
+      - hf_cache:/root/.cache/huggingface
+    restart: unless-stopped
+    mem_limit: 4g
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8090/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   scraper:
     build:
@@ -70,6 +103,7 @@ services:
         required: false
     environment:
       GEMINI_TRANSLATE_MODEL: "${GEMINI_TRANSLATE_MODEL:-gemini-3.5-flash-lite}"
+      LOCAL_AI_URL: http://local-ai:8090
     volumes:
       - hf_cache:/root/.cache/huggingface
     profiles:

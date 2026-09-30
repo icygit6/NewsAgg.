@@ -1,79 +1,53 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApp } from '../contexts/AppContext';
 import { apiFetch } from '../lib/apiFetch';
 import type { Bookmark } from '../services/bookmarkService';
 import type { NewsArticle } from '../types/article';
 import { getArticleId } from '../services/newsAPI';
 
-interface BookmarkListResponse {
-  success: boolean;
-  data?: Bookmark[];
-}
+type IdRow = Pick<Bookmark, 'id' | 'article_id'>;
+type Filters = { search?: string; collection?: string; source?: string; topic?: string; status?: string };
+const unwrap = <T,>(json: { success: boolean; data?: T; error?: string }): T => {
+  if (!json.success || json.data === undefined) throw new Error(json.error || 'Request failed');
+  return json.data;
+};
 
-interface BookmarkAddResponse {
-  success: boolean;
-  data?: Bookmark;
-  error?: string;
-}
-
-/** Server-state bookmarks: one shared cache per signed-in user, optimistic
- * removal, and 401s funnelled through apiFetch's global sign-out. */
 export function useBookmarks() {
   const { user, isAuthenticated } = useApp();
-  const queryClient = useQueryClient();
-  const queryKey = ['bookmarks', user?.id ?? null];
-
-  const { data: bookmarks = [], isLoading, isError } = useQuery({
-    queryKey,
-    queryFn: async () => {
-      const json = await apiFetch<BookmarkListResponse>('/api/bookmarks');
-      return json.success && json.data ? json.data : [];
-    },
-    enabled: isAuthenticated,
-    staleTime: 60 * 1000,
-  });
-
+  const qc = useQueryClient();
+  const key = ['bookmark-ids', user?.id ?? null];
+  const ids = useQuery({ queryKey: key, queryFn: async () => unwrap(await apiFetch<{success:boolean;data?:IdRow[];error?:string}>('/api/bookmarks/ids')), enabled: isAuthenticated, staleTime: 60_000 });
+  const refresh = () => { qc.invalidateQueries({ queryKey: ['bookmark-list'] }); qc.invalidateQueries({ queryKey: ['bookmark-meta'] }); };
   const add = useMutation({
-    mutationFn: (article: NewsArticle) =>
-      apiFetch<BookmarkAddResponse>('/api/bookmarks', {
-        method: 'POST',
-        body: JSON.stringify({
-          articleId: getArticleId(article),
-          articleTitle: article.title,
-          articleUrl: article.url,
-          urlToImage: article.urlToImage,
-          sourceName: article.source.name,
-          topic: article.topic,
-        }),
-      }),
-    onSuccess: (result) => {
-      if (result.success && result.data) {
-        queryClient.setQueryData<Bookmark[]>(queryKey, (old = []) => [result.data!, ...old]);
-      }
-    },
+    mutationFn: async (article: NewsArticle): Promise<Bookmark> => unwrap<Bookmark>(await apiFetch<any>('/api/bookmarks', { method:'POST', body:JSON.stringify({ articleId:getArticleId(article), articleTitle:article.title, articleUrl:article.url, urlToImage:article.urlToImage || '', sourceName:article.source.name, topic:article.topic }) })),
+    onSuccess: (b: Bookmark) => { qc.setQueryData<IdRow[]>(key, (old=[]) => [{id:b.id,article_id:b.article_id}, ...old.filter(x=>x.article_id!==b.article_id)]); refresh(); },
   });
-
   const remove = useMutation({
-    mutationFn: (bookmarkId: number) =>
-      apiFetch<{ success: boolean }>(`/api/bookmarks/${bookmarkId}`, { method: 'DELETE' }),
-    onMutate: async (bookmarkId) => {
-      await queryClient.cancelQueries({ queryKey });
-      const previous = queryClient.getQueryData<Bookmark[]>(queryKey);
-      queryClient.setQueryData<Bookmark[]>(queryKey, (old = []) =>
-        old.filter((b) => b.id !== bookmarkId)
-      );
-      return { previous };
-    },
-    onError: (_err, _id, context) => {
-      if (context?.previous) queryClient.setQueryData(queryKey, context.previous);
-    },
+    mutationFn: async (bookmarkId:number) => { await apiFetch(`/api/bookmarks/${bookmarkId}`, {method:'DELETE'}); return bookmarkId; },
+    onSuccess: (bookmarkId) => { qc.setQueryData<IdRow[]>(key, (old=[])=>old.filter(x=>x.id!==bookmarkId)); refresh(); },
   });
+  const rows = ids.data ?? [];
+  return { bookmarks: rows, isLoading:ids.isLoading, isError:ids.isError, add, remove, isBookmarked:(articleId:string)=>rows.some(b=>b.article_id===articleId), bookmarkIdFor:(articleId:string)=>rows.find(b=>b.article_id===articleId)?.id ?? null };
+}
 
-  const isBookmarked = (articleId: string) =>
-    bookmarks.some((b) => b.article_id === articleId);
+export function useBookmarkList(filters: Filters = {}) {
+  const sp = new URLSearchParams();
+  Object.entries(filters).forEach(([k,v]) => { if(v) sp.set(k,v); });
+  return useInfiniteQuery({
+    queryKey:['bookmark-list',filters], initialPageParam:'',
+    queryFn:async ({pageParam}) => { const q=new URLSearchParams(sp); if(pageParam) q.set('cursor',pageParam); return unwrap(await apiFetch<any>(`/api/bookmarks?${q}`)); },
+    getNextPageParam:(last:any)=>last.nextCursor || undefined,
+  });
+}
 
-  const bookmarkIdFor = (articleId: string) =>
-    bookmarks.find((b) => b.article_id === articleId)?.id ?? null;
+export function useBookmarkMeta(enabled=true) {
+  return useQuery<{total:number;collections:string[];sources:string[];topics:string[]}>({ queryKey:['bookmark-meta'], queryFn:async()=>unwrap(await apiFetch<any>('/api/bookmarks/meta')), enabled });
+}
 
-  return { bookmarks, isLoading, isError, add, remove, isBookmarked, bookmarkIdFor };
+export function useBookmarkActions() {
+  const qc=useQueryClient(); const refresh=()=>{qc.invalidateQueries({queryKey:['bookmark-list']});qc.invalidateQueries({queryKey:['bookmark-meta']});qc.invalidateQueries({queryKey:['bookmark-ids']});};
+  const update=useMutation({mutationFn:async({id,...body}:{id:number;collectionName?:string;notes?:string|null;isRead?:boolean;archived?:boolean})=>unwrap(await apiFetch<any>(`/api/bookmarks/${id}`,{method:'PATCH',body:JSON.stringify(body)})),onSuccess:refresh});
+  const remove=useMutation({mutationFn:async(id:number)=>{await apiFetch(`/api/bookmarks/${id}`,{method:'DELETE'});return id;},onSuccess:refresh});
+  const restore=useMutation({mutationFn:async(id:number)=>apiFetch(`/api/bookmarks/${id}/restore`,{method:'POST'}),onSuccess:refresh});
+  return {update,remove,restore};
 }

@@ -1,3 +1,4 @@
+import { useUiText, useUiLocale } from '../../i18n/uiText';
 import { Bookmark, Calendar, Clock3, Globe, Languages, MessageSquareQuote, PlayCircle, User } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useApp } from '../../contexts/AppContext';
@@ -14,6 +15,8 @@ interface ArticleHeaderProps {
 }
 
 export function ArticleHeader({ article, isDark }: ArticleHeaderProps) {
+  const ui = useUiText();
+  const locale = useUiLocale();
   const { t, isAuthenticated, setSidebarOpen } = useApp();
   const { isBookmarked: isArticleBookmarked, bookmarkIdFor, add, remove } = useBookmarks();
   const navigate = useNavigate();
@@ -46,13 +49,12 @@ export function ArticleHeader({ article, isDark }: ArticleHeaderProps) {
         <ImageWithFallback src={article.urlToImage || article.images[0]?.url || undefined} alt={article.title} className="w-full h-auto object-contain" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/65 to-transparent" />
         <div className="absolute top-3 left-3 flex flex-wrap items-center gap-2">
-          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${topicBadgeClass}`}>{article.topic}</span>
-          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${sentimentStyle.badge}`}>{article.sentiment.type}</span>
+          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${topicBadgeClass}`}>{ui(article.topic)}</span>
+          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${sentimentStyle.badge}`}>{t[article.sentiment.type]}</span>
           {article.section && <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-black/35 text-white backdrop-blur-sm">{article.section}</span>}
           {article.videoUrl && (
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-black/35 text-white backdrop-blur-sm">
-              <PlayCircle size={12} />Video
-            </span>
+              <PlayCircle size={12} />{ui("Video")} </span>
           )}
         </div>
       </div>
@@ -63,7 +65,7 @@ export function ArticleHeader({ article, isDark }: ArticleHeaderProps) {
         )}
         <div className="min-w-0">
           <p className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>{article.source.name}</p>
-          <p className={`text-xs ${mutedText}`}>{(CATEGORY_LABELS[TOPIC_TO_CATEGORY[article.topic]] ?? article.topic)} coverage</p>
+          <p className={`text-xs ${mutedText}`}>{ui(CATEGORY_LABELS[TOPIC_TO_CATEGORY[article.topic]] ?? article.topic)} {ui("coverage")}</p>
         </div>
       </div>
 
@@ -72,10 +74,10 @@ export function ArticleHeader({ article, isDark }: ArticleHeaderProps) {
       </h1>
 
       <div className={`flex flex-wrap items-center gap-4 pb-4 mb-6 border-b text-sm ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
-        <div className="flex items-center gap-1.5"><User size={14} className={mutedText} /><span className={bodyText}>{article.author || 'Unknown'}</span></div>
-        <div className="flex items-center gap-1.5"><Calendar size={14} className={mutedText} /><span className={bodyText}>{formatPublishedDate(article.publishedAt)}</span></div>
+        <div className="flex items-center gap-1.5"><User size={14} className={mutedText} /><span className={bodyText}>{article.author || ui("Unknown")}</span></div>
+        <div className="flex items-center gap-1.5"><Calendar size={14} className={mutedText} /><span className={bodyText}>{formatPublishedDate(article.publishedAt, locale)}</span></div>
         <div className="flex items-center gap-1.5"><Globe size={14} className={mutedText} /><span className={bodyText}>{article.source.name}</span></div>
-        <div className="flex items-center gap-1.5"><Clock3 size={14} className={mutedText} /><span className={bodyText}>{article.readability.readingTimeMin > 0 ? `${article.readability.readingTimeMin} min read` : 'Quick read'}</span></div>
+        <div className="flex items-center gap-1.5"><Clock3 size={14} className={mutedText} /><span className={bodyText}>{ui(article.readability.readingTimeMin > 0 ? `${article.readability.readingTimeMin} min read` : 'Quick read')}</span></div>
         {article.language && <div className="flex items-center gap-1.5"><Languages size={14} className={mutedText} /><span className={bodyText}>{article.language.toUpperCase()}</span></div>}
         <button
           type="button"

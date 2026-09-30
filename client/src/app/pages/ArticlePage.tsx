@@ -1,3 +1,4 @@
+import { useUiText } from '../i18n/uiText';
 import { ArticleSkeleton } from '../components/ui/ContentSkeleton';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
@@ -19,8 +20,10 @@ import { mutedTextClass, panelBaseClass } from '../components/article/helpers';
 import { buildLiveEngagement } from '../services/newsAPI';
 import type { NewsArticle, NewsCategoryFilter } from '../types/article';
 import type { SentimentDistributionItem } from '../types/sentiment';
+import { SeoMetadata } from '../components/SeoMetadata';
 
 export function ArticlePage() {
+  const ui = useUiText();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { t, isDark } = useApp();
@@ -92,11 +95,9 @@ export function ArticlePage() {
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className={`text-center py-20 rounded-2xl border ${panelBase}`}>
           <Newspaper size={56} className={`mx-auto mb-4 ${isDark ? 'text-slate-600' : 'text-gray-300'}`} />
-          <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>Article Not Found</h2>
+          <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>{ui("Article Not Found")}</h2>
           <p className={`mb-6 ${mutedText}`}>{error}</p>
-          <Link to="/" className="inline-block px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold hover:from-cyan-600 hover:to-blue-600 transition-all">
-            Go to Homepage
-          </Link>
+          <Link to="/" className="inline-block px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold hover:from-cyan-600 hover:to-blue-600 transition-all">{ui("Go to Homepage")} </Link>
         </motion.div>
       </div>
     );
@@ -110,6 +111,8 @@ export function ArticlePage() {
     description: tr.description,
     content: tr.content,
     aiSummary: tr.aiSummary,
+    // Translated plain text must not be hidden by original-language blocks.
+    contentBlocks: tr.isAutoTranslated ? [] : article.contentBlocks,
   };
 
   // Sidebar content extracted to avoid duplication between desktop and mobile
@@ -127,6 +130,7 @@ export function ArticlePage() {
 
   return (
     <div className="px-4 md:px-6 py-6">
+      <SeoMetadata article={article} />
       <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="mb-5">
         <button type="button" onClick={handleBackToHome} className={`inline-flex items-center gap-2 text-sm font-medium transition-colors ${isDark ? 'text-cyan-400 hover:text-cyan-300' : 'text-cyan-600 hover:text-cyan-700'}`}>
           <ArrowLeft size={16} />{t.backToHome}
@@ -138,7 +142,7 @@ export function ArticlePage() {
             whatever the right rail (max 560px) leaves over. */}
         <div className="flex-1 min-w-0 pb-10">
           <div className="mb-5">
-            <LanguageSwitcher isDark={isDark} isLoading={tr.isLoading} isAutoTranslated={tr.isAutoTranslated} error={tr.error} onRetry={tr.retry} />
+            <LanguageSwitcher isDark={isDark} isLoading={tr.isLoading} isAutoTranslated={tr.isAutoTranslated} error={tr.error} onRetry={tr.retry} selectedLanguage={tr.selectedLanguage} onSelectLanguage={tr.setSelectedLanguage} />
           </div>
           <motion.article initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="min-w-0">
             <ArticleHeader article={displayArticle} isDark={isDark} />

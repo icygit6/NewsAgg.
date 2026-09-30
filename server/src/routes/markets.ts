@@ -5,6 +5,11 @@ import { logger } from '../lib/logger'
 
 export const marketsRouter = Router()
 
+marketsRouter.use((_req, res, next) => {
+  res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=600')
+  next()
+})
+
 interface Section<T> { value: T | null; fetchedAt: number; stale: boolean }
 interface CachedSection { value: unknown; fetchedAt: number }
 const CACHE_FILE = process.env.MARKET_CACHE_FILE || '/app/.cache/markets.json'
@@ -55,7 +60,12 @@ async function section<T>(key: string, ttlMs: number, loader: () => Promise<T>):
 }
 
 const FETCH_TIMEOUT_MS = 8_000
-const fetchWithTimeout = (url: string) => fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) })
+const fetchWithTimeout = (url: string, init: RequestInit = {}) => fetch(url, {
+  ...init,
+  headers: { ...init.headers },
+  signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+})
+export const FX_CACHE_TTL_MS = 24 * 60 * 60 * 1000
 const finitePositive = (value: unknown, label: string): number => {
   const number = Number(value)
   if (!Number.isFinite(number) || number <= 0) throw new Error(`${label} is invalid`)
@@ -86,9 +96,9 @@ interface IndexQuote {
   spark: number[]; asOf: string | null; provider: string; exchangeTimezone: string | null
 }
 const INDICES = [
-  { symbol: 'SPX', stooq: '^spx', name: 'S&P 500' },
-  { symbol: 'IXIC', stooq: '^ndq', name: 'Nasdaq Composite' },
-  { symbol: 'DJI', stooq: '^dji', name: 'Dow Jones' },
+  { symbol: 'SPX', stooq: '^spx', yahoo: '^GSPC', name: 'S&P 500' },
+  { symbol: 'IXIC', stooq: '^ndq', yahoo: '^IXIC', name: 'Nasdaq Composite' },
+  { symbol: 'DJI', stooq: '^dji', yahoo: '^DJI', name: 'Dow Jones' },
 ]
 
 async function loadTwelveDataIndices(apiKey: string): Promise<IndexQuote[]> {
@@ -134,7 +144,9 @@ async function loadStooqIndices(): Promise<IndexQuote[]> {
       const url = `https://stooq.com/q/d/l/?s=${encodeURIComponent(stooq)}&d1=${stooqDate(start)}&d2=${stooqDate(end)}&i=d`
       const res = await fetchWithTimeout(url)
       if (!res.ok) return null
-      const rows = (await res.text()).trim().split(/\r?\n/).slice(1)
+      const text = await res.text()
+      if (!/^Date,Open,High,Low,Close(?:,Volume)?\s*$/m.test(text)) return null
+      const rows = text.trim().split(/\r?\n/).slice(1)
         .map((line) => {
           const columns = line.split(',')
           return { date: columns[0], close: Number(columns[4]) }
@@ -156,6 +168,61 @@ async function loadStooqIndices(): Promise<IndexQuote[]> {
   return quotes
 }
 
+interface YahooChartResult {
+  meta?: {
+    currency?: string
+    exchangeTimezoneName?: string
+    regularMarketTime?: number
+  }
+  timestamp?: number[]
+  indicators?: { quote?: Array<{ close?: Array<number | null> }> }
+}
+
+/** Parse only completed, finite closes from Yahoo's chart response. Exported
+ * for a fixture-based unit test because this keyless endpoint is an external
+ * fallback whose payload must never be trusted blindly. */
+export function parseYahooIndexChart(
+  result: YahooChartResult,
+  identity: { symbol: string; name: string }
+): IndexQuote {
+  const timestamps = Array.isArray(result.timestamp) ? result.timestamp : []
+  const closes = result.indicators?.quote?.[0]?.close
+  if (!Array.isArray(closes)) throw new Error(`Yahoo ${identity.symbol}: missing closes`)
+  const points = closes
+    .map((close, index) => ({ close: Number(close), timestamp: Number(timestamps[index]) }))
+    .filter((point) => Number.isFinite(point.close) && point.close > 0 && Number.isFinite(point.timestamp))
+  if (points.length < 2) throw new Error(`Yahoo ${identity.symbol}: insufficient history`)
+  const current = points[points.length - 1]
+  const previous = points[points.length - 2]
+  const changePct = ((current.close - previous.close) / previous.close) * 100
+  if (!Number.isFinite(changePct) || Math.abs(changePct) > 30) {
+    throw new Error(`Yahoo ${identity.symbol}: implausible daily change`)
+  }
+  return {
+    ...identity,
+    close: current.close,
+    changePct,
+    spark: points.slice(-14).map((point) => point.close),
+    asOf: new Date(current.timestamp * 1000).toISOString(),
+    provider: 'Yahoo Finance',
+    exchangeTimezone: result.meta?.exchangeTimezoneName ?? null,
+  }
+}
+
+async function loadYahooIndices(): Promise<IndexQuote[]> {
+  return Promise.all(INDICES.map(async ({ symbol, yahoo, name }) => {
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahoo)}?range=1mo&interval=1d&events=history`
+    const res = await fetchWithTimeout(url)
+    if (!res.ok) throw new Error(`Yahoo ${symbol} HTTP ${res.status}`)
+    const json: any = await res.json()
+    const result = json?.chart?.result?.[0]
+    if (!result || json?.chart?.error) {
+      throw new Error(`Yahoo ${symbol}: ${json?.chart?.error?.description || 'bad payload'}`)
+    }
+    return parseYahooIndexChart(result, { symbol, name })
+  }))
+}
+
 async function loadIndices(): Promise<IndexQuote[]> {
   const apiKey = process.env.TWELVE_DATA_API_KEY?.trim()
   if (apiKey) {
@@ -164,16 +231,27 @@ async function loadIndices(): Promise<IndexQuote[]> {
       logger.warn({ err: (err as Error).message }, '[markets] Twelve Data failed; using Stooq fallback')
     }
   }
-  return loadStooqIndices()
+  try { return await loadStooqIndices() }
+  catch (err) {
+    logger.warn({ err: (err as Error).message }, '[markets] Stooq failed; using Yahoo fallback')
+    return loadYahooIndices()
+  }
 }
 
 interface CryptoQuote {
   id: string; symbol: string; price: number; changePct24h: number | null
   spark: number[]; asOf: string | null; provider: string
 }
-async function loadCrypto(): Promise<CryptoQuote[]> {
+export function coinGeckoRequest(apiKey = process.env.COINGECKO_API_KEY?.trim()) {
   const url = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin,ethereum&sparkline=true&price_change_percentage=24h'
-  const res = await fetchWithTimeout(url)
+  return {
+    url,
+    init: apiKey ? { headers: { 'x-cg-demo-api-key': apiKey } } : {},
+  }
+}
+async function loadCrypto(): Promise<CryptoQuote[]> {
+  const request = coinGeckoRequest()
+  const res = await fetchWithTimeout(request.url, request.init)
   if (!res.ok) throw new Error(`CoinGecko HTTP ${res.status}`)
   const json: any = await res.json()
   if (!Array.isArray(json)) throw new Error('CoinGecko bad payload')
@@ -194,7 +272,7 @@ async function loadCrypto(): Promise<CryptoQuote[]> {
 
 marketsRouter.get('/summary', async (_req: Request, res: Response) => {
   const [fx, indices, crypto] = await Promise.all([
-    section('fx', 12 * 60 * 60 * 1000, loadFx),
+    section('fx', FX_CACHE_TTL_MS, loadFx),
     section('indices', 30 * 60 * 1000, loadIndices),
     section('crypto', 10 * 60 * 1000, loadCrypto),
   ])

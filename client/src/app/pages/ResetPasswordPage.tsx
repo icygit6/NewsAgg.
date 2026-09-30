@@ -1,12 +1,14 @@
+import { useUiText } from '../i18n/uiText';
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
-import { Eye, EyeOff, KeyRound, CheckCircle2 } from 'lucide-react';
+import { Eye, EyeOff, KeyRound } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { authService } from '../services/authService';
 import { AuthLayout } from '../components/auth/AuthLayout';
 
 export function ResetPasswordPage() {
-  const { isDark } = useApp();
+  const ui = useUiText();
+  const { isDark, setSidebarOpen, setUser } = useApp();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const token = params.get('token') || '';
@@ -16,7 +18,6 @@ export function ResetPasswordPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [done, setDone] = useState(false);
 
   const inputClass = `w-full px-4 py-3 rounded-xl border transition ${
     isDark
@@ -38,7 +39,12 @@ export function ResetPasswordPage() {
     const res = await authService.resetPassword(token, password);
     setLoading(false);
     if (res.success) {
-      setDone(true);
+      // A reset verifies inbox ownership on the server. Clear any stale
+      // pre-reset session/profile and take the user straight to fresh sign-in.
+      authService.logout();
+      setUser(null);
+      navigate('/', { replace: true });
+      setSidebarOpen(true);
     } else {
       setError(res.error || 'Could not reset your password. The link may have expired.');
     }
@@ -46,41 +52,18 @@ export function ResetPasswordPage() {
 
   if (!token) {
     return (
-      <AuthLayout title="Reset password" isDark={isDark}>
-        <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>
-          This password reset link is missing or invalid. Request a new one from the sign-in screen.
-        </p>
+      <AuthLayout title={ui("Reset password")} isDark={isDark}>
+        <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>{ui("This password reset link is missing or invalid. Request a new one from the sign-in screen.")} </p>
         <Link
           to="/"
           className="mt-5 inline-block text-sm font-medium text-cyan-500 hover:text-cyan-400"
-        >
-          ← Back to NewsAgg
-        </Link>
-      </AuthLayout>
-    );
-  }
-
-  if (done) {
-    return (
-      <AuthLayout title="Password reset" isDark={isDark}>
-        <div className="flex flex-col items-center text-center gap-3">
-          <CheckCircle2 size={44} className="text-emerald-500" />
-          <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
-            Your password has been reset. You can now sign in with your new password.
-          </p>
-          <button
-            onClick={() => navigate('/')}
-            className="mt-2 w-full px-5 py-3 rounded-2xl bg-gradient-to-r from-cyan-500 to-pink-500 text-white font-semibold hover:from-cyan-600 hover:to-pink-600 transition-all shadow-lg shadow-cyan-500/20"
-          >
-            Go to sign in
-          </button>
-        </div>
+        >{ui("← Back to NewsAgg")} </Link>
       </AuthLayout>
     );
   }
 
   return (
-    <AuthLayout title="Choose a new password" isDark={isDark}>
+    <AuthLayout title={ui("Choose a new password")} isDark={isDark}>
       <div className="space-y-4">
         <div className="relative">
           <input
@@ -89,13 +72,13 @@ export function ResetPasswordPage() {
             autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="New password"
+            placeholder={ui("New password")}
             className={`${inputClass} pr-11`}
           />
           <button
             type="button"
             onClick={() => setShowPassword((p) => !p)}
-            aria-label={showPassword ? 'Hide password' : 'Show password'}
+            aria-label={showPassword ? ui("Hide password") : ui("Show password")}
             className={`absolute right-3.5 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-gray-400 hover:text-gray-600'}`}
           >
             {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -107,7 +90,7 @@ export function ResetPasswordPage() {
           autoComplete="new-password"
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
-          placeholder="Confirm new password"
+          placeholder={ui("Confirm new password")}
           onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
           className={inputClass}
         />
@@ -115,7 +98,7 @@ export function ResetPasswordPage() {
 
       {error && (
         <div className={`mt-4 p-3 rounded-lg text-sm ${isDark ? 'bg-red-900/30 text-red-300' : 'bg-red-50 text-red-700'}`}>
-          {error}
+          {ui(error)}
         </div>
       )}
 
@@ -125,7 +108,7 @@ export function ResetPasswordPage() {
         className="mt-5 w-full flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-pink-500 text-white font-semibold hover:from-cyan-600 hover:to-pink-600 transition-all shadow-lg shadow-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <KeyRound size={18} />
-        {loading ? 'Resetting…' : 'Reset password'}
+        {loading ? ui('Resetting…') : ui("Reset password")}
       </button>
     </AuthLayout>
   );

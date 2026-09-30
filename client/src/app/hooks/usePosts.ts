@@ -1,153 +1,21 @@
-import {
-  useInfiniteQuery,
-  useMutation,
-  useQueryClient,
-  type InfiniteData,
-} from '@tanstack/react-query';
+import { useInfiniteQuery,useMutation,useQueryClient,type InfiniteData } from '@tanstack/react-query';
 import { useApp } from '../contexts/AppContext';
-import { API_BASE_URL, AUTH_UNAUTHORIZED_EVENT } from '../lib/apiFetch';
-
-export interface PostItem {
-  id: number;
-  content: string;
-  created_at: string;
-  article_id: string | null;
-  user_id: number;
-  username: string;
-  avatar: string | null;
-  article_title: string | null;
-  article_image: string | null;
-  article_topic: string | null;
-  source_name: string | null;
-  like_count: number;
-  liked_by_me: boolean;
-}
-
-export interface PostsPage {
-  posts: PostItem[];
-  totalCount: number;
-  page: number;
-  pageSize: number;
-}
-
-interface PostsApiResponse {
-  success: boolean;
-  data?: PostsPage | PostItem;
-  error?: string;
-}
-
-/** Like accountFetch: parses JSON bodies on 4xx so the server's error message
- * (281-char reject, rate limit, …) reaches the UI; 401 funnels into the
- * global sign-out event. */
-async function postsFetch(path: string, init: RequestInit = {}): Promise<PostsApiResponse & { status: number }> {
-  try {
-    const token = localStorage.getItem('authToken');
-    const res = await fetch(`${API_BASE_URL}${path}`, {
-      ...init,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-    });
-    if (res.status === 401 && token) {
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
-      window.dispatchEvent(new Event(AUTH_UNAUTHORIZED_EVENT));
-    }
-    const json = (await res.json()) as PostsApiResponse;
-    return { ...json, status: res.status };
-  } catch (error) {
-    return { success: false, error: String(error), status: 0 };
-  }
-}
-
-const postsKey = (mine: boolean, userId: number | null) => ['posts', { mine, userId }];
-
-/** Infinite public feed (or own posts with mine=true — requires sign-in). */
-export function usePosts({ mine = false, pageSize = 20 }: { mine?: boolean; pageSize?: number } = {}) {
-  const { user } = useApp();
-  return useInfiniteQuery({
-    queryKey: postsKey(mine, user?.id ?? null),
-    queryFn: async ({ pageParam }) => {
-      const sp = new URLSearchParams({ page: String(pageParam), pageSize: String(pageSize) });
-      if (mine) sp.set('mine', '1');
-      const res = await postsFetch(`/api/posts?${sp.toString()}`);
-      if (!res.success || !res.data) throw new Error(res.error || 'Failed to load posts');
-      return res.data as PostsPage;
-    },
-    initialPageParam: 1,
-    getNextPageParam: (last: PostsPage) =>
-      last.page * last.pageSize < last.totalCount ? last.page + 1 : undefined,
-    enabled: !mine || Boolean(user),
-  });
-}
-
-type PostsCache = InfiniteData<PostsPage> | undefined;
-
-/** Create / delete / like mutations. Like toggles optimistically across every
- * cached posts feed (home rail, /posts, profile tab). */
-export function usePostMutations() {
-  const { user } = useApp();
-  const queryClient = useQueryClient();
-
-  const invalidateAll = () => queryClient.invalidateQueries({ queryKey: ['posts'] });
-
-  const patchEverywhere = (patch: (post: PostItem) => PostItem) => {
-    queryClient.setQueriesData<PostsCache>({ queryKey: ['posts'] }, (old) =>
-      old
-        ? {
-            ...old,
-            pages: old.pages.map((page) => ({ ...page, posts: page.posts.map(patch) })),
-          }
-        : old
-    );
-  };
-
-  const create = useMutation({
-    mutationFn: async ({ content, articleId }: { content: string; articleId?: string }) => {
-      const res = await postsFetch('/api/posts', {
-        method: 'POST',
-        body: JSON.stringify({ content, ...(articleId ? { articleId } : {}) }),
-      });
-      if (!res.success) throw new Error(res.error || `HTTP ${res.status}`);
-      return res.data as PostItem;
-    },
-    onSuccess: invalidateAll,
-  });
-
-  const removePost = useMutation({
-    mutationFn: async (postId: number) => {
-      const res = await postsFetch(`/api/posts/${postId}`, { method: 'DELETE' });
-      if (!res.success) throw new Error(res.error || `HTTP ${res.status}`);
-    },
-    onSuccess: invalidateAll,
-  });
-
-  const toggleLike = useMutation({
-    mutationFn: async ({ postId, liked }: { postId: number; liked: boolean }) => {
-      const res = await postsFetch(`/api/posts/${postId}/like`, {
-        method: liked ? 'DELETE' : 'POST',
-      });
-      if (!res.success) throw new Error(res.error || `HTTP ${res.status}`);
-    },
-    onMutate: async ({ postId, liked }) => {
-      await queryClient.cancelQueries({ queryKey: ['posts'] });
-      const snapshots = queryClient.getQueriesData<PostsCache>({ queryKey: ['posts'] });
-      patchEverywhere((post) =>
-        post.id === postId
-          ? {
-              ...post,
-              liked_by_me: !liked,
-              like_count: Math.max(0, post.like_count + (liked ? -1 : 1)),
-            }
-          : post
-      );
-      return { snapshots };
-    },
-    onError: (_err, _vars, context) => {
-      context?.snapshots?.forEach(([key, data]) => queryClient.setQueryData(key, data));
-    },
-  });
-
-  return { create, removePost, toggleLike, canPost: Boolean(user) };
-}
+import { API_BASE_URL,AUTH_UNAUTHORIZED_EVENT } from '../lib/apiFetch';
+export interface PostItem {id:number;content:string;category?:string;created_at:string;updated_at:string|null;article_id:string|null;user_id:number;username:string;display_name:string|null;avatar:string|null;article_title:string|null;article_image:string|null;article_topic:string|null;source_name:string|null;like_count:number;comment_count:number;liked_by_me:boolean}
+export interface PostsPage {posts:PostItem[];nextCursor:string|null}
+export interface PostComment {id:number;post_id:number;user_id:number;parent_id:number|null;parent_username:string|null;content:string;created_at:string;username:string;display_name:string|null;avatar:string|null}
+export interface CommentsPage {comments:PostComment[];nextOffset:number|null}
+async function request(path:string,init:RequestInit={}){const r=await fetch(`${API_BASE_URL}${path}`,{...init,credentials:'include',headers:{'Content-Type':'application/json'}});if(r.status===401)window.dispatchEvent(new Event(AUTH_UNAUTHORIZED_EVENT));const j=await r.json();if(!r.ok||!j.success)throw new Error(j.error||`HTTP ${r.status}`);return j.data;}
+export function usePosts({mine=false,pageSize=20,enabled=true,sort='latest',username,category='all'}:{mine?:boolean;pageSize?:number;enabled?:boolean;sort?:'latest'|'popular';username?:string;category?:string}={}){const{user}=useApp();return useInfiniteQuery({queryKey:['posts',{mine,userId:user?.id??null,sort,username,category,pageSize}],initialPageParam:'',queryFn:({pageParam})=>{const q=new URLSearchParams({limit:String(pageSize),sort,category});if(mine)q.set('mine','1');if(username)q.set('username',username);if(pageParam)q.set('cursor',pageParam);return request(`/api/posts?${q}`) as Promise<PostsPage>},getNextPageParam:last=>last.nextCursor||undefined,enabled:enabled&&(!mine||!!user)})}
+export function usePostComments(postId:number,enabled:boolean){const{user}=useApp();return useInfiniteQuery({queryKey:['post-comments',postId,user?.id??null],initialPageParam:0,queryFn:({pageParam})=>request(`/api/posts/${postId}/comments?offset=${pageParam}`) as Promise<CommentsPage>,getNextPageParam:last=>last.nextOffset??undefined,enabled})}
+export function useCommentMutations(postId:number){const qc=useQueryClient();const refresh=()=>{void qc.invalidateQueries({queryKey:['post-comments',postId]});void qc.invalidateQueries({queryKey:['posts']})};const create=useMutation({mutationFn:({content,parentId}:{content:string;parentId?:number})=>request(`/api/posts/${postId}/comments`,{method:'POST',body:JSON.stringify({content,parentId})}),onSuccess:refresh});const remove=useMutation({mutationFn:(commentId:number)=>request(`/api/posts/${postId}/comments/${commentId}`,{method:'DELETE'}),onSuccess:refresh});return{create,remove}}
+type Cache=InfiniteData<PostsPage>|undefined;
+export function usePostMutations(){const{user}=useApp();const qc=useQueryClient();const refresh=()=>qc.invalidateQueries({queryKey:['posts']});const patch=(fn:(p:PostItem)=>PostItem)=>qc.setQueriesData<Cache>({queryKey:['posts']},old=>old?({...old,pages:old.pages.map(pg=>({...pg,posts:pg.posts.map(fn)}))}):old);
+ const create=useMutation({mutationFn:(v:{content:string;articleId?:string;category?:string})=>request('/api/posts',{method:'POST',body:JSON.stringify(v)}),onSuccess:refresh});
+ const editPost=useMutation({mutationFn:({postId,content}:{postId:number;content:string})=>request(`/api/posts/${postId}`,{method:'PATCH',body:JSON.stringify({content})}),onSuccess:refresh});
+ const removePost=useMutation({mutationFn:(id:number)=>request(`/api/posts/${id}`,{method:'DELETE'}),onSuccess:refresh});
+ const restorePost=useMutation({mutationFn:(id:number)=>request(`/api/posts/${id}/restore`,{method:'POST'}),onSuccess:refresh});
+ const reportPost=useMutation({mutationFn:({postId,reason,details}:{postId:number;reason:string;details?:string})=>request(`/api/posts/${postId}/report`,{method:'POST',body:JSON.stringify({reason,details})})});
+ const blockUser=useMutation({mutationFn:(blockedUserId:number)=>request('/api/posts/blocks',{method:'POST',body:JSON.stringify({blockedUserId})}),onSuccess:refresh});
+ const toggleLike=useMutation({mutationFn:({postId,liked}:{postId:number;liked:boolean})=>request(`/api/posts/${postId}/like`,{method:liked?'DELETE':'POST'}),onMutate:async({postId,liked})=>{await qc.cancelQueries({queryKey:['posts']});const snapshots=qc.getQueriesData<Cache>({queryKey:['posts']});patch(p=>p.id===postId?{...p,liked_by_me:!liked,like_count:Math.max(0,p.like_count+(liked?-1:1))}:p);return{snapshots}},onError:(_e,_v,c)=>c?.snapshots.forEach(([k,d])=>qc.setQueryData(k,d))});
+ return{create,editPost,removePost,restorePost,reportPost,blockUser,toggleLike,canPost:!!user};}

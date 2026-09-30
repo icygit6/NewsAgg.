@@ -1,3 +1,4 @@
+import { useUiText } from '../../i18n/uiText';
 import { useState } from 'react';
 import { NavLink, Link } from 'react-router';
 import { Home, MessageSquareQuote, Bookmark, Sun, Moon, Languages } from 'lucide-react';
@@ -13,6 +14,7 @@ interface NavItem {
 }
 
 export function NavRail() {
+  const ui = useUiText();
   const { t, isDark, toggleTheme, setSidebarOpen, avatarSrc, user, language, setLanguage } =
     useApp();
   const [langOpen, setLangOpen] = useState(false);
@@ -24,18 +26,18 @@ export function NavRail() {
     { to: '/bookmarks', icon: Bookmark, label: t.bookmarks },
   ];
 
-  const baseItem = `flex items-center gap-4 rounded-full transition-colors px-3 py-3 xl:px-4
+  const baseItem = `flex items-center gap-4 rounded-full px-3 py-3 xl:px-4 transition-[background-color,color,transform,box-shadow] duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 motion-reduce:transition-none
     ${isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-200/70'}`;
 
   return (
     <nav
-      className={`hidden md:flex h-full w-[68px] xl:w-[240px] shrink-0 flex-col
+      className={`hidden lg:flex h-full w-[68px] xl:w-[240px] shrink-0 flex-col
         items-center xl:items-stretch gap-1 px-2 xl:px-4 py-4 border-r overflow-y-auto
         ${isDark ? 'border-slate-800' : 'border-slate-200'}`}
       style={{ scrollbarWidth: 'none' }}
       aria-label={t.menu}
     >
-      <Link to="/" className="mb-4 flex items-center gap-2 px-2 py-2" aria-label="NewsAgg home">
+      <Link to="/" className="mb-4 flex items-center gap-2 rounded-xl px-2 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500" aria-label={ui("NewsAgg home")}>
         <BrandLogo
           markClassName="w-10 h-10"
           wordmarkClassName={`hidden xl:inline text-xl ${isDark ? 'text-slate-100' : 'text-slate-900'}`}
@@ -47,13 +49,10 @@ export function NavRail() {
           key={to}
           to={to}
           title={label}
+          aria-label={label}
           className={({ isActive }) =>
             `${baseItem} ${
-              isActive
-                ? 'font-semibold text-white'
-                : isDark
-                  ? 'text-slate-200'
-                  : 'text-slate-700'
+              isActive ? 'font-semibold text-white shadow-sm shadow-blue-500/20' : isDark ? 'text-slate-200' : 'text-slate-700'
             }`
           }
           style={({ isActive }) => (isActive ? { background: 'var(--brand, #2563eb)' } : undefined)}
@@ -69,7 +68,11 @@ export function NavRail() {
           title={isDark ? t.lightMode : t.darkMode}
           className={`${baseItem} ${isDark ? 'text-slate-200' : 'text-slate-700'}`}
         >
-          {isDark ? <Sun size={22} className="shrink-0" /> : <Moon size={22} className="shrink-0" />}
+          {isDark ? (
+            <Sun size={22} className="shrink-0" />
+          ) : (
+            <Moon size={22} className="shrink-0" />
+          )}
           <span className="hidden xl:inline text-[15px]">{isDark ? t.lightMode : t.darkMode}</span>
         </button>
 
@@ -92,7 +95,10 @@ export function NavRail() {
               {LANG_PILLS.map(({ code, short }) => (
                 <button
                   key={code}
-                  onClick={() => { setLanguage(code); setLangOpen(false); }}
+                  onClick={() => {
+                    setLanguage(code);
+                    setLangOpen(false);
+                  }}
                   className={`w-full text-left px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                     language === code
                       ? 'text-white'
@@ -100,7 +106,9 @@ export function NavRail() {
                         ? 'text-slate-200 hover:bg-slate-800'
                         : 'text-slate-700 hover:bg-slate-100'
                   }`}
-                  style={language === code ? { background: 'var(--brand-grad, #06b6d4)' } : undefined}
+                  style={
+                    language === code ? { background: 'var(--brand-grad, #2563eb)' } : undefined
+                  }
                 >
                   {short}
                 </button>

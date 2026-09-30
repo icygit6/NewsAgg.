@@ -103,10 +103,15 @@ def extract_jsonld(soup: BeautifulSoup) -> list[dict]:
     for script in soup.find_all("script", {"type": "application/ld+json"}):
         try:
             data = json.loads(script.string or "")
-            if isinstance(data, list):
-                items.extend(data)
-            else:
-                items.append(data)
+            def visit(value):
+                if isinstance(value, list):
+                    for child in value:
+                        visit(child)
+                elif isinstance(value, dict):
+                    items.append(value)
+                    if '@graph' in value:
+                        visit(value['@graph'])
+            visit(data)
         except Exception:
             pass
     return items
@@ -139,6 +144,8 @@ def jsonld_article(items: list[dict]) -> dict:
         if isinstance(pub, dict):
             result["jsonld_publisher"] = pub.get("name")
         img = item.get("image")
+        if isinstance(img, list):
+            img = img[0] if img else None
         if isinstance(img, dict):
             result["jsonld_image"] = img.get("url")
         elif isinstance(img, str):

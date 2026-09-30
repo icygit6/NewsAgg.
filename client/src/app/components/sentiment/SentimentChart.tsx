@@ -1,13 +1,13 @@
+import { useUiText } from '../../i18n/uiText';
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { Activity } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { CATEGORY_BADGE_CLASS, CATEGORIES, CATEGORY_LABELS } from '../../constants';
 import { useStatsOverview, type StatsOverview } from '../../hooks/useStats';
 import type { NewsCategoryFilter } from '../../types/article';
 import type { SentimentDistributionItem } from '../../types/sentiment';
-import { ChartFrame } from '../ui/ChartFrame';
+import { DonutChart } from './DonutChart';
 import { panelBaseClass, chartTextColor, chartMutedColor } from './shared';
 
 const toDistribution = (overview: StatsOverview | undefined): SentimentDistributionItem[] =>
@@ -24,22 +24,8 @@ const SENTIMENT_COLORS = {
 
 const SENTIMENT_ROTATE_MS = 10000;
 
-const CustomTooltip = ({ active, payload, isDark, total }: any) => {
-  if (active && payload && payload.length) {
-    const value = Number(payload[0].value ?? 0);
-    const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
-
-    return (
-      <div className={`px-3 py-2 rounded-lg text-xs shadow-lg ${isDark ? 'bg-slate-700 text-slate-100' : 'bg-white text-gray-800 border border-gray-100'}`}>
-        <p className="font-semibold">{payload[0].name}</p>
-        <p>{value} articles ({percentage}%)</p>
-      </div>
-    );
-  }
-  return null;
-};
-
 export function SentimentChart() {
+  const ui = useUiText();
   const { t, isDark, selectedCategory } = useApp();
   const [sentimentCategoryIndex, setSentimentCategoryIndex] = useState(0);
 
@@ -88,7 +74,7 @@ export function SentimentChart() {
   const categoryTotal = categorySentimentData.reduce((sum, item) => sum + item.value, 0);
   const textColor = chartTextColor(isDark);
   const mutedColor = chartMutedColor(isDark);
-  const sentimentCategoryLabel = CATEGORY_LABELS[rotatingSentimentCategory];
+  const sentimentCategoryLabel = ui(CATEGORY_LABELS[rotatingSentimentCategory]);
   const sentimentCategoryBadgeClass = CATEGORY_BADGE_CLASS[rotatingSentimentCategory];
 
   return (
@@ -107,24 +93,13 @@ export function SentimentChart() {
       <div className="space-y-3">
         <div className={`rounded-xl border p-3 ${isDark ? 'border-slate-700 bg-slate-900/30' : 'border-gray-100 bg-gray-50/70'}`}>
           <div className="flex items-center justify-between text-[11px] mb-2">
-            <span className={`font-semibold ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>Overall</span>
+            <span className={`font-semibold ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>{ui("Overall")}</span>
             <span className={`px-2 py-0.5 rounded-full ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-gray-100 text-gray-700'}`}>
               {t.allCategories}
             </span>
           </div>
 
-          <ChartFrame className="h-[130px] w-full flex min-w-0">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={overallSentimentData} cx="50%" cy="50%" innerRadius={28} outerRadius={52} paddingAngle={2} dataKey="value">
-                  {overallSentimentData.map((entry, i) => (
-                    <Cell key={`overall-${entry.type}-${i}`} fill={entry.color} strokeWidth={0} />
-                  ))}
-                </Pie>
-                <Tooltip content={<CustomTooltip isDark={isDark} total={overallTotal} />} />
-              </PieChart>
-            </ResponsiveContainer>
-          </ChartFrame>
+          <DonutChart segments={overallSentimentData} isDark={isDark} />
 
           <div className="space-y-2">
             {overallSentimentData.map((item) => {
@@ -147,7 +122,7 @@ export function SentimentChart() {
           </div>
 
           <div className="flex items-center justify-between text-[11px] pt-2">
-            <span style={{ color: mutedColor }}>Total analyzed (Overall)</span>
+            <span style={{ color: mutedColor }}>{ui("Total analyzed (Overall)")}</span>
             <span className="font-semibold" style={{ color: textColor }}>{overallTotal}</span>
           </div>
         </div>
@@ -155,7 +130,7 @@ export function SentimentChart() {
         <div className={`rounded-xl border p-3 ${isDark ? 'border-slate-700 bg-slate-900/30' : 'border-gray-100 bg-gray-50/70'}`}>
           <div className="flex items-center justify-between gap-2 mb-2">
             <div className="flex items-center gap-2">
-              <span className={`text-[11px] font-semibold ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>Per Category</span>
+              <span className={`text-[11px] font-semibold ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>{ui("Per Category")}</span>
               <span className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${sentimentCategoryBadgeClass}`}>
                 {sentimentCategoryLabel}
               </span>
@@ -172,18 +147,7 @@ export function SentimentChart() {
             )}
           </div>
 
-          <ChartFrame className="h-[130px] w-full flex min-w-0">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={categorySentimentData} cx="50%" cy="50%" innerRadius={28} outerRadius={52} paddingAngle={2} dataKey="value">
-                  {categorySentimentData.map((entry, i) => (
-                    <Cell key={`category-${entry.type}-${i}`} fill={entry.color} strokeWidth={0} />
-                  ))}
-                </Pie>
-                <Tooltip content={<CustomTooltip isDark={isDark} total={categoryTotal} />} />
-              </PieChart>
-            </ResponsiveContainer>
-          </ChartFrame>
+          <DonutChart segments={categorySentimentData} isDark={isDark} />
 
           <div className="space-y-2">
             {categorySentimentData.map((item) => {
@@ -206,7 +170,7 @@ export function SentimentChart() {
           </div>
 
           <div className="flex items-center justify-between text-[11px] pt-2">
-            <span style={{ color: mutedColor }}>Total analyzed ({sentimentCategoryLabel})</span>
+            <span style={{ color: mutedColor }}>{ui("Total analyzed (")}{sentimentCategoryLabel})</span>
             <span className="font-semibold" style={{ color: textColor }}>{categoryTotal}</span>
           </div>
 
@@ -221,8 +185,7 @@ export function SentimentChart() {
                   className="h-full rounded-full bg-cyan-500"
                 />
               </div>
-              <p className="text-[11px] mt-1" style={{ color: mutedColor }}>
-                Auto-rotate every {Math.round(SENTIMENT_ROTATE_MS / 1000)}s
+              <p className="text-[11px] mt-1" style={{ color: mutedColor }}>{ui("Auto-rotate every")} {Math.round(SENTIMENT_ROTATE_MS / 1000)}s
               </p>
             </div>
           )}

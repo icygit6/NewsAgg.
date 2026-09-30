@@ -3,7 +3,6 @@ import { AnimatePresence, motion } from 'motion/react';
 import { Eraser, Loader2, Send, Sparkles, X } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { getArticleId } from '../../services/newsAPI';
-import { authService } from '../../services/authService';
 import type { Language } from '../../i18n/translations';
 import type { NewsArticle } from '../../types/article';
 
@@ -33,7 +32,7 @@ const loadHistory = (key: string): ChatMessage[] => {
   try {
     const raw = localStorage.getItem(key);
     const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed.slice(-STORED_TURNS) : [];
+    return Array.isArray(parsed) ? parsed.filter(m => m && ['user','assistant'].includes(m.role) && typeof m.content === 'string').slice(-STORED_TURNS) : [];
   } catch {
     return [];
   }
@@ -45,8 +44,13 @@ interface ArticleChatProps {
 }
 
 export function ArticleChat({ article, isDark }: ArticleChatProps) {
-  const { t, language } = useApp();
-  const storageKey = `chat:${getArticleId(article)}`;
+  const { user } = useApp();
+  return <ArticleChatSession key={`${user?.id ?? 'guest'}:${getArticleId(article)}`} article={article} isDark={isDark} />;
+}
+
+function ArticleChatSession({ article, isDark }: ArticleChatProps) {
+  const { t, language, isAuthenticated, user } = useApp();
+  const storageKey = `chat:${user?.id ?? 'guest'}:${getArticleId(article)}`;
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>(() => loadHistory(storageKey));
@@ -97,11 +101,11 @@ export function ArticleChat({ article, isDark }: ArticleChatProps) {
     const stillCurrent = () => activeKeyRef.current === keyAtSend;
 
     try {
-      const token = authService.getToken();
-      if (!token) throw new Error('Please sign in to use AI chat.');
+      if (!isAuthenticated) throw new Error('Please sign in to use AI chat.');
       const response = await fetch(`${API_BASE}/api/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: trimmed,
           articleId: getArticleId(article),
@@ -151,7 +155,7 @@ export function ArticleChat({ article, isDark }: ArticleChatProps) {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="fixed bottom-20 md:bottom-6 right-6 z-40 inline-flex items-center gap-2 px-4 py-3 rounded-full text-sm font-semibold text-white shadow-lg bg-gradient-to-r from-cyan-500 to-pink-500 hover:from-cyan-600 hover:to-pink-600 transition-all"
+          className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] lg:bottom-6 right-6 z-40 inline-flex items-center gap-2 px-4 py-3 rounded-full text-sm font-semibold text-white shadow-lg bg-gradient-to-r from-cyan-500 to-pink-500 hover:from-cyan-600 hover:to-pink-600 transition-all"
         >
           <Sparkles size={16} />{t.askAI}
         </button>
@@ -173,11 +177,12 @@ export function ArticleChat({ article, isDark }: ArticleChatProps) {
             />
             <motion.aside
               key="chat-panel"
+              aria-label={t.askAI}
               initial={{ x: 360 }}
               animate={{ x: 0 }}
               exit={{ x: 360 }}
               transition={{ type: 'tween', duration: 0.3 }}
-              className={`fixed top-0 right-0 z-[60] h-screen w-full max-w-sm flex flex-col border-l shadow-2xl ${isDark ? 'bg-slate-900 border-slate-700/60' : 'bg-white border-gray-100'}`}
+              className={`fixed top-0 right-0 z-[60] h-dvh w-full max-w-sm flex flex-col border-l shadow-2xl ${isDark ? 'bg-slate-900 border-slate-700/60' : 'bg-white border-gray-100'}`}
             >
               <div className={`flex items-center justify-between gap-2 px-4 py-3 border-b ${isDark ? 'border-slate-700/60' : 'border-gray-100'}`}>
                 <div className="flex items-center gap-2 min-w-0">
@@ -198,7 +203,7 @@ export function ArticleChat({ article, isDark }: ArticleChatProps) {
                     <Eraser size={16} />
                   </button>
                 )}
-                <button type="button" onClick={() => setOpen(false)} className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-gray-100 text-gray-600'}`}>
+                <button type="button" aria-label={language === 'zhTW' ? '關閉聊天' : 'Close chat'} onClick={() => setOpen(false)} className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-gray-100 text-gray-600'}`}>
                   <X size={18} />
                 </button>
               </div>
@@ -250,6 +255,7 @@ export function ArticleChat({ article, isDark }: ArticleChatProps) {
               <div className={`flex items-center gap-2 px-4 py-3 border-t ${isDark ? 'border-slate-700/60' : 'border-gray-100'}`}>
                 <input
                   name="chat-message"
+                  aria-label={t.chatPlaceholder}
                   autoComplete="off"
                   value={input}
                   onChange={(event) => setInput(event.target.value)}
@@ -260,6 +266,7 @@ export function ArticleChat({ article, isDark }: ArticleChatProps) {
                 <button
                   type="button"
                   onClick={() => void sendMessage()}
+                  aria-label={language === 'zhTW' ? '傳送訊息' : 'Send message'}
                   disabled={!input.trim() || loading}
                   className="p-2.5 rounded-xl text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 transition-all disabled:opacity-50"
                 >

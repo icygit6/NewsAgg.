@@ -43,10 +43,10 @@ export const mutedTextClass = (isDark: boolean): string => (isDark ? 'text-slate
 export const bodyTextClass = (isDark: boolean): string => (isDark ? 'text-slate-200' : 'text-gray-700');
 
 // ── Formatters ────────────────────────────────────────────────────────────────
-export const formatPublishedDate = (value: string): string => {
+export const formatPublishedDate = (value: string, locale?: string): string => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString(undefined, { dateStyle: 'full', timeStyle: 'short' });
+  return date.toLocaleString(locale, { dateStyle: 'full', timeStyle: 'short' });
 };
 
 export const formatRelativeTime = (value: string): string => {

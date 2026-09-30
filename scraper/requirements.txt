@@ -16,6 +16,8 @@ accelerate
 nltk
 langdetect
 textstat
+jieba>=0.42,<0.43
+Pillow>=10
 
 # Database
 psycopg2-binary

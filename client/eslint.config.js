@@ -29,7 +29,18 @@ export default tseslint.config(
     rules: {
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
-      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      'react-refresh/only-export-components': ['warn', {
+        allowConstantExport: true,
+        allowExportNames: [
+          'useApp',
+          'categoryAttribution',
+          'LANG_PILLS',
+          'getVideoEmbedUrl',
+          'isYouTubeUrl',
+          'isVimeoUrl',
+          'isExternalVideoUrl',
+        ],
+      }],
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-vars': [
         'warn',

@@ -1,5 +1,6 @@
+import { useUiText } from '../i18n/uiText';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, LogOut, Bookmark, Sun, Moon, Check, Languages, UserCircle, ChevronRight } from 'lucide-react';
+import { X, LogOut, Bookmark, Sun, Moon, Check, UserCircle, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useApp } from '../contexts/AppContext';
 import { useBookmarks } from '../hooks/useBookmarks';
@@ -9,26 +10,58 @@ import { FooterCompact } from './shell/Footer';
 import { useIsMobile } from './ui/use-mobile';
 import { BrandLogo } from './ui/BrandLogo';
 import type { Language } from '../i18n/translations';
+import { useEffect, useRef } from 'react';
 
 /** Slim account drawer: identity card linking to /profile plus quick
  * settings rows. All account editing lives on the /profile page. */
 export function ProfileSidebar() {
+  const ui = useUiText();
   const {
     sidebarOpen, setSidebarOpen, isDark, toggleTheme, t, user, setUser,
-    language, setLanguage, translateMode, setTranslateMode, avatarSrc,
+    language, setLanguage, avatarSrc,
   } = useApp();
   const { bookmarks } = useBookmarks();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const drawerRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    previousFocusRef.current = document.activeElement as HTMLElement | null;
+    const drawer = drawerRef.current;
+    drawer?.querySelector<HTMLElement>('button, a, input, [tabindex]:not([tabindex="-1"])')?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setSidebarOpen(false);
+        return;
+      }
+      if (event.key !== 'Tab' || !drawer) return;
+      const focusable = Array.from(drawer.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], input:not([disabled]), [tabindex]:not([tabindex="-1"])'));
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    const priorOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = priorOverflow;
+      previousFocusRef.current?.focus();
+    };
+  }, [sidebarOpen, setSidebarOpen]);
 
   const goTo = (path: string) => {
     navigate(path);
     setSidebarOpen(false);
   };
 
-  const handleLogout = () => {
-    authService.logout();
-    setUser(null);
+  const handleLogout = async () => {
+    const result = await authService.logout();
+    if (result.success) setUser(null);
   };
 
   const languageOptions: { code: Language; label: string }[] = [
@@ -46,6 +79,7 @@ export function ProfileSidebar() {
       {sidebarOpen && (
         <>
           <motion.div
+            aria-hidden="true"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -55,6 +89,10 @@ export function ProfileSidebar() {
           />
 
           <motion.div
+            ref={drawerRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label={user ? t.account : t.signIn}
             initial={{ x: isMobile ? '100%' : '-100%' }}
             animate={{ x: 0 }}
             exit={{ x: isMobile ? '100%' : '-100%' }}
@@ -77,6 +115,7 @@ export function ProfileSidebar() {
               </div>
               <button
                 onClick={() => setSidebarOpen(false)}
+                aria-label={ui("Close account panel")}
                 className={`p-2 rounded-xl transition-colors ${isDark ? 'text-slate-400 hover:bg-slate-800' : 'text-gray-400 hover:bg-gray-100'}`}
               >
                 <X size={18} />
@@ -125,7 +164,7 @@ export function ProfileSidebar() {
               <p className={`mt-5 mb-2 text-[11px] font-semibold uppercase tracking-wide ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
                 {t.appearance}
               </p>
-              <button onClick={toggleTheme} className={rowClass}>
+              <button onClick={toggleTheme} role="switch" aria-checked={isDark} className={rowClass}>
                 <div className={iconBox}>
                   {isDark ? <Moon size={16} className="text-cyan-400" /> : <Sun size={16} className="text-yellow-500" />}
                 </div>
@@ -161,14 +200,6 @@ export function ProfileSidebar() {
                 })}
               </div>
 
-              {/* Auto-translate */}
-              <button onClick={() => setTranslateMode(!translateMode)} className={`${rowClass} mt-4`}>
-                <div className={iconBox}><Languages size={16} className={isDark ? 'text-cyan-400' : 'text-cyan-600'} /></div>
-                <span className="font-medium flex-1">{t.translateAll}</span>
-                <div className={`relative w-11 h-6 rounded-full transition-colors ${translateMode ? 'bg-cyan-500' : isDark ? 'bg-slate-600' : 'bg-gray-300'}`}>
-                  <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${translateMode ? 'left-6' : 'left-1'}`} />
-                </div>
-              </button>
 
               <div className={`mt-6 pt-4 border-t ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
                 <FooterCompact />
@@ -179,7 +210,7 @@ export function ProfileSidebar() {
             {user && (
               <div className={`p-4 border-t ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
                 <button
-                  onClick={handleLogout}
+                  onClick={() => void handleLogout()}
                   className={`w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl font-semibold transition-all ${
                     isDark
                       ? 'bg-red-900/30 text-red-300 border border-red-700/50 hover:bg-red-900/40'

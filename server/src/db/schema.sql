@@ -67,23 +67,53 @@ CREATE TABLE IF NOT EXISTS articles (
 );
 
 CREATE TABLE IF NOT EXISTS users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email VARCHAR(255) UNIQUE NOT NULL,
-  username VARCHAR(100) UNIQUE NOT NULL,
-  password_hash VARCHAR(255),
-  google_id VARCHAR(255) UNIQUE,
-  avatar_url TEXT,
-  role VARCHAR(20) DEFAULT 'user',
-  created_at TIMESTAMPTZ DEFAULT NOW(),
+  id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  username TEXT UNIQUE NOT NULL,
+  password TEXT,
+  google_id TEXT UNIQUE,
+  avatar TEXT,
+  profile_background smallint NOT NULL DEFAULT 0 CHECK (profile_background BETWEEN 0 AND 5),
+  profile_background_image TEXT CHECK (profile_background_image IS NULL OR length(profile_background_image) <= 150000),
+  display_name TEXT,
+  bio TEXT,
+  role TEXT DEFAULT 'user',
+  email_verified BOOLEAN NOT NULL DEFAULT false,
+  personalization_enabled BOOLEAN NOT NULL DEFAULT true,
+  preferred_language TEXT NOT NULL DEFAULT 'en' CHECK (preferred_language IN ('en', 'zhTW')),
+  email_updates BOOLEAN NOT NULL DEFAULT false,
+  terms_accepted_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   last_login TIMESTAMPTZ
 );
 
 CREATE TABLE IF NOT EXISTS bookmarks (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  article_id UUID REFERENCES articles(id) ON DELETE CASCADE,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
+  id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  article_id TEXT NOT NULL,
+  article_title TEXT,
+  article_url TEXT,
+  url_to_image TEXT,
+  source_name TEXT,
+  topic TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  collection_name TEXT NOT NULL DEFAULT 'Read later',
+  notes TEXT,
+  is_read BOOLEAN NOT NULL DEFAULT false,
+  archived BOOLEAN NOT NULL DEFAULT false,
+  deleted_at TIMESTAMPTZ,
   UNIQUE(user_id, article_id)
+);
+
+CREATE TABLE IF NOT EXISTS account_sessions (
+  token_hash TEXT PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_agent TEXT,
+  ip_address TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  expires_at TIMESTAMPTZ NOT NULL,
+  revoked_at TIMESTAMPTZ
 );
 
 -- Indexes

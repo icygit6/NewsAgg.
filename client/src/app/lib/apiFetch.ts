@@ -21,16 +21,13 @@ export class ApiError extends Error {
 export const AUTH_UNAUTHORIZED_EVENT = 'auth:unauthorized';
 
 export async function apiFetch<T = unknown>(path: string, init: RequestInit = {}): Promise<T> {
-  const token = localStorage.getItem('authToken');
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(init.headers as Record<string, string> | undefined),
   };
-  if (token) headers.Authorization = `Bearer ${token}`;
+  const res = await fetch(`${API_BASE_URL}${path}`, { ...init, headers, credentials: 'include' });
 
-  const res = await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
-
-  if (res.status === 401 && token) {
+  if (res.status === 401) {
     localStorage.removeItem('authToken');
     localStorage.removeItem('user');
     window.dispatchEvent(new Event(AUTH_UNAUTHORIZED_EVENT));

@@ -12,7 +12,7 @@ from typing import Optional
 
 from bs4 import BeautifulSoup
 
-from core import config, db, extract, http, nlp, summarizer
+from core import config, db, extract, http, nlp, summarizer, quality
 from core.cleaner import (
     clean_text,
     date_from_url,
@@ -37,6 +37,7 @@ class SourceSpec:
     target_per_category: int = field(default=config.TARGET_PER_CATEGORY)
     content_selectors: list[str] = field(default_factory=list)   # CSS selectors tried first for the body
     boilerplate_extra: list[re.Pattern] = field(default_factory=list)  # site-specific line filters
+    feeds: dict[str, list[str]] = field(default_factory=dict)
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -47,7 +48,7 @@ def _lead_sentences(text: str, limit: int = 220) -> str:
     fallback instead of a blind text[:300] cut. CJK-aware split."""
     if not text:
         return ""
-    parts = re.split(r"(?<=[.!?。！？])\s*", text.replace("\n", " "))
+    parts = re.split(r"(?<=[。！？])|(?<=[.!?])\s+", text.replace("\n", " "))
     out = ""
     for p in parts:
         p = p.strip()
@@ -117,22 +118,15 @@ def enrich_article(item: dict, spec: SourceSpec) -> Optional[dict]:
         np_cfg.request_timeout = config.REQUEST_TIMEOUT
 
         art = Article(url, config=np_cfg)
-        rendered_html = http.fetch_rendered_html(url) if spec.use_playwright else None
+        response = http.get(url)
+        rendered_html = http.html_text(response) if response is not None else None
+        if not rendered_html and spec.use_playwright:
+            rendered_html = http.fetch_rendered_html(url)
         if rendered_html:
             art.set_html(rendered_html)
             art.parse()
-            try:
-                art.nlp()
-            except Exception:
-                pass
         else:
-            art.download()
-            art.parse()
-            art.nlp()
-
-        pub_dt = art.publish_date
-        if not is_fresh(url, pub_dt):
-            print("     too old, skip")
+            item['rejection'] = 'fetch_failed'
             return None
 
         # Raw soup for body + meta extraction. Reuse the HTML newspaper3k
@@ -143,19 +137,49 @@ def enrich_article(item: dict, spec: SourceSpec) -> Optional[dict]:
         else:
             soup = http.fetch_soup(url, timeout=12) or BeautifulSoup("", "html.parser")
 
-        text = _extract_body(art, page_html, spec, soup)
-        text = strip_boilerplate(text, spec.boilerplate_extra)
-        text = truncate_content(text, config.MAX_CONTENT_CHARS)
-        if len(text) < config.MIN_TEXT_LEN:
-            print("     too short, skip")
-            return None
-        if spec.language == "en" and len(text.split()) < config.MIN_WORDS_EN:
-            print("     too few words, skip")
-            return None
-
         jsonld_items = extract.extract_jsonld(soup)
         jsonld = extract.jsonld_article(jsonld_items)
         og_data = extract.extract_og(soup, url)
+        pub_dt, date_source = quality.publication_date(soup, jsonld, og_data, art.publish_date, url, item.get('published_hint'))
+        reason = quality.date_rejection(pub_dt, config.MAX_AGE_DAYS)
+        title = jsonld.get('jsonld_headline') or art.title or og_data.get('og_title') or ''
+        if reason or quality.NON_ARTICLE.search(title):
+            item['rejection'] = reason or 'non_article'
+            print(f"     reject: {item['rejection']}")
+            return None
+        fallback = _extract_body(art, page_html, spec, soup)
+        text, blocks = quality.structured_body(soup, spec.content_selectors, fallback, spec.boilerplate_extra)
+        original_length = len(text)
+        kept, size = [], 0
+        for block in blocks:
+            value = '\n'.join(block.get('items', [])) if block['type'] == 'list' else block['text']
+            if size + len(value) > config.MAX_CONTENT_CHARS:
+                break
+            kept.append(block)
+            size += len(value) + 2
+        blocks = kept
+        text = '\n\n'.join('\n'.join(b['items']) if b['type'] == 'list' else b['text'] for b in blocks)
+        if len(text) < config.MIN_TEXT_LEN:
+            item['rejection'] = 'short_body'
+            print("     too short, skip")
+            return None
+        if spec.language == "en" and len(text.split()) < config.MIN_WORDS_EN:
+            item['rejection'] = 'short_body'
+            print("     too few words, skip")
+            return None
+
+        # Run expensive classification only after date/body validation and
+        # only for candidates actually needed to fill the category quota.
+        if not spec.skip_zero_shot:
+            item['title_hint'] = title
+            from core.taxonomy import classification_context
+            item['content_hint'] = classification_context(text)
+            item['source_key'] = spec.key
+            if not nlp.zero_shot_filter([item]):
+                item.setdefault('rejection', 'category_unverified')
+                print(f"     reject: {item['rejection']}")
+                return None
+
         video_url = extract.extract_video(soup, url, jsonld_items)
         related_urls = extract.extract_related(soup, url)
         author_info = extract.extract_author(soup, url, art.authors, jsonld)
@@ -174,11 +198,12 @@ def enrich_article(item: dict, spec: SourceSpec) -> Optional[dict]:
 
         entities = nlp.run_ner(text)
         sentiment = nlp.analyze_sentiment(text, topic, language)
-        ai_summary = summarizer.build_ai_summary(text, language)
+        summary_result = summarizer.summarize(quality.summary_body(blocks), language, title)
+        ai_summary = summary_result['text']
         toxicity = nlp.run_toxicity(text, language)
         keywords = nlp.extract_keywords(text, art.keywords or [], entities,
                                         top_n=config.KEYWORDS_TOP_N)
-        readability = nlp.reading_metrics(text)
+        readability = nlp.reading_metrics(text, language)
 
         desc = (
             og_data.get("og_description")
@@ -187,19 +212,13 @@ def enrich_article(item: dict, spec: SourceSpec) -> Optional[dict]:
             or _lead_sentences(text)
         )
 
-        pub_iso = None
-        if pub_dt:
-            if pub_dt.tzinfo is None:
-                pub_dt = pub_dt.replace(tzinfo=timezone.utc)
-            pub_iso = pub_dt.isoformat()
-        pub_iso = (
-            pub_iso
-            or og_data.get("published_meta")
-            or jsonld.get("jsonld_datePublished")
-            or datetime.now(timezone.utc).isoformat()
-        )
-        mod_iso = og_data.get("modified_meta") or jsonld.get("jsonld_dateModified")
+        pub_iso = pub_dt.isoformat()
+        modified = quality.parse_date(jsonld.get('jsonld_dateModified') or og_data.get('modified_meta'))
+        mod_iso = modified.isoformat() if modified and modified >= pub_dt else None
         canonical = normalize_canonical(og_data.get("canonical_url") or url)
+        if not http.same_family(canonical, url):
+            canonical = normalize_canonical(url)
+        images = quality.validate_images(quality.image_candidates(soup, url, jsonld, art.top_image))
 
         record = {
             "id": url_id(canonical),
@@ -208,12 +227,17 @@ def enrich_article(item: dict, spec: SourceSpec) -> Optional[dict]:
             "source": source_meta(url),
             "author": author_info["name"],
             "author_url": author_info["url"],
-            "title": art.title or og_data.get("og_title") or jsonld.get("jsonld_headline", "Untitled"),
+            "title": title,
             "description": desc,
             "content": text,
             "ai_summary": ai_summary,
-            "url_to_image": art.top_image or jsonld.get("jsonld_image"),
-            "images": og_data.get("images", []),
+            "url_to_image": images[0]['url'] if images else None,
+            "images": images,
+            "content_blocks": blocks,
+            "content_hash": quality.content_hash(text),
+            "extraction_version": quality.VERSION,
+            "summary_method": summary_result['method'],
+            "quality_metadata": {'date_source': date_source, 'image_status': 'verified' if images else 'unavailable', 'summary_evidence': summary_result['evidence'], 'source_categories': item.get('source_categories', [topic]), 'content_truncated': len(text) < original_length, 'original_content_chars': original_length, 'category_model': item.get('category_model'), 'category_taxonomy': item.get('category_taxonomy')},
             "video_url": video_url,
             "published_at": pub_iso,
             "modified_at": mod_iso,
@@ -254,6 +278,7 @@ def enrich_article(item: dict, spec: SourceSpec) -> Optional[dict]:
         return record
 
     except Exception as e:                          # noqa: BLE001
+        item['rejection'] = 'extraction_error'
         print(f"     error: {e}")
         return None
 
@@ -277,6 +302,8 @@ def run_source(
     conn=None,
     global_seen: Optional[set[str]] = None,
     stats: Optional[dict] = None,
+    attempted_urls: Optional[set[str]] = None,
+    candidate_limit: Optional[int] = None,
 ) -> list[dict]:
     """Crawl, filter, enrich and (optionally) upsert one source. Returns records.
 
@@ -306,42 +333,62 @@ def run_source(
 
     for category, urls in spec.categories.items():
         print(f"\n-- {category} --")
-        per_src_target = max(20, (target * per_src_mult) // max(1, len(urls)))
+        per_src_target = min(120, max(40, (target * per_src_mult * 2) // max(1, len(urls))))
 
         raw_pool: list[dict] = []
-        for u in urls:
-            raw_pool += http.crawl_source(u, category, per_src_target, rendered=spec.use_playwright)
-
-        deduped: dict[str, dict] = {}
-        for it in raw_pool:
-            deduped.setdefault(it["url"], it)
-        raw_pool = list(deduped.values())
-
-        if spec.skip_zero_shot:
-            validated = _assign_topic(raw_pool)
-        else:
-            validated = nlp.zero_shot_filter(raw_pool)
-
-        validated.sort(
-            key=lambda x: (
-                -x.get("ai_relevance_score", 0),
-                -(date_from_url(x["url"]).timestamp() if date_from_url(x["url"]) else 0.0),
-            )
-        )
-
+        for feed in spec.feeds.get(category, []):
+            raw_pool += http.crawl_feed(feed, category, per_src_target, urls[0])
         cat_articles: list[dict] = []
-        for item in validated:
+        attempted = attempted_urls if attempted_urls is not None else set()
+        def candidates():
+            # Try dated feeds first. Only accepted articles fill a quota: a
+            # large but stale/mismatched RSS feed must not suppress the section
+            # fallback (the previous raw-feed-length gate did exactly that).
+            batches = [lambda: raw_pool] + [lambda u=u: http.crawl_source(u, category, per_src_target, rendered=spec.use_playwright) for u in urls]
+            for discover in batches:
+                if len(cat_articles) >= target:
+                    return
+                pool = discover()
+                stats[f'discovered_{spec.key}_{category}'] = stats.get(f'discovered_{spec.key}_{category}', 0) + len(pool)
+                pool.sort(key=lambda x: -((quality.parse_date(x.get('published_hint')) or date_from_url(x['url'])).timestamp() if quality.parse_date(x.get('published_hint')) or date_from_url(x['url']) else 0.0))
+                for item in _assign_topic(pool):
+                    if candidate_limit and attempts >= candidate_limit:
+                        return
+                    canonical = normalize_canonical(item['url'])
+                    if canonical in attempted or canonical in global_seen:
+                        continue
+                    attempted.add(canonical)
+                    hint = quality.parse_date(item.get('published_hint')) or date_from_url(item['url'])
+                    if hint and quality.date_rejection(hint, config.MAX_AGE_DAYS):
+                        stats['skipped_stale_hint'] = stats.get('skipped_stale_hint', 0) + 1
+                        continue
+                    yield item
+
+        attempts = 0
+        for item in candidates():
             if len(cat_articles) >= target:
                 break
             if item["url"] in global_seen:
                 continue
+            attempts += 1
+            stage_key = None
+            if to_db:
+                stage_key, conn = db.staging_with_retry(conn, db.stage_candidate, item, spec.key)
             record = enrich_article(item, spec)
             if record is None:
+                reason = 'rejected_' + item.get('rejection', 'unknown')
+                stats[reason] = stats.get(reason, 0) + 1
+                if to_db:
+                    _, conn = db.staging_with_retry(conn, db.reject_candidate, stage_key, item.get('rejection', 'unknown'))
+                if candidate_limit and attempts >= candidate_limit:
+                    break
                 continue
+            record['_stage_key'] = stage_key
             ckey = record["canonical_url"]
             if ckey in global_seen:
+                if to_db:
+                    _, conn = db.staging_with_retry(conn, db.reject_candidate, stage_key, 'duplicate_canonical')
                 continue
-            global_seen.add(ckey)
 
             if to_db:
                 try:
@@ -350,6 +397,8 @@ def run_source(
                     # the first write of the run would otherwise abort the source.
                     status, conn = db.upsert_with_retry(conn, record)
                     stats[status] = stats.get(status, 0) + 1
+                    if status == 'quarantined':
+                        continue
                 except Exception as e:              # noqa: BLE001
                     try:
                         if conn is not None and not conn.closed:
@@ -358,10 +407,15 @@ def run_source(
                         pass
                     stats["errors"] = stats.get("errors", 0) + 1
                     print(f"     DB insert error: {e}")
+                    continue
+            global_seen.add(ckey)
             cat_articles.append(record)
+            if candidate_limit and attempts >= candidate_limit:
+                break
 
         collected.extend(cat_articles)
         print(f"  collected {len(cat_articles)} for {category}")
+        stats[f'deficit_{spec.key}_{category}'] = max(0, target - len(cat_articles))
 
     if owns_conn:
         conn.close()

@@ -1,46 +1,43 @@
+import { useUiText } from '../i18n/uiText';
+import { useTitleTranslations } from '../hooks/useTitleTranslations';
 import { useEffect, useRef } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { useArticles } from '../hooks/useArticles';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
-import { usePreviewTranslations } from '../hooks/usePreviewTranslations';
 import { NewsCard } from './NewsCard';
 import { HeroCarousel } from './HeroCarousel';
 import { CATEGORY_LABELS } from '../constants';
 import { FeedSkeleton } from './ui/ContentSkeleton';
 
 export function NewsGrid() {
-  const { t, isDark, selectedCategory, selectedSources, selectedSentiment, searchQuery } = useApp();
+  const ui = useUiText();
+  const {
+    t,
+    isDark,
+    selectedCategory,
+    selectedSources,
+    selectedSentiment,
+    selectedSort,
+    searchQuery,
+  } = useApp();
   const debouncedQuery = useDebouncedValue(searchQuery.trim(), 250);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   // All filtering happens server-side now (category/source/sentiment/q),
   // 20 summary rows per page instead of the legacy 400-article payload.
-  const {
-    data,
-    isLoading,
-    isError,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useArticles({
+  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useArticles({
     category: selectedCategory,
     sources: selectedSources,
     sentiment: selectedSentiment,
     q: debouncedQuery,
-    // The unfiltered front page is an editorially ranked, source-diverse feed.
-    // Search and category pages remain chronological.
-    sort: selectedCategory === 'all' && !debouncedQuery ? 'top' : 'latest',
+    sort: selectedSort,
     pageSize: 20,
   });
 
-  const articles = data?.pages.flatMap((page) => page.articles) ?? [];
-  const { data: previewTranslations = {} } = usePreviewTranslations(articles);
-  const displayArticles = articles.map((article) => {
-    const translated = previewTranslations[article.id];
-    return translated && translated.provider !== 'none'
-      ? { ...article, title: translated.title ?? article.title, description: translated.description ?? article.description, aiSummary: translated.aiSummary ?? article.aiSummary }
-      : article;
-  });
+  // Offset pages may overlap when a new publication arrives during browsing.
+  const articles = [...new Map((data?.pages.flatMap((page) => page.articles) ?? [])
+    .map(article => [article.id || article.url, article])).values()];
+  const displayArticles = useTitleTranslations(articles);
 
   // Infinite scroll: pull the next page when the sentinel becomes visible.
   useEffect(() => {
@@ -54,21 +51,21 @@ export function NewsGrid() {
           fetchNextPage();
         }
       },
-      { rootMargin: '200px' }
+      { root: document.getElementById('main-scroll'), rootMargin: '200px' },
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage, articles.length]);
 
   if (isLoading) {
-    return (
-      <FeedSkeleton label={t.loading} hero={!searchQuery.trim()} />
-    );
+    return <FeedSkeleton label={t.loading} hero={!searchQuery.trim()} />;
   }
 
   if (isError) {
     return (
-      <div className={`flex flex-col items-center justify-center py-20 text-center ${isDark ? 'text-red-400' : 'text-red-500'}`}>
+      <div
+        className={`flex flex-col items-center justify-center py-20 text-center ${isDark ? 'text-red-400' : 'text-red-500'}`}
+      >
         <div className="text-5xl mb-4">⚠️</div>
         <p className="text-lg font-medium">{t.errorTitle}</p>
         <p className="text-sm mt-1">{t.fetchFailed}</p>
@@ -78,7 +75,9 @@ export function NewsGrid() {
 
   if (articles.length === 0) {
     return (
-      <div className={`flex flex-col items-center justify-center py-20 text-center ${isDark ? 'text-slate-400' : 'text-gray-400'}`}>
+      <div
+        className={`flex flex-col items-center justify-center py-20 text-center ${isDark ? 'text-slate-400' : 'text-gray-400'}`}
+      >
         <div className="text-5xl mb-4">📰</div>
         <p className="text-lg font-medium">{t.noResults}</p>
         <p className="text-sm mt-1">{t.tryDifferent}</p>
@@ -87,11 +86,14 @@ export function NewsGrid() {
   }
 
   return (
-    <div className="w-full overflow-x-hidden">
+    <div className="w-full min-w-0">
       {selectedCategory !== 'all' && (
         <header className="flex items-end justify-between gap-4 py-5">
-          <h1 className="text-3xl font-extrabold tracking-tight">{CATEGORY_LABELS[selectedCategory]}</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">{(data?.pages[0]?.totalCount ?? articles.length).toLocaleString()} articles</p>
+          <h1 className="text-3xl font-extrabold tracking-tight">
+            {ui(CATEGORY_LABELS[selectedCategory])}
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            {(data?.pages[0]?.totalCount ?? articles.length).toLocaleString()} {ui("articles")} </p>
         </header>
       )}
 
@@ -103,18 +105,17 @@ export function NewsGrid() {
         </div>
       )}
 
-      {/* Feed: single column in the X-style centre; two columns once the
-          full-bleed centre grows past ~900px (viewport ≥1600px). */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 items-stretch gap-3 sm:gap-5 overflow-x-hidden">
-        {displayArticles.map((article, i) => (
-          <NewsCard key={article.id || article.url} article={article} index={i} />
+      {/* Vertical cards stay roomy while using the wider feed efficiently. */}
+      <div className="grid min-w-0 grid-cols-1 items-stretch gap-5 sm:grid-cols-2">
+        {displayArticles.map((article) => (
+          <NewsCard key={article.id || article.url} article={article} />
         ))}
       </div>
 
       {/* Infinite-scroll sentinel + loading indicator */}
       {hasNextPage && (
-        <div ref={sentinelRef} className="min-h-4">
-          {isFetchingNextPage && <FeedSkeleton count={2} label={t.loading} />}
+        <div ref={sentinelRef} className="h-16 flex items-center justify-center" role="status" aria-live="polite">
+          {isFetchingNextPage && <span className="text-sm text-slate-500">{t.loading}</span>}
         </div>
       )}
     </div>

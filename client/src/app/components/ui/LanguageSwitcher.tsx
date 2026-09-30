@@ -1,3 +1,4 @@
+import { useUiText } from '../../i18n/uiText';
 import { Languages, Loader2, Sparkles } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import type { Language } from '../../i18n/translations';
@@ -9,6 +10,8 @@ interface LanguageSwitcherProps {
   isAutoTranslated?: boolean;
   error?: string | null;
   onRetry?: () => void;
+  selectedLanguage: Language;
+  onSelectLanguage: (language: Language) => void;
 }
 
 export const LANG_PILLS: { code: Language; short: string }[] = [
@@ -16,8 +19,9 @@ export const LANG_PILLS: { code: Language; short: string }[] = [
   { code: 'zhTW', short: '繁中' },
 ];
 
-export function LanguageSwitcher({ isDark, isLoading = false, isAutoTranslated = false, error, onRetry }: LanguageSwitcherProps) {
-  const { language, setLanguage, translateMode, setTranslateMode, t } = useApp();
+export function LanguageSwitcher({ isDark, isLoading = false, isAutoTranslated = false, error, onRetry, selectedLanguage, onSelectLanguage }: LanguageSwitcherProps) {
+  const ui = useUiText();
+  const { t } = useApp();
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -25,12 +29,13 @@ export function LanguageSwitcher({ isDark, isLoading = false, isAutoTranslated =
       <div className={`inline-flex items-center gap-1 rounded-full p-1 border ${isDark ? 'border-slate-700 bg-slate-800/60' : 'border-gray-200 bg-white'}`}>
         <Languages size={14} className={`ml-1.5 ${isDark ? 'text-slate-400' : 'text-gray-400'}`} />
         {LANG_PILLS.map((pill) => {
-          const active = language === pill.code;
+          const active = selectedLanguage === pill.code;
           return (
             <button
               key={pill.code}
               type="button"
-              onClick={() => setLanguage(pill.code)}
+              onClick={() => onSelectLanguage(pill.code)}
+              aria-pressed={active}
               className={`px-2.5 py-1 rounded-full text-xs font-semibold font-mono transition-colors ${
                 active
                   ? 'bg-cyan-500 text-white'
@@ -44,23 +49,6 @@ export function LanguageSwitcher({ isDark, isLoading = false, isAutoTranslated =
           );
         })}
       </div>
-
-      {/* Translate-all toggle */}
-      <button
-        type="button"
-        onClick={() => setTranslateMode(!translateMode)}
-        aria-pressed={translateMode}
-        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
-          translateMode
-            ? 'bg-cyan-500 border-cyan-500 text-white'
-            : isDark
-            ? 'border-slate-700 text-slate-300 hover:bg-slate-800'
-            : 'border-gray-200 text-gray-600 hover:bg-gray-100'
-        }`}
-      >
-        <Languages size={13} />
-        {t.translateAll}
-      </button>
 
       {/* Loading spinner during first-time translate */}
       {isLoading && (
@@ -79,8 +67,7 @@ export function LanguageSwitcher({ isDark, isLoading = false, isAutoTranslated =
       )}
       {!isLoading && error && (
         <button type="button" onClick={onRetry} className="text-xs font-semibold text-red-600 underline decoration-red-300 underline-offset-4">
-          {t.noTranslation} · Retry
-        </button>
+          {t.noTranslation} {ui("· Retry")} </button>
       )}
     </div>
   );

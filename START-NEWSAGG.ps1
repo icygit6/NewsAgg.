@@ -32,8 +32,14 @@ if ($LASTEXITCODE -ne 0) {
 docker compose config --quiet
 if ($LASTEXITCODE -ne 0) { throw 'Konfigurasi Docker Compose tidak valid.' }
 
-docker compose up -d --build --remove-orphans server client tunnel
+docker compose up -d --build server client tunnel local-ai
 if ($LASTEXITCODE -ne 0) { throw 'Docker gagal membangun atau menjalankan NewsAgg.' }
+try {
+    & (Join-Path $PSScriptRoot 'UPDATE-STABLE-ORIGIN.ps1')
+} catch {
+    Write-Warning "Stable public address could not be refreshed: $($_.Exception.Message)"
+    Write-Warning 'The local site and Docker containers are still running. Authenticate Wrangler separately, then run .\UPDATE-STABLE-ORIGIN.ps1.'
+}
 
 docker compose ps
 Write-Host ''
