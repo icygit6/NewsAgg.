@@ -43,26 +43,10 @@ jobs:
         if: github.event_name == 'workflow_dispatch' && inputs.save_recipients
         shell: powershell
         run: |
-          if (-not $env:NEWSAGG_MANUAL_RECIPIENTS) { throw 'Enter recipient emails before selecting Save recipients.' }
-          $saved = & node.exe 'D:\Website\server\scripts\save-daily-recipients.mjs' $env:NEWSAGG_MANUAL_RECIPIENTS
-          if ($LASTEXITCODE -ne 0) { throw 'Recipient validation failed.' }
-          $credentialInput = "protocol=https`nhost=github.com`nusername=icygit6`n`n"
-          $passwordLine = ($credentialInput | git credential fill) | Where-Object { $_ -like 'password=*' } | Select-Object -First 1
-          if (-not $passwordLine) { throw 'GitHub credential unavailable on the self-hosted runner.' }
-          $gh = (Get-Command gh.exe -ErrorAction SilentlyContinue).Source
-          if (-not $gh) { $gh = Join-Path $env:ProgramFiles 'GitHub CLI\gh.exe' }
-          if (-not (Test-Path -LiteralPath $gh)) { throw 'GitHub CLI is unavailable on the self-hosted runner.' }
-          $env:GH_TOKEN = $passwordLine.Substring(9)
-          try {
-            & $gh variable set REPORT_EMAIL_TO --repo $env:GITHUB_REPOSITORY --body $saved
-            if ($LASTEXITCODE -ne 0) { throw 'Could not save the recipient variable in GitHub.' }
-            $confirmed = & $gh variable get REPORT_EMAIL_TO --repo $env:GITHUB_REPOSITORY
-            if ($LASTEXITCODE -ne 0 -or $confirmed.Trim() -ne $saved) { throw 'Saved recipient verification failed.' }
-            Write-Host "Saved $(@($saved -split ',').Count) additional recipient(s) for future runs."
-          } finally {
-            Remove-Item Env:GH_TOKEN -ErrorAction SilentlyContinue
-            $passwordLine = $null
-          }
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass `
+            -File 'D:\Website\SAVE-GITHUB-RECIPIENTS.ps1' `
+            -Recipients $env:NEWSAGG_MANUAL_RECIPIENTS
+          if ($LASTEXITCODE -ne 0) { throw 'Could not persist recipient emails.' }
       - name: Validate daily pipeline without sending mail
         if: github.event_name == 'workflow_dispatch' && inputs.mode == 'preflight'
         shell: powershell
