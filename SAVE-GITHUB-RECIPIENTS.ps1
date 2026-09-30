@@ -12,11 +12,13 @@ $gh = (Get-Command gh.exe -ErrorAction SilentlyContinue).Source
 if (-not $gh) { $gh = Join-Path $env:ProgramFiles 'GitHub CLI\gh.exe' }
 if (-not (Test-Path -LiteralPath $gh)) { throw 'GitHub CLI is unavailable on the self-hosted runner.' }
 
-# Write the credential request directly to stdin. Windows PowerShell's native
-# pipeline can lose this multi-line input inside a GitHub Actions run block.
+# Ask the installed Git Credential Manager directly. The runner's Git wrapper
+# can reject the credential stdin record even though the manager accepts it.
 $startInfo = New-Object System.Diagnostics.ProcessStartInfo
-$startInfo.FileName = (Get-Command git.exe -ErrorAction Stop).Source
-$startInfo.Arguments = 'credential fill'
+$manager = Join-Path $env:ProgramFiles 'Git\mingw64\bin\git-credential-manager.exe'
+if (-not (Test-Path -LiteralPath $manager)) { throw 'Git Credential Manager is unavailable on the self-hosted runner.' }
+$startInfo.FileName = $manager
+$startInfo.Arguments = 'get'
 $startInfo.UseShellExecute = $false
 $startInfo.CreateNoWindow = $true
 $startInfo.RedirectStandardInput = $true
