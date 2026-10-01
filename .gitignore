@@ -8,6 +8,7 @@ server/.env
 server/.hf.env
 baogao/
 .codex_tmp/
+output/
 *.png
 
 # Local dependency/build/cache output

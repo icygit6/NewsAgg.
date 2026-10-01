@@ -11,7 +11,7 @@ if (-not $containerId) {
 # records when ErrorActionPreference is Stop, so temporarily allow the output.
 $previousErrorActionPreference = $ErrorActionPreference
 $ErrorActionPreference = 'Continue'
-$logs = docker compose logs --no-color tunnel 2>&1 | Select-String -Pattern 'https://[a-z0-9-]+\.trycloudflare\.com' | Out-String
+$logs = docker compose logs --no-color --tail 80 tunnel | Select-String -Pattern 'https://[a-z0-9-]+\.trycloudflare\.com' | Out-String
 $dockerLogsExitCode = $LASTEXITCODE
 $ErrorActionPreference = $previousErrorActionPreference
 
@@ -43,7 +43,7 @@ if (-not $isReachable -and $RefreshTunnel) {
     do {
         Start-Sleep -Seconds 2
         $ErrorActionPreference = 'Continue'
-        try { $logs = docker compose logs --no-color --since 1m tunnel 2>&1 | Select-String -Pattern 'https://[a-z0-9-]+\.trycloudflare\.com' | Out-String }
+        try { $logs = docker compose logs --no-color --since 1m --tail 80 tunnel | Select-String -Pattern 'https://[a-z0-9-]+\.trycloudflare\.com' | Out-String }
         finally { $ErrorActionPreference = $previousErrorActionPreference }
         $urls = [regex]::Matches($logs, 'https://[a-z0-9-]+\.trycloudflare\.com')
     } while ($urls.Count -eq 0 -and (Get-Date) -lt $deadline)

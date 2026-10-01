@@ -97,7 +97,15 @@ where the challenge appears:
   after **3 failed logins from the same IP within 15 minutes** (the server echoes
   a `captchaRequired` flag once that threshold trips); a clean login clears the
   counter.
-- **Google sign-in** is never challenged (the OAuth provider handles bot risk).
+- **Google sign-in** always requires a Turnstile check before Google OAuth is
+  launched. It fails closed when the Turnstile keys are missing, so a production
+  deployment cannot silently expose unprotected Google authentication.
+
+New accounts must accept the Terms of Service. They can separately opt in to
+email updates during either email or Google registration, and can change that
+choice later under Profile. A signed-in user's Profile language preference is
+stored with the account and drives both interface copy and automatic news
+translation across devices.
 
 Verification fails open: if Cloudflare is briefly unreachable the request is
 allowed through, so an outage can't lock everyone out — rate limiting still caps

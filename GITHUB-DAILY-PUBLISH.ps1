@@ -130,7 +130,7 @@ function Get-PublicUrl {
         Start-Sleep -Seconds 3
         $previousPreference = $ErrorActionPreference
         $ErrorActionPreference = 'Continue'
-        $logs = (& docker compose logs --no-color tunnel 2>&1 | Select-String -Pattern 'https://[a-z0-9-]+\.trycloudflare\.com' | Out-String)
+        $logs = (& docker compose logs --no-color --tail 80 tunnel | Select-String -Pattern 'https://[a-z0-9-]+\.trycloudflare\.com' | Out-String)
         $ErrorActionPreference = $previousPreference
         $matches = @([regex]::Matches($logs, 'https://[a-z0-9-]+\.trycloudflare\.com') |
             ForEach-Object { $_.Value } |

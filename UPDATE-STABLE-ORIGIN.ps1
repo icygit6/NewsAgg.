@@ -39,7 +39,7 @@ try {
         foreach ($attempt in 1..20) {
             $oldPreference = $ErrorActionPreference
             $ErrorActionPreference = 'Continue'
-            try { $logs = docker compose logs --no-color tunnel 2>&1 | Select-String -Pattern 'https://[a-z0-9-]+\.trycloudflare\.com' | Out-String }
+            try { $logs = docker compose logs --no-color --tail 80 tunnel | Select-String -Pattern 'https://[a-z0-9-]+\.trycloudflare\.com' | Out-String }
             finally { $ErrorActionPreference = $oldPreference }
             $urls = [regex]::Matches($logs,'https://[a-z0-9-]+\.trycloudflare\.com')
             if ($urls.Count) { $TunnelUrl = $urls[$urls.Count-1].Value; break }
