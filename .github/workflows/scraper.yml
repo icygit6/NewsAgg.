@@ -1,9 +1,12 @@
 name: Scraper
 
 on:
-  # 17:05 Asia/Taipei (Taiwan has no daylight-saving time).
+  # Primary: 17:05 Asia/Taipei; backup: 19:17. Both use the same idempotent
+  # ingestion state, so a completed primary run makes the backup a no-op.
+  # GitHub can delay or drop individual scheduled events.
   schedule:
     - cron: '5 9 * * *'
+    - cron: '17 11 * * *'
   workflow_dispatch:
     inputs:
       job:
