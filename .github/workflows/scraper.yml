@@ -1,12 +1,9 @@
 name: Scraper
 
 on:
-  # Primary: 17:05 Asia/Taipei; backup: 19:17. Both use the same idempotent
-  # ingestion state, so a completed primary run makes the backup a no-op.
-  # GitHub can delay or drop individual scheduled events.
-  schedule:
-    - cron: '5 9 * * *'
-    - cron: '17 11 * * *'
+  # Windows Task Scheduler owns timed ingestion at 17:00 Asia/Taipei.
+  # GitHub scheduled events arrived after 02:20 and exhausted the 04:25 cutoff.
+  # Keep Actions as the manual operation/recovery interface.
   workflow_dispatch:
     inputs:
       job:
@@ -27,14 +24,14 @@ concurrency:
 # for the private repository and reuses locally cached Docker images and models.
 jobs:
   scrape:
-    if: github.event_name == 'schedule' || inputs.job == 'scrape' || inputs.job == 'full-recheck'
+    if: inputs.job == 'scrape' || inputs.job == 'full-recheck'
     runs-on: [self-hosted, Windows, X64]
     timeout-minutes: 360
     env:
       NEWSAGG_TARGET: ${{ inputs.target }}
     steps:
       - name: Ingest and publish news (idempotent daily run)
-        if: github.event_name == 'schedule' || inputs.job == 'scrape'
+        if: inputs.job == 'scrape'
         shell: powershell
         run: |
           $flags = @('-Ingest')

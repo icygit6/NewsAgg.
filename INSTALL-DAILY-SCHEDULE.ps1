@@ -15,8 +15,10 @@ $ingestAction = New-ScheduledTaskAction -Execute $node -Argument ('"' + $script 
 $ingestTrigger = New-ScheduledTaskTrigger -Daily -At $config.startTime
 $ingestSettings = New-ScheduledTaskSettingsSet -WakeToRun -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Hours 4) -RestartCount 2 -RestartInterval (New-TimeSpan -Minutes 5)
 Register-ScheduledTask -TaskName 'NewsAgg Live Ingestion' -Action $ingestAction -Trigger $ingestTrigger -Settings $ingestSettings -Principal $principal -Description '17:00 Taipei: scrape into staging; validate and atomically publish each ready article. No email.' -Force | Out-Null
-$verified = Get-ScheduledTask -TaskName 'NewsAgg Daily Pipeline'
-if (-not $verified.Settings.Enabled) { throw 'New pipeline task is not enabled; legacy task was left unchanged.' }
+foreach ($taskName in @('NewsAgg Daily Pipeline', 'NewsAgg Live Ingestion')) {
+    $verified = Get-ScheduledTask -TaskName $taskName
+    if (-not $verified.Settings.Enabled) { throw "Task $taskName is not enabled; legacy task was left unchanged." }
+}
 foreach ($legacy in @('NewsAgg Daily Email 0500')) {
     $task = Get-ScheduledTask -TaskName $legacy -ErrorAction SilentlyContinue
     if ($task) { Disable-ScheduledTask -TaskName $legacy | Out-Null }

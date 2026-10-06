@@ -1,9 +1,8 @@
 name: NewsAgg Daily Publish and Report
 
 on:
-  # 04:25 Asia/Taipei, then the runner waits for 04:30 freeze and 04:40 send.
-  schedule:
-    - cron: '25 20 * * *'
+  # Windows Task Scheduler owns the 04:30 freeze and 04:40 delivery.
+  # Actions stays available for explicit preflight/recovery operations.
   workflow_dispatch:
     inputs:
       mode:
@@ -58,7 +57,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Daily preflight failed with exit code $LASTEXITCODE." }
 
       - name: Freeze edition and send daily brief
-        if: github.event_name == 'schedule' || inputs.mode == 'send'
+        if: inputs.mode == 'send'
         shell: powershell
         run: |
           $flags = @()

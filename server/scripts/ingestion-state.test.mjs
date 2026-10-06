@@ -20,3 +20,14 @@ test('completed ingestion is not rerun and retries cannot escape count/time limi
   assert.throws(()=>nextIngestionAttempt({phase:'failed',attempt:3},{now,deadline}),/retry limit/);
   assert.throws(()=>nextIngestionAttempt({phase:'scraping',scrapeDeadline:now.toISOString()},{now,deadline}),/budget exhausted/);
 });
+
+test('a queued backup after the morning cutoff preserves the failed attempt',()=>{
+  const state={day:'2026-10-06',runKey:'original',phase:'failed',attempt:1,
+    scrapeDeadline:'2026-10-05T20:25:00.000Z',error:'Command deadline exceeded'};
+  const before=structuredClone(state);
+  assert.throws(()=>nextIngestionAttempt(state,{
+    now:new Date('2026-10-05T20:25:37.005Z'),
+    deadline:new Date('2026-10-06T00:00:00Z'),
+  }),/budget exhausted/);
+  assert.deepEqual(state,before);
+});
