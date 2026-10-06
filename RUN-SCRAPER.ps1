@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([ValidateRange(1, 100)][int]$Target = 15)
+param([ValidateRange(1, 100)][int]$Target = 20)
 
 $ErrorActionPreference = 'Stop'
 if ($env:GITHUB_ACTIONS -eq 'true' -and (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'logs\daily\primary-enabled.json'))) {

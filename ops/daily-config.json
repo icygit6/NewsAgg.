@@ -6,7 +6,7 @@
   "scrapeDeadline": "04:25",
   "sendTime": "04:40",
   "sendDeadline": "04:55",
-  "targetPerSourceCategory": 15,
+  "targetPerSourceCategory": 20,
   "maxAgeHours": 48,
   "minimumArticles": 8,
   "minimumSources": 2,

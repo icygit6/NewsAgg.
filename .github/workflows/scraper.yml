@@ -12,10 +12,10 @@ on:
         options: [scrape, full-recheck, cleanup, backfill-lang]
         default: scrape
       target:
-        description: "Articles per source/category (1-100; default 15), not total articles"
+        description: "Articles per source/category (1-100; default 20), not total articles"
         type: number
         required: false
-        default: 15
+        default: 20
 concurrency:
   group: newsagg-daily-pipeline
   cancel-in-progress: false
