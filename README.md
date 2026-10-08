@@ -4,7 +4,7 @@
 
 NewsAgg is a news aggregation platform with transformer-based sentiment analytics, an X-style three-column UI, a social posts feed, and a per-article AI chat.
 
-[Watch the English-language website demo](demo/NewsAgg_Website_Demo_English_2026-10-01.mp4). It shows the BBC Science feed, an English article with sentiment analysis, and Topic Insights.
+The English-language demo video and bilingual project report are distributed separately; generated media and reports are not part of this source checkout.
 
 ## Architecture
 

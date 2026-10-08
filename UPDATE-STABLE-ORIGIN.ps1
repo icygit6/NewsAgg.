@@ -39,7 +39,7 @@ try {
         foreach ($attempt in 1..20) {
             $oldPreference = $ErrorActionPreference
             $ErrorActionPreference = 'Continue'
-            try { $logs = docker compose logs --no-color --tail 80 tunnel | Select-String -Pattern 'https://[a-z0-9-]+\.trycloudflare\.com' | Out-String }
+            try { $logs = docker compose logs --no-color --tail 1000 tunnel | Select-String -Pattern 'https://[a-z0-9-]+\.trycloudflare\.com' | Out-String }
             finally { $ErrorActionPreference = $oldPreference }
             $urls = [regex]::Matches($logs,'https://[a-z0-9-]+\.trycloudflare\.com')
             if ($urls.Count) { $TunnelUrl = $urls[$urls.Count-1].Value; break }
@@ -57,7 +57,12 @@ try {
         try {
             $deployed = $false
             foreach ($deployAttempt in 1..3) {
-                & npx.cmd --yes wrangler deploy --var "NEWSAGG_ORIGIN:$TunnelUrl"
+                $localWrangler = Join-Path $PSScriptRoot 'deploy\stable-origin\node_modules\wrangler\bin\wrangler.js'
+                if (Test-Path -LiteralPath $localWrangler) {
+                    & node.exe $localWrangler deploy --var "NEWSAGG_ORIGIN:$TunnelUrl"
+                } else {
+                    & npx.cmd --yes wrangler@4.148.0 deploy --var "NEWSAGG_ORIGIN:$TunnelUrl"
+                }
                 if ($LASTEXITCODE -eq 0) { $deployed = $true; break }
                 if ($deployAttempt -lt 3) { Start-Sleep -Seconds 5 }
             }

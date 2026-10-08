@@ -10,11 +10,13 @@ baogao/
 .codex_tmp/
 output/
 *.png
+demo/*.mp4
 
 # Local dependency/build/cache output
 client/node_modules/
 client/dist/
 server/node_modules/
+deploy/stable-origin/node_modules/
 server/dist/
 scraper/__pycache__/
 scraper/**/*.pyc

@@ -1,0 +1,6 @@
+{
+  "name": "newsagg-stable-origin",
+  "private": true,
+  "scripts": { "test": "node --test worker.test.mjs" },
+  "devDependencies": { "wrangler": "4.148.0" }
+}
