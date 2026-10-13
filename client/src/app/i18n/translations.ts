@@ -146,6 +146,7 @@ export interface Translations {
   attachedArticle: string;
   noPostsYet: string;
   askAI: string;
+  askModel: string;
   chatAbout: string;
   chatWelcome: string;
   chatPlaceholder: string;
@@ -329,6 +330,7 @@ export const translations: Record<Language, Translations> = {
     attachedArticle: 'Attached article',
     noPostsYet: 'No posts yet — be the first to share something',
     askAI: 'Ask AI',
+    askModel: 'Ask {model}',
     chatAbout: 'About:',
     chatWelcome: "Ask me anything about this article and I'll answer based on its content.",
     chatPlaceholder: 'Ask about this article...',
@@ -507,6 +509,7 @@ export const translations: Record<Language, Translations> = {
     attachedArticle: 'Artikel terlampir',
     noPostsYet: 'Belum ada postingan — jadilah yang pertama berbagi',
     askAI: 'Tanya AI',
+    askModel: 'Tanya {model}',
     chatAbout: 'Tentang:',
     chatWelcome: 'Tanyakan apa saja tentang artikel ini — saya jawab berdasarkan isinya.',
     chatPlaceholder: 'Tanya tentang artikel ini...',
@@ -681,6 +684,7 @@ export const translations: Record<Language, Translations> = {
     attachedArticle: '附加文章',
     noPostsYet: '还没有帖子 — 成为第一个分享的人吧',
     askAI: 'AI 问答',
+    askModel: '问 {model}',
     chatAbout: '关于：',
     chatWelcome: '随便问我关于这篇文章的问题，我会根据内容回答。',
     chatPlaceholder: '询问这篇文章...',
@@ -855,6 +859,7 @@ export const translations: Record<Language, Translations> = {
     attachedArticle: '附加文章',
     noPostsYet: '還沒有貼文 — 成為第一個分享的人吧',
     askAI: 'AI 問答',
+    askModel: '問 {model}',
     chatAbout: '關於：',
     chatWelcome: '隨便問我關於這篇文章的問題，我會根據內容回答。',
     chatPlaceholder: '詢問這篇文章...',

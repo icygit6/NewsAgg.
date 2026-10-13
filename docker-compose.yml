@@ -15,6 +15,7 @@ services:
       GEMINI_TRANSLATE_MODEL: "${GEMINI_TRANSLATE_MODEL:-gemini-3.5-flash-lite}"
       GROQ_CHAT_MODEL: "${GROQ_CHAT_MODEL:-openai/gpt-oss-120b}"
       GROQ_CHAT_FALLBACK_MODEL: "${GROQ_CHAT_FALLBACK_MODEL:-openai/gpt-oss-20b}"
+      CHAT_MODEL_LABEL: "${CHAT_MODEL_LABEL:-}"   # optional override for the chat button label
       TWELVE_DATA_API_KEY: "${TWELVE_DATA_API_KEY:-}"
       TURNSTILE_SECRET: "${TURNSTILE_SECRET:-}"
       TURNSTILE_SITE_KEY: "${TURNSTILE_SITE_KEY:-}"

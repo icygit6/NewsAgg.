@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { Eraser, Loader2, Send, Sparkles, X } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { getArticleId } from '../../services/newsAPI';
+import { getRuntimeConfig } from '../../lib/runtimeConfig';
 import type { Language } from '../../i18n/translations';
 import type { NewsArticle } from '../../types/article';
 
@@ -51,6 +52,11 @@ export function ArticleChat({ article, isDark }: ArticleChatProps) {
 function ArticleChatSession({ article, isDark }: ArticleChatProps) {
   const { t, language, isAuthenticated, user } = useApp();
   const storageKey = `chat:${user?.id ?? 'guest'}:${getArticleId(article)}`;
+  // Name the actual model (from the API's public config) instead of a generic
+  // "AI"; falls back to the translated generic label when the API hasn't
+  // reported one.
+  const modelLabel = getRuntimeConfig().chatModelLabel;
+  const askLabel = modelLabel ? t.askModel.replace('{model}', modelLabel) : t.askAI;
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>(() => loadHistory(storageKey));
@@ -157,7 +163,7 @@ function ArticleChatSession({ article, isDark }: ArticleChatProps) {
           onClick={() => setOpen(true)}
           className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] lg:bottom-6 right-6 z-40 inline-flex items-center gap-2 px-4 py-3 rounded-full text-sm font-semibold text-white shadow-lg bg-gradient-to-r from-cyan-500 to-pink-500 hover:from-cyan-600 hover:to-pink-600 transition-all"
         >
-          <Sparkles size={16} />{t.askAI}
+          <Sparkles size={16} />{askLabel}
         </button>
       )}
 
@@ -177,7 +183,7 @@ function ArticleChatSession({ article, isDark }: ArticleChatProps) {
             />
             <motion.aside
               key="chat-panel"
-              aria-label={t.askAI}
+              aria-label={askLabel}
               initial={{ x: 360 }}
               animate={{ x: 0 }}
               exit={{ x: 360 }}
@@ -188,7 +194,7 @@ function ArticleChatSession({ article, isDark }: ArticleChatProps) {
                 <div className="flex items-center gap-2 min-w-0">
                   <Sparkles size={16} className="text-cyan-500 shrink-0" />
                   <div className="min-w-0">
-                    <p className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>{t.askAI}</p>
+                    <p className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>{askLabel}</p>
                     <p className={`text-xs truncate ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{t.chatAbout} {article.title}</p>
                   </div>
                 </div>

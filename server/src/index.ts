@@ -29,6 +29,7 @@ import { chatRouter } from './routes/chat'
 import { apiLimiter, authLimiter } from './middleware/rateLimit'
 import { mailerConfigured } from './services/mailer'
 import { requireTrustedOrigin } from './middleware/trustedOrigin'
+import { chatModelLabel } from './services/groq'
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -66,6 +67,7 @@ app.get('/api/config/public', (_req, res) => {
     data: {
       googleClientId: process.env.GOOGLE_CLIENT_ID || '',
       turnstileSiteKey: process.env.TURNSTILE_SITE_KEY || '',
+      chatModelLabel: chatModelLabel(),
     },
   })
 })

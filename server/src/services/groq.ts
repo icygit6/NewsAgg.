@@ -5,6 +5,22 @@ let groqClient: Groq | null = null
 const PRIMARY_CHAT_MODEL = process.env.GROQ_CHAT_MODEL || 'openai/gpt-oss-120b'
 const FALLBACK_CHAT_MODEL = process.env.GROQ_CHAT_FALLBACK_MODEL || 'openai/gpt-oss-20b'
 
+/** Human-readable name of the model that answers article questions, shown on
+ * the chat button instead of a generic "AI". Derived from GROQ_CHAT_MODEL so
+ * changing the model in the environment also changes the label, with
+ * CHAT_MODEL_LABEL as an explicit override. The fallback model is deliberately
+ * not advertised: it only serves degraded requests. */
+export function chatModelLabel(): string {
+  const override = process.env.CHAT_MODEL_LABEL?.trim()
+  if (override) return override.slice(0, 40)
+  const id = (PRIMARY_CHAT_MODEL.split('/').pop() || PRIMARY_CHAT_MODEL).trim()
+  return id
+    .split('-')
+    .map((part) => (/^[a-z]+$/.test(part) && part.length > 4 ? part[0].toUpperCase() + part.slice(1) : part.toUpperCase()))
+    .join('-')
+    .slice(0, 40)
+}
+
 function groq(): Groq {
   if (!groqClient) {
     if (!process.env.GROQ_API_KEY) {
