@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Eraser, Loader2, Send, Sparkles, X } from 'lucide-react';
+import { ChevronDown, Eraser, Loader2, Send, Sparkles, X } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { getArticleId } from '../../services/newsAPI';
 import { getRuntimeConfig } from '../../lib/runtimeConfig';
@@ -91,8 +91,8 @@ function ArticleChatSession({ article, isDark }: ArticleChatProps) {
 
   const clearChat = () => setMessages([]);
 
-  const sendMessage = async () => {
-    const trimmed = input.trim();
+  const sendMessage = async (preset?: string) => {
+    const trimmed = (preset ?? input).trim();
     if (!trimmed || loading) return;
 
     const keyAtSend = storageKey;
@@ -161,9 +161,10 @@ function ArticleChatSession({ article, isDark }: ArticleChatProps) {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] lg:bottom-6 right-6 z-40 inline-flex items-center gap-2 px-4 py-3 rounded-full text-sm font-semibold text-white shadow-lg bg-gradient-to-r from-cyan-500 to-pink-500 hover:from-cyan-600 hover:to-pink-600 transition-all"
+          className="group fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] lg:bottom-6 right-6 z-40 inline-flex items-center gap-2 pl-4 pr-5 py-3 rounded-full text-sm font-semibold text-white shadow-lg shadow-cyan-500/25 ring-1 ring-white/20 bg-gradient-to-r from-cyan-500 to-pink-500 hover:from-cyan-600 hover:to-pink-600 hover:shadow-xl hover:-translate-y-0.5 transition-all"
         >
-          <Sparkles size={16} />{askLabel}
+          <Sparkles size={16} className="transition-transform group-hover:rotate-12" />
+          {askLabel}
         </button>
       )}
 
@@ -184,100 +185,174 @@ function ArticleChatSession({ article, isDark }: ArticleChatProps) {
             <motion.aside
               key="chat-panel"
               aria-label={askLabel}
-              initial={{ x: 360 }}
-              animate={{ x: 0 }}
-              exit={{ x: 360 }}
-              transition={{ type: 'tween', duration: 0.3 }}
-              className={`fixed top-0 right-0 z-[60] h-dvh w-full max-w-sm flex flex-col border-l shadow-2xl ${isDark ? 'bg-slate-900 border-slate-700/60' : 'bg-white border-gray-100'}`}
+              initial={{ x: 380, opacity: 0.5 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: 380, opacity: 0.5 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 34 }}
+              className={`fixed top-0 right-0 z-[60] h-dvh w-full max-w-sm flex flex-col overflow-hidden border-l shadow-2xl lg:rounded-l-3xl ${isDark ? 'bg-slate-900 border-slate-700/60' : 'bg-white border-gray-100'}`}
             >
-              <div className={`flex items-center justify-between gap-2 px-4 py-3 border-b ${isDark ? 'border-slate-700/60' : 'border-gray-100'}`}>
-                <div className="flex items-center gap-2 min-w-0">
-                  <Sparkles size={16} className="text-cyan-500 shrink-0" />
-                  <div className="min-w-0">
-                    <p className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>{askLabel}</p>
-                    <p className={`text-xs truncate ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{t.chatAbout} {article.title}</p>
+              <div className={`relative shrink-0 px-4 py-3 border-b ${isDark ? 'border-slate-700/60' : 'border-gray-100'}`}>
+                {/* Gradient hairline, echoing the floating trigger. */}
+                <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-cyan-500 via-blue-500 to-pink-500" />
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="shrink-0 grid place-items-center w-9 h-9 rounded-full text-white shadow-sm bg-gradient-to-br from-cyan-500 to-pink-500">
+                      <Sparkles size={16} />
+                    </span>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <p className={`text-sm font-semibold truncate ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>{t.askAI}</p>
+                        {modelLabel && (
+                          <span
+                            className={`shrink-0 px-1.5 py-0.5 rounded-md text-[10px] font-semibold tracking-wide ${isDark ? 'bg-slate-800 text-cyan-300 ring-1 ring-slate-700' : 'bg-cyan-50 text-cyan-700 ring-1 ring-cyan-100'}`}
+                          >
+                            {modelLabel}
+                          </span>
+                        )}
+                      </div>
+                      <p className={`text-xs truncate ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{t.chatAbout} {article.title}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-0.5 shrink-0">
+                    {messages.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={clearChat}
+                        aria-label={t.clearChat}
+                        title={t.clearChat}
+                        className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-gray-100 text-gray-500'}`}
+                      >
+                        <Eraser size={16} />
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      aria-label={t.chatClose}
+                      title={t.chatClose}
+                      onClick={() => setOpen(false)}
+                      className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-gray-100 text-gray-600'}`}
+                    >
+                      <X size={18} />
+                    </button>
                   </div>
                 </div>
-                {messages.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={clearChat}
-                    aria-label={t.clearChat}
-                    title={t.clearChat}
-                    className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-gray-100 text-gray-500'}`}
-                  >
-                    <Eraser size={16} />
-                  </button>
-                )}
-                <button type="button" aria-label={language === 'zhTW' ? '關閉聊天' : 'Close chat'} onClick={() => setOpen(false)} className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-gray-100 text-gray-600'}`}>
-                  <X size={18} />
-                </button>
               </div>
 
               <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
                 {messages.length === 0 && !loading && (
-                  <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                    {t.chatWelcome}
-                  </p>
+                  <div className="pt-6 text-center">
+                    <span className={`inline-grid place-items-center w-12 h-12 rounded-2xl ${isDark ? 'bg-slate-800 text-cyan-300' : 'bg-cyan-50 text-cyan-600'}`}>
+                      <Sparkles size={20} />
+                    </span>
+                    <p className={`mt-3 text-sm leading-relaxed ${isDark ? 'text-slate-300' : 'text-gray-600'}`}>{t.chatWelcome}</p>
+                    <p className={`mt-1 text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>{t.chatGrounded}</p>
+                    {/* Starter questions: one tap sends, so an empty panel is
+                        never a blank prompt the reader has to fill in. */}
+                    <div className="mt-4 flex flex-wrap justify-center gap-2">
+                      {t.chatSuggestions.map((suggestion) => (
+                        <button
+                          key={suggestion}
+                          type="button"
+                          onClick={() => void sendMessage(suggestion)}
+                          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${isDark ? 'bg-slate-800 text-slate-200 ring-1 ring-slate-700 hover:bg-slate-700' : 'bg-gray-50 text-gray-700 ring-1 ring-gray-200 hover:bg-gray-100'}`}
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 )}
                 {messages.map((message, index) => (
-                  <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.18 }}
+                    className={`flex items-end gap-2 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    {message.role === 'assistant' && (
+                      <span className="shrink-0 grid place-items-center w-6 h-6 rounded-full text-white bg-gradient-to-br from-cyan-500 to-pink-500">
+                        <Sparkles size={12} />
+                      </span>
+                    )}
                     <div
-                      className={`max-w-[85%] px-3 py-2 rounded-2xl text-sm leading-relaxed whitespace-pre-line ${
+                      className={`max-w-[82%] px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-line shadow-sm rounded-2xl ${
                         message.role === 'user'
-                          ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-br-sm'
+                          ? 'bg-gradient-to-br from-cyan-500 to-blue-500 text-white rounded-br-md'
                           : isDark
-                            ? 'bg-slate-800 text-slate-100 rounded-bl-sm'
-                            : 'bg-gray-100 text-gray-800 rounded-bl-sm'
+                            ? 'bg-slate-800 text-slate-100 ring-1 ring-slate-700/60 rounded-bl-md'
+                            : 'bg-gray-50 text-gray-800 ring-1 ring-gray-100 rounded-bl-md'
                       }`}
                     >
                       {message.content}
                       {message.role === 'assistant' && message.citations && message.citations.length > 0 && (
-                        <details className="mt-2 border-t border-current/10 pt-2 text-xs opacity-80">
-                          <summary className="cursor-pointer font-medium">
-                            {language === 'zhTW' ? '來源段落' : 'Source passages'}
+                        <details className={`group mt-2.5 pt-2.5 border-t ${isDark ? 'border-slate-700/60' : 'border-gray-200'}`}>
+                          <summary
+                            className={`list-none cursor-pointer inline-flex items-center gap-1 text-[11px] font-medium ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-gray-500 hover:text-gray-700'}`}
+                          >
+                            <ChevronDown size={12} className="transition-transform group-open:rotate-180" />
+                            {t.chatSources} · {message.citations.length}
                           </summary>
-                          <div className="mt-2 space-y-2">
+                          <div className="mt-2 space-y-1.5">
                             {message.citations.map((citation) => (
-                              <p key={citation.index} className="line-clamp-4">
-                                [{citation.index}] {citation.text}
+                              <p
+                                key={citation.index}
+                                className={`line-clamp-4 rounded-lg px-2 py-1.5 text-[11px] leading-relaxed ${isDark ? 'bg-slate-900/60 text-slate-400' : 'bg-white text-gray-500'}`}
+                              >
+                                <span className={`mr-1 font-semibold ${isDark ? 'text-cyan-300' : 'text-cyan-600'}`}>[{citation.index}]</span>
+                                {citation.text}
                               </p>
                             ))}
                           </div>
                         </details>
                       )}
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
                 {loading && (
-                  <div className="flex justify-start">
-                    <div className={`px-3 py-2 rounded-2xl rounded-bl-sm ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-gray-100 text-gray-500'}`}>
-                      <Loader2 size={16} className="animate-spin" />
+                  <div className="flex items-end gap-2 justify-start">
+                    <span className="shrink-0 grid place-items-center w-6 h-6 rounded-full text-white bg-gradient-to-br from-cyan-500 to-pink-500">
+                      <Sparkles size={12} />
+                    </span>
+                    <div className={`flex items-center gap-1 px-3.5 py-3 rounded-2xl rounded-bl-md shadow-sm ${isDark ? 'bg-slate-800 ring-1 ring-slate-700/60' : 'bg-gray-50 ring-1 ring-gray-100'}`}>
+                      {[0, 1, 2].map((dot) => (
+                        <motion.span
+                          key={dot}
+                          className={`w-1.5 h-1.5 rounded-full ${isDark ? 'bg-slate-400' : 'bg-gray-400'}`}
+                          animate={{ opacity: [0.3, 1, 0.3], y: [0, -2, 0] }}
+                          transition={{ duration: 1, repeat: Infinity, delay: dot * 0.15 }}
+                        />
+                      ))}
                     </div>
                   </div>
                 )}
               </div>
 
-              <div className={`flex items-center gap-2 px-4 py-3 border-t ${isDark ? 'border-slate-700/60' : 'border-gray-100'}`}>
-                <input
-                  name="chat-message"
-                  aria-label={t.chatPlaceholder}
-                  autoComplete="off"
-                  value={input}
-                  onChange={(event) => setInput(event.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder={t.chatPlaceholder}
-                  className={`flex-1 px-3 py-2 rounded-xl text-sm outline-none ${isDark ? 'bg-slate-800 text-slate-100 placeholder:text-slate-500' : 'bg-gray-100 text-gray-900 placeholder:text-gray-400'}`}
-                />
-                <button
-                  type="button"
-                  onClick={() => void sendMessage()}
-                  aria-label={language === 'zhTW' ? '傳送訊息' : 'Send message'}
-                  disabled={!input.trim() || loading}
-                  className="p-2.5 rounded-xl text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 transition-all disabled:opacity-50"
+              <div className={`shrink-0 px-4 py-3 border-t ${isDark ? 'border-slate-700/60' : 'border-gray-100'}`}>
+                <div
+                  className={`flex items-center gap-2 rounded-2xl pl-3.5 pr-1.5 py-1.5 ${isDark ? 'bg-slate-800 focus-within:ring-2 focus-within:ring-cyan-500/40' : 'bg-gray-100 focus-within:ring-2 focus-within:ring-cyan-500/30'}`}
                 >
-                  <Send size={16} />
-                </button>
+                  <input
+                    name="chat-message"
+                    aria-label={t.chatPlaceholder}
+                    autoComplete="off"
+                    value={input}
+                    onChange={(event) => setInput(event.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder={t.chatPlaceholder}
+                    className={`flex-1 min-w-0 bg-transparent py-1.5 text-sm outline-none ${isDark ? 'text-slate-100 placeholder:text-slate-500' : 'text-gray-900 placeholder:text-gray-400'}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void sendMessage()}
+                    aria-label={t.chatSend}
+                    title={t.chatSend}
+                    disabled={!input.trim() || loading}
+                    className="grid place-items-center shrink-0 w-9 h-9 rounded-xl text-white bg-gradient-to-br from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 disabled:opacity-40 transition-all"
+                  >
+                    {loading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                  </button>
+                </div>
               </div>
             </motion.aside>
           </>

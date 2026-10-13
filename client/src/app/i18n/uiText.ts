@@ -16,7 +16,10 @@ export function translateUi(text: string, language: Language): string {
     if (ago) return `${ago[1]} ${ { m:'分鐘', h:'小時', d:'天' }[ago[2]] }前`;
   }
   const key = (Object.keys(translations.en) as Array<keyof typeof translations.en>).find(key => translations.en[key] === text);
-  return key ? translations[language][key] : text;
+  // Some entries (chat starter questions) are string lists, not copy this
+  // helper can substitute; fall back to the original text for those.
+  const translated = key ? translations[language][key] : text;
+  return typeof translated === 'string' ? translated : text;
 }
 /** Translate curated interface copy only. Never apply this to publisher/user content. */
 export function useUiText() {

@@ -151,6 +151,11 @@ export interface Translations {
   chatWelcome: string;
   chatPlaceholder: string;
   clearChat: string;
+  chatSources: string;
+  chatClose: string;
+  chatSend: string;
+  chatGrounded: string;
+  chatSuggestions: string[];
   aiUnavailable: string;
   pageNotFound: string;
   errorTitle: string;
@@ -335,6 +340,11 @@ export const translations: Record<Language, Translations> = {
     chatWelcome: "Ask me anything about this article and I'll answer based on its content.",
     chatPlaceholder: 'Ask about this article...',
     clearChat: 'Clear chat',
+    chatSources: 'Source passages',
+    chatClose: 'Close chat',
+    chatSend: 'Send message',
+    chatGrounded: 'Answers use only this article.',
+    chatSuggestions: ['Summarise this article', 'What are the key facts?', 'Why does this matter?'],
     aiUnavailable: 'Sorry, the AI assistant is unavailable right now.',
     pageNotFound: 'Page not found',
     errorTitle: 'Error',
@@ -514,6 +524,11 @@ export const translations: Record<Language, Translations> = {
     chatWelcome: 'Tanyakan apa saja tentang artikel ini — saya jawab berdasarkan isinya.',
     chatPlaceholder: 'Tanya tentang artikel ini...',
     clearChat: 'Bersihkan obrolan',
+    chatSources: 'Kutipan sumber',
+    chatClose: 'Tutup obrolan',
+    chatSend: 'Kirim pesan',
+    chatGrounded: 'Jawaban hanya berdasarkan artikel ini.',
+    chatSuggestions: ['Ringkas artikel ini', 'Apa fakta pentingnya?', 'Kenapa ini penting?'],
     aiUnavailable: 'Maaf, asisten AI sedang tidak tersedia.',
     pageNotFound: 'Halaman tidak ditemukan',
     errorTitle: 'Galat',
@@ -689,6 +704,11 @@ export const translations: Record<Language, Translations> = {
     chatWelcome: '随便问我关于这篇文章的问题，我会根据内容回答。',
     chatPlaceholder: '询问这篇文章...',
     clearChat: '清空对话',
+    chatSources: '来源段落',
+    chatClose: '关闭对话',
+    chatSend: '发送消息',
+    chatGrounded: '回答仅依据这篇文章。',
+    chatSuggestions: ['总结这篇文章', '有哪些关键事实？', '为什么这很重要？'],
     aiUnavailable: '抱歉，AI 助手暂时不可用。',
     pageNotFound: '页面未找到',
     errorTitle: '错误',
@@ -864,6 +884,11 @@ export const translations: Record<Language, Translations> = {
     chatWelcome: '隨便問我關於這篇文章的問題，我會根據內容回答。',
     chatPlaceholder: '詢問這篇文章...',
     clearChat: '清空對話',
+    chatSources: '來源段落',
+    chatClose: '關閉對話',
+    chatSend: '傳送訊息',
+    chatGrounded: '回答僅依據這篇文章。',
+    chatSuggestions: ['總結這篇文章', '有哪些關鍵事實？', '為什麼這很重要？'],
     aiUnavailable: '抱歉，AI 助手暫時不可用。',
     pageNotFound: '頁面未找到',
     errorTitle: '錯誤',
