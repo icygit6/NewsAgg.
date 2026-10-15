@@ -12,6 +12,7 @@ export function SearchBox() {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && searchQuery.trim()) navigate('/');
+    if (e.key === 'Escape') setSearchQuery('');
   };
 
   return (
@@ -29,12 +30,16 @@ export function SearchBox() {
         onChange={(e) => setSearchQuery(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder={t.searchPlaceholder}
-        className="flex-1 min-w-0 bg-transparent outline-none text-sm placeholder:text-slate-400 font-sans"
+        aria-label={t.search}
+        // type="search" keeps the mobile search keyboard, but Chromium also
+        // draws its own clear (×) control next to ours; hide the native one.
+        className="flex-1 min-w-0 bg-transparent outline-none text-sm placeholder:text-slate-400 font-sans [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none"
       />
       {searchQuery && (
         <button
+          type="button"
           onClick={() => setSearchQuery('')}
-          className={`rounded-full p-0.5 ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}
+          className={`-my-1 -mr-2 grid h-8 w-8 place-items-center rounded-full ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}
           aria-label={ui("Clear search")}
         >
           <X size={14} />

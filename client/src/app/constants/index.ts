@@ -50,15 +50,17 @@ export const TOPIC_TO_CATEGORY: Record<CategoryTopic, Category> = {
   Climate: 'climate',
 };
 
+// White 11–12px badge text needs a 4.5:1 contrast ratio (WCAG AA); the
+// 500/600 orange, emerald, sky, teal and green shades fell short (2.8–4.1:1).
 export const CATEGORY_BADGE_CLASS: Record<Category, string> = {
-  sport: 'bg-orange-500 text-white',
-  health: 'bg-emerald-600 text-white',
+  sport: 'bg-orange-700 text-white',
+  health: 'bg-emerald-700 text-white',
   business: 'bg-indigo-600 text-white',
   world: 'bg-slate-600 text-white',
-  politics: 'bg-sky-600 text-white',
+  politics: 'bg-sky-700 text-white',
   lifestyle: 'bg-fuchsia-600 text-white',
-  science: 'bg-teal-600 text-white',
-  climate: 'bg-green-600 text-white',
+  science: 'bg-teal-700 text-white',
+  climate: 'bg-green-700 text-white',
 };
 
 export const TOPIC_BADGE_CLASS: Record<CategoryTopic, string> = {

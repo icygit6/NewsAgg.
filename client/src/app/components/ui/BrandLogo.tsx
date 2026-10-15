@@ -13,7 +13,11 @@ export function BrandLogo({
   return (
     <>
       <img
-        src="/logo-mark.png?v=20260910-baseline"
+        // 128px copy of the 1254px master (785 KB -> 19 KB); the mark never
+        // renders above 40 CSS px. The master stays for structured data.
+        src="/logo-mark-128.png"
+        width={128}
+        height={128}
         alt={showWordmark ? '' : 'NewsAgg'}
         className={`${markClassName} shrink-0 object-contain`}
       />

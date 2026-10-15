@@ -17,6 +17,11 @@ export function RightRail() {
   const tabButton = (key: RailTab, label: string) => (
     <button
       key={key}
+      type="button"
+      role="tab"
+      id={`rail-tab-${key}`}
+      aria-selected={tab === key}
+      aria-controls="rail-panel"
       onClick={() => setTab(key)}
       className={`flex-1 py-2 text-sm font-semibold rounded-full transition-colors ${
         tab === key
@@ -49,6 +54,7 @@ export function RightRail() {
             isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'
           }`}
           role="tablist"
+          aria-label={`${t.insights} / ${t.pulse}`}
         >
           {tabButton('insights', t.insights)}
           {tabButton('pulse', t.pulse)}
@@ -56,7 +62,13 @@ export function RightRail() {
       </div>
 
       {/* Scrollable content — independent scroll container */}
-      <div className="flex-1 overflow-y-auto px-4 pb-6" style={{ scrollbarWidth: 'none' }}>
+      <div
+        id="rail-panel"
+        role="tabpanel"
+        aria-labelledby={`rail-tab-${tab}`}
+        className="flex-1 overflow-y-auto px-4 pb-6"
+        style={{ scrollbarWidth: 'none' }}
+      >
         <Suspense fallback={<PanelSkeleton />}>
           {tab === 'pulse' ? <PulseRail /> : <InsightsRail />}
         </Suspense>

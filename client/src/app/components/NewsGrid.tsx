@@ -41,7 +41,7 @@ export function NewsGrid() {
   // as the first cards made the top of the feed look duplicated. Shares the
   // carousel's query cache, so this adds no request.
   const showHero = searchQuery.trim().length === 0;
-  const { data: heroData } = useRankedHeadlines({
+  const { data: heroData, isPending: heroPending } = useRankedHeadlines({
     limit: 10,
     category: selectedCategory,
     sources: selectedSources,
@@ -69,7 +69,9 @@ export function NewsGrid() {
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage, articles.length]);
 
-  if (isLoading) {
+  // Hold the grid until the carousel's headlines are known: filtering them
+  // out after the cards had rendered pushed every card upwards (CLS 0.48).
+  if (isLoading || (showHero && heroPending)) {
     return <FeedSkeleton label={t.loading} hero={!searchQuery.trim()} />;
   }
 

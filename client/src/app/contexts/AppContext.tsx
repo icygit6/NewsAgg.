@@ -140,6 +140,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (res.success && res.user) {
           setUser(res.user);
           authService.setUser(res.user);
+        } else if (res.success && res.user === null) {
+          // No session cookie: drop any profile cached by an earlier sign-in.
+          setUser(null);
+          authService.clearCachedUser();
         }
       })
       // accountFetch resolves {success:false} on its own failures; this catch

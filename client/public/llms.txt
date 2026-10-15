@@ -1,0 +1,23 @@
+# NewsAgg
+
+> NewsAgg aggregates news from BBC, CNN, Al Jazeera and Yahoo News Taiwan, and adds automated topic classification, sentiment analysis, extractive summaries and readability metrics. It is an undergraduate project of the Department of Computer Science and Engineering, National Taiwan Ocean University. NewsAgg does not judge whether news is true; every article links to its original publisher.
+
+Articles are shown in their original language by default (English or Traditional Chinese). Sentiment describes the wording of a report, not its truth, a publisher's politics or public opinion. Summaries are sentences selected from the article itself.
+
+## Pages
+
+- [Home feed](https://newsagg.sentsis.workers.dev/): latest articles, filterable by topic, publisher and sentiment
+- [Insights](https://newsagg.sentsis.workers.dev/insights): sentiment by category, trending keywords and live articles
+- [Research, evaluation and tests](https://newsagg.sentsis.workers.dev/insights?view=research): the 120-article evaluation against human and AI references, with definitions of agreement, precision, recall, F1 and Cohen's kappa
+- [How NewsAgg works](https://newsagg.sentsis.workers.dev/methodology): sources, coverage gaps, models, decision rules and known limitations
+
+## Policies
+
+- [Terms of Service](https://newsagg.sentsis.workers.dev/terms)
+- [Privacy Policy](https://newsagg.sentsis.workers.dev/privacy)
+
+## Notes for agents
+
+- Article pages live at /article/{id}, where {id} is 16 hexadecimal characters.
+- The public feed covers the last 30 days; collection runs daily at 17:00 Taipei time.
+- Use the original publisher link on each article for quotation or citation.

@@ -7,10 +7,12 @@ vi.mock('../db/client', () => ({
   pool: { connect: vi.fn() },
 }))
 vi.mock('../middleware/auth', () => ({
-  authMiddleware: (req: any, _res: any, next: any) => {
+  authMiddleware: (req: any, res: any, next: any) => {
+    if (req.headers.authorization === 'Bearer expired') return res.status(401).json({ success: false })
     req.userId = 7
     next()
   },
+  hasSessionToken: (req: any) => Boolean(req.headers.authorization || req.headers.cookie),
 }))
 vi.mock('../services/googleIdentity', () => ({ verifyGoogleIdToken: vi.fn() }))
 
@@ -97,5 +99,21 @@ describe('Google account controls', () => {
 
     expect(res.status).toBe(409)
     expect(res.body.error).toContain('password')
+  })
+})
+
+describe('boot-time session check', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('answers a signed-out visitor with user: null instead of 401', async () => {
+    const res = await request(makeApp()).get('/api/account/me')
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual({ success: true, user: null })
+    expect(mockQuery).not.toHaveBeenCalled()
+  })
+
+  it('still rejects a present but invalid session', async () => {
+    const res = await request(makeApp()).get('/api/account/me').set('Authorization', 'Bearer expired')
+    expect(res.status).toBe(401)
   })
 })

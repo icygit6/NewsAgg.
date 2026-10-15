@@ -3,8 +3,8 @@
 /* Font utilities (Tailwind v4 registers `font-<name>` from the --font-* namespace).
    Inter + Poppins are loaded in index.html; `font-sans` (Inter) is the body default. */
 @theme {
-  --font-sans: 'Nunito', 'Noto Sans TC', 'Noto Sans SC', ui-sans-serif, system-ui, sans-serif;
-  --font-poppins: 'Nunito', 'Noto Sans TC', 'Noto Sans SC', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Nunito', 'PingFang TC', 'Microsoft JhengHei', 'Noto Sans TC', 'Noto Sans CJK TC', ui-sans-serif, system-ui, sans-serif;
+  --font-poppins: 'Nunito', 'PingFang TC', 'Microsoft JhengHei', 'Noto Sans TC', 'Noto Sans CJK TC', ui-sans-serif, system-ui, sans-serif;
 
   /* Keep legacy cyan/pink/violet utility classes on the current navy/blue
      identity so every screen shares one accent system. */

@@ -21,6 +21,11 @@ function cookieToken(cookieHeader: string | undefined): string | undefined {
   return undefined
 }
 
+/** True when the request carries any session credential at all. */
+export function hasSessionToken(req: any): boolean {
+  return Boolean(requestToken(req))
+}
+
 function requestToken(req: any): string | undefined {
   const auth = req.headers.authorization
   const bearer = typeof auth === 'string' && auth.startsWith('Bearer ') ? auth.slice(7) : undefined

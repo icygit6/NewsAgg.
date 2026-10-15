@@ -26,8 +26,8 @@
   --border: #d8dee6;
   --text-primary: #0b1f33;
   --text-secondary: #475569;
-  --font-display: 'Nunito', 'Noto Sans TC', 'Noto Sans SC', sans-serif;
-  --font-body: 'Nunito', 'Noto Sans TC', 'Noto Sans SC', sans-serif;
+  --font-display: 'Nunito', 'PingFang TC', 'Microsoft JhengHei', 'Noto Sans TC', 'Noto Sans CJK TC', sans-serif;
+  --font-body: 'Nunito', 'PingFang TC', 'Microsoft JhengHei', 'Noto Sans TC', 'Noto Sans CJK TC', sans-serif;
 }
 
 .dark {

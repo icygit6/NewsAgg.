@@ -2,7 +2,7 @@ import { Router, Response } from 'express'
 import { logger } from '../lib/logger'
 import bcrypt from 'bcryptjs'
 import { pool, query } from '../db/client'
-import { authMiddleware } from '../middleware/auth'
+import { authMiddleware, hasSessionToken } from '../middleware/auth'
 import {
   validateBody,
   profileSchema,
@@ -23,6 +23,14 @@ import { clearSessionCookie, createSession, setSessionCookie } from '../lib/sess
 // column nullable for Google-only accounts, `avatar` stores a small data-URL).
 // Response shape mirrors /auth: { success, user?/data?, error? }.
 export const accountRouter = Router()
+// Signed-out visitors carry no session at all: answer the boot-time session
+// check with user: null instead of 401, which every guest page load logged as
+// a console error. A present but invalid/expired token still gets 401 below.
+accountRouter.get('/me', (req, res, next) => {
+  if (!hasSessionToken(req)) return res.json({ success: true, user: null })
+  next()
+})
+
 accountRouter.use(authMiddleware)
 accountRouter.use((req, res, next) =>
   req.method === 'GET' ? next() : accountWriteLimiter(req, res, next)
