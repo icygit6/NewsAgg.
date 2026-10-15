@@ -1,4 +1,4 @@
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import { useUiText } from '../i18n/uiText';
 import { useApp } from '../contexts/AppContext';
 import { CATEGORY_LABELS } from '../constants';
@@ -11,12 +11,33 @@ import { TrendingKeywords } from '../components/sentiment/TrendingKeywords';
 import { DatasetStats } from '../components/sentiment/DatasetStats';
 import { BusinessInsights } from '../components/widgets/BusinessInsights';
 import { PanelSkeleton } from '../components/ui/ContentSkeleton';
+import { EvaluationPanel } from '../components/insights/EvaluationPanel';
 
 export function InsightsPage() {
+  const { t, isDark, language } = useApp();
+  const [params] = useSearchParams();
+  const research = params.get('view') === 'research';
+  const zh = language === 'zhTW' || language === 'zhCN';
+  return <div className="max-w-6xl mx-auto px-4 py-6">
+    <h1 className={`font-poppins text-2xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{t.insights}</h1>
+    <p className={`mt-1 mb-5 max-w-3xl text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+      {t.insightsNote}{' '}<Link to="/methodology" className="font-semibold text-blue-600 hover:underline">{t.methodologyTitle} →</Link>
+    </p>
+    <nav className="flex flex-wrap gap-2 mb-5" aria-label={zh ? '洞察檢視' : 'Insights views'}>
+      {[[false, zh ? '新聞資料概覽' : 'Published news'], [true, zh ? '研究、評估與測試' : 'Research, evaluation & tests']].map(([active, title]) => <Link key={String(active)} to={active ? '/insights?view=research' : '/insights'} aria-current={research === active ? 'page' : undefined} className={`min-h-11 px-4 py-3 rounded-xl text-sm font-semibold ${research === active ? 'bg-blue-600 text-white' : isDark ? 'bg-slate-800 text-slate-200' : 'bg-white border border-slate-200 text-slate-700'}`}>{title}</Link>)}
+    </nav>
+    {research ? <EvaluationPanel /> : <LiveInsights />}
+  </div>;
+}
+
+function LiveInsights() {
   const ui = useUiText();
-  const { t, isDark, selectedCategory } = useApp();
-  const { data: overview, isLoading: overviewLoading } = useStatsOverview(selectedCategory);
-  const { data: latest, isLoading: latestLoading } = useLatestArticles({ limit: 8, category: selectedCategory });
+  const { t, selectedCategory } = useApp();
+  const overviewQuery = useStatsOverview(selectedCategory);
+  const latestQuery = useLatestArticles({ limit: 8, category: selectedCategory });
+  const { data: overview, isLoading: overviewLoading } = overviewQuery;
+  const { data: latest, isLoading: latestLoading } = latestQuery;
+  if (overviewQuery.isError || latestQuery.isError) return <div role="alert" className="rounded-2xl border border-red-300 p-5"><p>{t.fetchFailed}</p><button type="button" className="mt-3 min-h-11 rounded-xl border px-4" onClick={() => { void overviewQuery.refetch(); void latestQuery.refetch(); }}>{ui('Try again')}</button></div>;
 
   const categoryLabel =
     selectedCategory === 'all' ? t.allCategories : ui(CATEGORY_LABELS[selectedCategory]);
@@ -33,14 +54,7 @@ export function InsightsPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6">
-      <h1 className={`font-poppins text-2xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-        {t.insights}
-      </h1>
-      <p className={`mt-1 mb-6 max-w-3xl text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-        {t.insightsNote}{' '}
-        <Link to="/methodology" className="font-semibold text-cyan-600 hover:underline">{t.methodologyTitle} →</Link>
-      </p>
+    <>
       {overviewLoading || latestLoading ? <PanelSkeleton /> : (
         // Two columns on wide screens; the former single 42rem column left
         // most of a desktop viewport empty.
@@ -63,6 +77,6 @@ export function InsightsPage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

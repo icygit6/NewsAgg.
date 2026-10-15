@@ -1,5 +1,5 @@
 import { useUiText } from '../i18n/uiText';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { X, LogOut, Bookmark, Sun, Moon, Check, UserCircle, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useApp } from '../contexts/AppContext';
@@ -23,6 +23,7 @@ export function ProfileSidebar() {
   const { bookmarks } = useBookmarks();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const reducedMotion = useReducedMotion();
   const drawerRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
@@ -80,7 +81,7 @@ export function ProfileSidebar() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: reducedMotion ? 0 : 0.2 }}
             onClick={() => setSidebarOpen(false)}
             className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm"
           />
@@ -93,8 +94,8 @@ export function ProfileSidebar() {
             initial={{ x: isMobile ? '100%' : '-100%' }}
             animate={{ x: 0 }}
             exit={{ x: isMobile ? '100%' : '-100%' }}
-            transition={{ type: 'spring', stiffness: 350, damping: 35 }}
-            className={`fixed top-0 bottom-0 z-[70] w-[344px] max-w-[90vw] flex flex-col shadow-2xl ${
+            transition={reducedMotion ? { duration: 0 } : { type: 'spring', stiffness: 350, damping: 35 }}
+            className={`fixed top-0 bottom-0 z-[70] ${user ? 'w-[344px]' : 'w-[400px]'} max-w-[95vw] flex flex-col shadow-2xl ${
               isMobile ? 'right-0' : 'left-0'
             } ${
               isDark

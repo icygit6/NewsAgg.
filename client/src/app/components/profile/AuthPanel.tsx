@@ -1,11 +1,13 @@
 import { useUiText } from '../../i18n/uiText';
-import { useState } from 'react';
-import { Eye, EyeOff, Info, LogIn, UserPlus, Mail } from 'lucide-react';
+import { useId, useRef, useState } from 'react';
+import { Eye, EyeOff, Info, LogIn, UserPlus, Mail, Bookmark, Check } from 'lucide-react';
 import { GoogleLogin } from '@react-oauth/google';
 import { getRuntimeConfig } from '../../lib/runtimeConfig';
 import { useApp } from '../../contexts/AppContext';
 import { authService } from '../../services/authService';
 import { Turnstile } from '../auth/Turnstile';
+import { LoadingIndicator } from '../ui/ContentSkeleton';
+import '../auth/auth.css';
 
 interface AuthPanelProps {
   isDark: boolean;
@@ -18,6 +20,8 @@ interface AuthPanelProps {
 export function AuthPanel({ isDark, onAuthenticated }: AuthPanelProps) {
   const ui = useUiText();
   const { t, setUser, language } = useApp();
+  const id = useId();
+  const submitting = useRef(false);
   const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login');
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
@@ -67,6 +71,8 @@ export function AuthPanel({ isDark, onAuthenticated }: AuthPanelProps) {
   };
 
   const handleGoogleSuccess = async (credentialResponse: any) => {
+    if (submitting.current) return;
+    submitting.current = true;
     try {
       setLoading(true);
       setError('');
@@ -101,6 +107,7 @@ export function AuthPanel({ isDark, onAuthenticated }: AuthPanelProps) {
       console.error('Google login error:', err);
       setError('Google authentication failed');
     } finally {
+      submitting.current = false;
       setLoading(false);
     }
   };
@@ -187,7 +194,34 @@ export function AuthPanel({ isDark, onAuthenticated }: AuthPanelProps) {
     setLoading(false);
   };
 
-  const inputClass = `w-full px-4 py-3 rounded-xl border transition ${
+  const changeMode = (next: typeof mode) => {
+    if (loading) return;
+    setMode(next);
+    setPassword('');
+    setShowPassword(false);
+    setError('');
+    setInfo('');
+    setPendingGoogleSignup(false);
+    setGoogleCredential('');
+    setTermsAccepted(false);
+    setEmailUpdates(false);
+    resetCaptcha();
+  };
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (submitting.current) return;
+    submitting.current = true;
+    try {
+      await (mode === 'login' ? handleLogin() : mode === 'signup' ? handleSignup() : handleForgot());
+    } catch {
+      setError('Unable to connect. Please try again.');
+      resetCaptcha();
+    } finally {
+      submitting.current = false;
+      setLoading(false);
+    }
+  };
+  const inputClass = `auth-input w-full px-4 py-3 rounded-xl border transition ${
     isDark
       ? 'bg-slate-800 border-slate-700 text-slate-100 placeholder-slate-500 focus:border-cyan-500'
       : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-cyan-500'
@@ -195,16 +229,26 @@ export function AuthPanel({ isDark, onAuthenticated }: AuthPanelProps) {
   const labelClass = `block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-gray-700'}`;
 
   return (
-    <div>
-      <h3 className={`font-bold text-lg mb-4 ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>
-        {mode === 'login' ? ui("Sign In") : mode === 'signup' ? 'Create Account' : 'Reset Password'}
-      </h3>
+    <section className="newsagg-auth" data-theme={isDark ? 'dark' : 'light'}>
+      <header className="auth-welcome">
+        <span className="auth-mark" aria-hidden="true"><Bookmark size={22} /></span>
+        <p className="auth-eyebrow">NEWSAGG / {ui('YOUR READING SPACE')}</p>
+        <h3 className="text-2xl font-extrabold tracking-tight">{ui(mode === 'login' ? 'Welcome back.' : mode === 'signup' ? 'Make room for perspective.' : 'A fresh start.')}</h3>
+        <p className="mt-2 text-sm leading-relaxed">{ui('Save stories, join discussions, and make your reading experience your own.')}</p>
+      </header>
+      {mode !== 'forgot' && <div className="auth-mode" role="group" aria-label={ui('Account access')}>
+        {(['login', 'signup'] as const).map(value => <button key={value} type="button" disabled={loading} aria-pressed={mode === value} onClick={() => changeMode(value)}>{ui(value === 'login' ? 'Sign In' : 'Create Account')}</button>)}
+      </div>}
+      <form onSubmit={submit} aria-label={ui(mode === 'login' ? 'Sign In' : mode === 'signup' ? 'Create Account' : 'Reset Password')} aria-busy={loading}>
+      <fieldset disabled={loading} className="min-w-0">
 
       <div className="space-y-4 mb-6">
         {mode === 'signup' && (
           <div>
-            <label className={labelClass}>{ui("Username")}</label>
+            <label htmlFor={`${id}-username`} className={labelClass}>{ui("Username")}</label>
             <input
+              id={`${id}-username`}
+              required
               type="text"
               name="username"
               autoComplete="username"
@@ -216,8 +260,11 @@ export function AuthPanel({ isDark, onAuthenticated }: AuthPanelProps) {
           </div>
         )}
         <div>
-          <label className={labelClass}>{ui("Email")}</label>
+          <label htmlFor={`${id}-email`} className={labelClass}>{ui("Email")}</label>
           <input
+            id={`${id}-email`}
+            required
+            readOnly={pendingGoogleSignup}
             type="email"
             name="email"
             autoComplete="email"
@@ -229,9 +276,13 @@ export function AuthPanel({ isDark, onAuthenticated }: AuthPanelProps) {
         </div>
         {mode !== 'forgot' && !pendingGoogleSignup && (
           <div>
-            <label className={labelClass}>{ui("Password")}</label>
+            <label htmlFor={`${id}-password`} className={labelClass}>{ui("Password")}</label>
             <div className="relative">
               <input
+                id={`${id}-password`}
+                required
+                minLength={mode === 'signup' ? 8 : undefined}
+                aria-describedby={mode === 'signup' ? `${id}-password-help` : undefined}
                 type={showPassword ? 'text' : 'password'}
                 name="password"
                 autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
@@ -248,21 +299,18 @@ export function AuthPanel({ isDark, onAuthenticated }: AuthPanelProps) {
                 onClick={() => setShowPassword((p) => !p)}
                 aria-label={showPassword ? t.hidePassword : t.showPassword}
                 title={showPassword ? t.hidePassword : t.showPassword}
-                className={`absolute right-1.5 top-1/2 -translate-y-1/2 grid h-9 w-9 place-items-center rounded-full ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-gray-400 hover:text-gray-600'}`}
+                className={`absolute right-0.5 top-1/2 -translate-y-1/2 grid h-11 w-11 place-items-center rounded-xl ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-gray-400 hover:text-gray-600'}`}
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
+            {mode === 'signup' && <p id={`${id}-password-help`} className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400"><Check size={14} className={password.length >= 8 ? 'text-emerald-500' : 'opacity-40'} />{ui('At least 8 characters')}</p>}
             {mode === 'login' && (
               <div className="mt-2 text-right">
                 <button
                   type="button"
-                  onClick={() => {
-                    setMode('forgot');
-                    setError('');
-                    setInfo('');
-                  }}
-                  className={`text-xs font-medium transition ${isDark ? 'text-cyan-400 hover:text-cyan-300' : 'text-cyan-600 hover:text-cyan-700'}`}
+                  onClick={() => changeMode('forgot')}
+                  className={`min-h-11 text-xs font-medium transition ${isDark ? 'text-cyan-400 hover:text-cyan-300' : 'text-cyan-600 hover:text-cyan-700'}`}
                 >{ui("Forgot password?")} </button>
               </div>
             )}
@@ -287,14 +335,14 @@ export function AuthPanel({ isDark, onAuthenticated }: AuthPanelProps) {
       </div>
 
       {info && !error && (
-        <div className={`mb-4 p-3 rounded-lg flex items-start gap-2 text-sm ${isDark ? 'bg-cyan-900/30 text-cyan-200' : 'bg-cyan-50 text-cyan-800'}`}>
+        <div role="status" className={`mb-4 p-3 rounded-lg flex items-start gap-2 text-sm ${isDark ? 'bg-cyan-900/30 text-cyan-200' : 'bg-cyan-50 text-cyan-800'}`}>
           <Info size={15} className="shrink-0 mt-0.5" />
           {ui(info)}
         </div>
       )}
 
       {error && (
-        <div className={`mb-4 p-3 rounded-lg ${isDark ? 'bg-red-900/30 text-red-300' : 'bg-red-50 text-red-700'}`}>
+        <div role="alert" className={`mb-4 p-3 rounded-lg ${isDark ? 'bg-red-900/30 text-red-300' : 'bg-red-50 text-red-700'}`}>
           {ui(error)}
         </div>
       )}
@@ -304,15 +352,14 @@ export function AuthPanel({ isDark, onAuthenticated }: AuthPanelProps) {
       )}
 
       <button
-        onClick={mode === 'login' ? handleLogin : mode === 'signup' ? handleSignup : handleForgot}
+        type="submit"
         disabled={loading}
-        className="w-full flex items-center justify-center gap-3 px-5 py-4 rounded-2xl bg-gradient-to-r from-cyan-500 to-pink-500 text-white font-semibold hover:from-cyan-600 hover:to-pink-600 transition-all shadow-lg shadow-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed mb-4"
+        className="auth-submit w-full flex items-center justify-center gap-3 px-5 py-4 rounded-2xl text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed mb-4"
       >
-        {mode === 'login' ? <LogIn size={18} /> : mode === 'signup' ? <UserPlus size={18} /> : <Mail size={18} />}
-        {ui(loading
-          ? mode === 'login' ? 'Signing in...' : mode === 'signup' ? 'Creating account...' : 'Sending...'
-          : mode === 'login' ? ui("Sign In") : mode === 'signup' ? 'Create Account' : 'Send reset link')}
+        {loading ? <LoadingIndicator label={ui(mode === 'login' ? 'Signing in...' : mode === 'signup' ? 'Creating account...' : 'Sending...')} /> : <>{mode === 'login' ? <LogIn size={18} /> : mode === 'signup' ? <UserPlus size={18} /> : <Mail size={18} />}{ui(mode === 'login' ? 'Sign In' : mode === 'signup' ? 'Create Account' : 'Send reset link')}</>}
       </button>
+      </fieldset>
+      </form>
 
       {googleAvailable && !captchaConfigured && (
         <p role="status" className={`mb-4 rounded-xl border p-3 text-center text-sm ${isDark ? 'border-amber-800 bg-amber-950/30 text-amber-200' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>
@@ -320,7 +367,7 @@ export function AuthPanel({ isDark, onAuthenticated }: AuthPanelProps) {
         </p>
       )}
 
-      {googleAvailable && captchaConfigured && !(mode === 'signup' && pendingGoogleSignup) && (
+      {googleAvailable && captchaConfigured && !loading && !(mode === 'signup' && pendingGoogleSignup) && (
         <div className="mb-4">
           {captchaConfigured && !captchaToken ? (
             <p className={`rounded-xl border p-3 text-center text-sm ${isDark ? 'border-slate-700 text-slate-300' : 'border-slate-200 text-slate-600'}`}>{ui("Complete the “I am not a robot” check above to continue with Google.")}</p>
@@ -335,7 +382,7 @@ export function AuthPanel({ isDark, onAuthenticated }: AuthPanelProps) {
               }
               theme={isDark ? 'filled_black' : 'outline'}
               size="large"
-              width="300"
+              width="260"
               text={mode === 'login' ? 'signin_with' : 'signup_with'}
             />
           )}
@@ -349,21 +396,15 @@ export function AuthPanel({ isDark, onAuthenticated }: AuthPanelProps) {
           </p>
         )}
         <button
-          onClick={() => {
-            setMode(mode === 'login' ? 'signup' : mode === 'signup' ? 'login' : 'login');
-            setError('');
-            setInfo('');
-            setPendingGoogleSignup(false);
-            setGoogleCredential('');
-            setTermsAccepted(false);
-            setEmailUpdates(false);
-            resetCaptcha();
-          }}
-          className={`text-sm font-medium transition ${isDark ? 'text-cyan-400 hover:text-cyan-300' : 'text-cyan-600 hover:text-cyan-700'}`}
+          type="button"
+          disabled={loading}
+          onClick={() => changeMode(mode === 'login' ? 'signup' : 'login')}
+          className={`min-h-11 text-sm font-medium transition ${isDark ? 'text-cyan-400 hover:text-cyan-300' : 'text-cyan-600 hover:text-cyan-700'}`}
         >
           {ui(mode === 'login' ? 'Create one' : mode === 'signup' ? 'Sign in' : '← Back to sign in')}
         </button>
       </div>
-    </div>
+      <p className="mt-3 text-center text-xs text-slate-500 dark:text-slate-400"><a className="underline underline-offset-4" href="/privacy" target="_blank" rel="noreferrer">{ui('Privacy Policy')}</a></p>
+    </section>
   );
 }

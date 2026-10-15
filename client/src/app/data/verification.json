@@ -1,0 +1,1006 @@
+{
+  "recordedAt": "2026-10-15T12:33:28.755Z",
+  "scope": "offline-regression",
+  "suites": [
+    {
+      "id": "client",
+      "cases": [
+        {
+          "name": "restores listing position only when going Back from an article",
+          "status": "passed"
+        },
+        {
+          "name": "automatically translates into the site language and keeps article selections separate",
+          "status": "passed"
+        },
+        {
+          "name": "does not call the API when the site language matches the original",
+          "status": "passed"
+        },
+        {
+          "name": "does not show a late result after navigating to another article",
+          "status": "passed"
+        },
+        {
+          "name": "keeps the published language in Multi mode until a translation pill is chosen",
+          "status": "passed"
+        },
+        {
+          "name": "rejects unsupported formats and oversized uploads before decoding",
+          "status": "passed"
+        },
+        {
+          "name": "crops, re-encodes and releases the temporary image URL",
+          "status": "passed"
+        },
+        {
+          "name": "opens the research deep link without mounting database-backed feed hooks",
+          "status": "passed"
+        },
+        {
+          "name": "discloses personalization, external deletion boundaries and data controls",
+          "status": "passed"
+        },
+        {
+          "name": "provides Chinese corrections policy without claiming guaranteed factual truth",
+          "status": "passed"
+        },
+        {
+          "name": "ResetPasswordPage opens a fresh sign-in panel immediately after a successful reset",
+          "status": "passed"
+        },
+        {
+          "name": "authService password-reset flows forgotPassword POSTs the email to /auth/forgot-password",
+          "status": "passed"
+        },
+        {
+          "name": "authService password-reset flows resetPassword POSTs the token and new password to /auth/reset-password",
+          "status": "passed"
+        },
+        {
+          "name": "profile personalization service uses the HttpOnly cookie session instead of a local bearer token",
+          "status": "passed"
+        },
+        {
+          "name": "preserves database nulls and parses numeric strings at the API boundary",
+          "status": "passed"
+        },
+        {
+          "name": "preserves missing toxicity and keeps a genuine zero",
+          "status": "passed"
+        },
+        {
+          "name": "structured article reader does not repeat resized BBC hero images in the gallery",
+          "status": "passed"
+        },
+        {
+          "name": "structured article reader labels unverified archived extractions",
+          "status": "passed"
+        },
+        {
+          "name": "structured article reader renders semantic blocks without duplicating the header image",
+          "status": "passed"
+        },
+        {
+          "name": "structured article reader renders untrusted publisher text as text, never HTML",
+          "status": "passed"
+        },
+        {
+          "name": "keeps all metric labels but explains non-English applicability",
+          "status": "passed"
+        },
+        {
+          "name": "does not turn a missing English metric into zero",
+          "status": "passed"
+        },
+        {
+          "name": "preserves real zero Flesch/grade scores, but not the SMOG short-text sentinel",
+          "status": "passed"
+        },
+        {
+          "name": "public research evidence recomputes every public confusion matrix and preserves class-denominator rules",
+          "status": "passed"
+        },
+        {
+          "name": "public research evidence exports only aggregate evidence and retains unresolved gold status",
+          "status": "passed"
+        },
+        {
+          "name": "public research evidence switches task and reference together in matrices and worked calculations",
+          "status": "passed"
+        },
+        {
+          "name": "public research evidence shows all reference pairs and keeps them distinct from system comparisons",
+          "status": "passed"
+        },
+        {
+          "name": "public research evidence renders Chinese controls, definitions and source-language detail without translation calls",
+          "status": "passed"
+        },
+        {
+          "name": "public research evidence shows actual test records and explicitly states unmeasured outcomes",
+          "status": "passed"
+        },
+        {
+          "name": "public research evidence explains names and keeps all 28 report references with their role disclosures",
+          "status": "passed"
+        },
+        {
+          "name": "submits with Enter, prevents repeat requests, and recovers after network failure",
+          "status": "passed"
+        },
+        {
+          "name": "clears password when switching modes and requires explicit Terms consent",
+          "status": "passed"
+        },
+        {
+          "name": "keeps the CAPTCHA gate for password recovery",
+          "status": "passed"
+        },
+        {
+          "name": "shows progress instead of fabricated zero sentiment counts while loading",
+          "status": "passed"
+        },
+        {
+          "name": "shows errors instead of empty sentiment distributions when requests fail",
+          "status": "passed"
+        },
+        {
+          "name": "ImageWithFallback renders the provided image source",
+          "status": "passed"
+        },
+        {
+          "name": "ImageWithFallback swaps to the fallback graphic when the image fails to load",
+          "status": "passed"
+        },
+        {
+          "name": "ImageWithFallback recovers when a different article image replaces a failed source",
+          "status": "passed"
+        },
+        {
+          "name": "also renders safely before the router and runtime config are initialized",
+          "status": "passed"
+        },
+        {
+          "name": "matches the responsive feed and hides decorative blocks from assistive technology",
+          "status": "passed"
+        },
+        {
+          "name": "uses the matching route fallback for /insights",
+          "status": "passed"
+        },
+        {
+          "name": "uses the matching route fallback for /article/123",
+          "status": "passed"
+        },
+        {
+          "name": "uses the matching route fallback for /profile",
+          "status": "passed"
+        },
+        {
+          "name": "selects an article target without changing the website locale",
+          "status": "passed"
+        }
+      ],
+      "passed": 44,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "id": "server",
+      "cases": [
+        {
+          "name": "post categories recognizes English, Indonesian, and Chinese comments",
+          "status": "passed"
+        },
+        {
+          "name": "post categories does not force a category onto an ambiguous comment",
+          "status": "passed"
+        },
+        {
+          "name": "publication-aware caching reuses data only while the publication revision is unchanged",
+          "status": "passed"
+        },
+        {
+          "name": "publication-aware caching does not serve a stale cached feed if revision verification fails",
+          "status": "passed"
+        },
+        {
+          "name": "auth tokens generates a 64-char hex raw token whose sha256 hash matches hashToken",
+          "status": "passed"
+        },
+        {
+          "name": "auth tokens produces unique raw tokens and stable, collision-free hashes",
+          "status": "passed"
+        },
+        {
+          "name": "revocable account sessions accepts a signed token backed by an active server session",
+          "status": "passed"
+        },
+        {
+          "name": "revocable account sessions rejects legacy or revoked sessions",
+          "status": "passed"
+        },
+        {
+          "name": "bookmark and post validation rejects non-http bookmark URLs",
+          "status": "passed"
+        },
+        {
+          "name": "bookmark and post validation requires at least one bookmark update",
+          "status": "passed"
+        },
+        {
+          "name": "bookmark and post validation enforces the 280 character edit limit",
+          "status": "passed"
+        },
+        {
+          "name": "bookmark and post validation accepts only supported report reasons",
+          "status": "passed"
+        },
+        {
+          "name": "bookmark and post validation bounds public profile fields",
+          "status": "passed"
+        },
+        {
+          "name": "trusted browser origins rejects cross-site browser writes",
+          "status": "passed"
+        },
+        {
+          "name": "trusted browser origins allows non-browser API clients without an Origin header",
+          "status": "passed"
+        },
+        {
+          "name": "trusted browser origins allows writes from the exact reverse-proxied origin",
+          "status": "passed"
+        },
+        {
+          "name": "chatModelLabel names the configured chat model without its vendor prefix",
+          "status": "passed"
+        },
+        {
+          "name": "chatModelLabel prefers an explicit override",
+          "status": "passed"
+        },
+        {
+          "name": "grounded article retrieval keeps short section headings together with the following facts",
+          "status": "passed"
+        },
+        {
+          "name": "grounded article retrieval retrieves a final club section instead of generic league paragraphs",
+          "status": "passed"
+        },
+        {
+          "name": "grounded article retrieval normalizes provider citation brackets without altering the evidence number",
+          "status": "passed"
+        },
+        {
+          "name": "grounded article retrieval does not split decimal numbers or duplicate text before oversized sentences",
+          "status": "passed"
+        },
+        {
+          "name": "grounded article retrieval splits long articles without dropping text",
+          "status": "passed"
+        },
+        {
+          "name": "grounded article retrieval selects passages related to the question",
+          "status": "passed"
+        },
+        {
+          "name": "hybrid retrieval keeps lexical fallback bounded and in article order",
+          "status": "passed"
+        },
+        {
+          "name": "hybrid retrieval allows semantic evidence beyond the lexical top four to be selected",
+          "status": "passed"
+        },
+        {
+          "name": "hybrid retrieval falls back on invalid model dimensions",
+          "status": "passed"
+        },
+        {
+          "name": "keeps every paragraph and respects the requested chunk maximum",
+          "status": "passed"
+        },
+        {
+          "name": "splits an oversized paragraph without truncation",
+          "status": "passed"
+        },
+        {
+          "name": "translates every long-body chunk and preserves field ownership",
+          "status": "passed"
+        },
+        {
+          "name": "never labels a truncated full article as translated",
+          "status": "passed"
+        },
+        {
+          "name": "coalesces simultaneous requests for the same article and language",
+          "status": "passed"
+        },
+        {
+          "name": "Google account controls saves an account-owned background preset",
+          "status": "passed"
+        },
+        {
+          "name": "Google account controls rejects arbitrary profile background values before a database write",
+          "status": "passed"
+        },
+        {
+          "name": "Google account controls rejects script-capable and falsely labelled background uploads",
+          "status": "passed"
+        },
+        {
+          "name": "Google account controls saves an uploaded PNG against the authenticated account",
+          "status": "passed"
+        },
+        {
+          "name": "Google account controls links a server-verified Google identity with the same email",
+          "status": "passed"
+        },
+        {
+          "name": "Google account controls refuses to link a Google identity with a different email",
+          "status": "passed"
+        },
+        {
+          "name": "Google account controls prevents a Google-only account from disconnecting and becoming locked out",
+          "status": "passed"
+        },
+        {
+          "name": "article correction reports stores a guest report for an existing article",
+          "status": "passed"
+        },
+        {
+          "name": "article correction reports rejects unknown reasons without touching the database",
+          "status": "passed"
+        },
+        {
+          "name": "article correction reports returns 404 when the article does not exist",
+          "status": "passed"
+        },
+        {
+          "name": "auth routes registers a new user → 201 with an HttpOnly session and emailVerified:false",
+          "status": "passed"
+        },
+        {
+          "name": "auth routes rejects a duplicate registration → 409 (not 200)",
+          "status": "passed"
+        },
+        {
+          "name": "auth routes rejects an unknown login → 401",
+          "status": "passed"
+        },
+        {
+          "name": "auth routes rejects a wrong password → 401",
+          "status": "passed"
+        },
+        {
+          "name": "auth routes fails Google sign-in closed when CAPTCHA is not configured",
+          "status": "passed"
+        },
+        {
+          "name": "auth routes answers forgot-password with a generic 200 even for unknown emails",
+          "status": "passed"
+        },
+        {
+          "name": "auth routes rejects a reset with an invalid/expired token → 400",
+          "status": "passed"
+        },
+        {
+          "name": "article chat route requires authentication",
+          "status": "passed"
+        },
+        {
+          "name": "article chat route loads trusted article text from the database and returns citations",
+          "status": "passed"
+        },
+        {
+          "name": "market index fallbacks parses valid Yahoo chart closes and ignores null points",
+          "status": "passed"
+        },
+        {
+          "name": "market index fallbacks rejects malformed or implausible market payloads",
+          "status": "passed"
+        },
+        {
+          "name": "free market provider configuration uses CoinGecko Demo authentication when a key is configured",
+          "status": "passed"
+        },
+        {
+          "name": "free market provider configuration caches once-daily FX data for 24 hours",
+          "status": "passed"
+        },
+        {
+          "name": "feed quality contract excludes old and future stories even in oldest order",
+          "status": "passed"
+        },
+        {
+          "name": "feed quality contract filters freshness by publication rather than scrape time",
+          "status": "passed"
+        },
+        {
+          "name": "feed quality contract diversifies top stories by topic and publisher without sentiment bias",
+          "status": "passed"
+        },
+        {
+          "name": "feed quality contract keeps legacy feeds behind the same freshness gate",
+          "status": "passed"
+        },
+        {
+          "name": "post comments and replies loads comments only for an existing post and scopes the query to that post",
+          "status": "passed"
+        },
+        {
+          "name": "post comments and replies rejects a reply to a comment on another post",
+          "status": "passed"
+        },
+        {
+          "name": "post comments and replies creates a reply and returns its author and parent details",
+          "status": "passed"
+        },
+        {
+          "name": "post comments and replies only deletes a comment owned by the current user in the requested post",
+          "status": "passed"
+        },
+        {
+          "name": "posts feed ordering orders oldest posts first and paginates forward from the cursor",
+          "status": "passed"
+        },
+        {
+          "name": "posts feed ordering retains newest and most-popular ordering",
+          "status": "passed"
+        },
+        {
+          "name": "scraper status reports partial quotas without exposing unexpected report fields",
+          "status": "passed"
+        },
+        {
+          "name": "scraper status reports missing history honestly",
+          "status": "passed"
+        },
+        {
+          "name": "preview translation cache serves a matching PostgreSQL preview without consuming translation quota",
+          "status": "passed"
+        }
+      ],
+      "passed": 68,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "id": "operations",
+      "cases": [
+        {
+          "name": "accepts only a bare HTTPS Quick Tunnel origin",
+          "status": "passed"
+        },
+        {
+          "name": "fails closed until configured",
+          "status": "passed"
+        },
+        {
+          "name": "keeps browser cookies and origin stable while upstream tunnels change",
+          "status": "passed"
+        },
+        {
+          "name": "rewrites only redirects to the upstream hostname",
+          "status": "passed"
+        },
+        {
+          "name": "returns a non-cacheable offline response",
+          "status": "passed"
+        },
+        {
+          "name": "17:00 ingestion belongs to tomorrow, including a year boundary",
+          "status": "passed"
+        },
+        {
+          "name": "morning edition covers the previous 17:00 through 04:30 Taipei",
+          "status": "passed"
+        },
+        {
+          "name": "coverage gates distinguish empty, partial and full editions",
+          "status": "passed"
+        },
+        {
+          "name": "freeze stores the whole message and reads only approved public articles",
+          "status": "passed"
+        },
+        {
+          "name": "restart reuses the immutable edition without reading changed articles",
+          "status": "passed"
+        },
+        {
+          "name": "freeze cannot run early and rolls back on database failure",
+          "status": "passed"
+        },
+        {
+          "name": "newsletter uses email-safe layout with working escaped article links",
+          "status": "passed"
+        },
+        {
+          "name": "partial status stays visible and missing categories are explicit",
+          "status": "passed"
+        },
+        {
+          "name": "failure layout has no article cards or misleading completed date",
+          "status": "passed"
+        },
+        {
+          "name": "Taipei day and deadlines cross UTC midnight correctly",
+          "status": "passed"
+        },
+        {
+          "name": "only the exact completed run can produce a digest",
+          "status": "passed"
+        },
+        {
+          "name": "missing, stale, future, or ineligible articles fail validation",
+          "status": "passed"
+        },
+        {
+          "name": "partial quotas remain explicit instead of being labelled complete",
+          "status": "passed"
+        },
+        {
+          "name": "minimum coverage is enforced",
+          "status": "passed"
+        },
+        {
+          "name": "accepted, in-flight and uncertain mail are never resent",
+          "status": "passed"
+        },
+        {
+          "name": "SMTP rejection differs from ambiguous connection failure",
+          "status": "passed"
+        },
+        {
+          "name": "failure email cannot masquerade as a digest and publisher HTML is escaped",
+          "status": "passed"
+        },
+        {
+          "name": "articles aging out during the wait are excluded, never replaced with an unrelated run",
+          "status": "passed"
+        },
+        {
+          "name": "digest sample covers every available category and balances sources",
+          "status": "passed"
+        },
+        {
+          "name": "scheduled recipients include configured addresses and saved additions",
+          "status": "passed"
+        },
+        {
+          "name": "manual recipients replace the list for only that run",
+          "status": "passed"
+        },
+        {
+          "name": "saved additions are deduplicated without dropping configured addresses",
+          "status": "passed"
+        },
+        {
+          "name": "invalid addresses cannot be saved or sent",
+          "status": "passed"
+        },
+        {
+          "name": "atomic state and live process lock prevent overlapping pipeline owners",
+          "status": "passed"
+        },
+        {
+          "name": "SMTP intent is durable before send, recipient acceptance survives restart",
+          "status": "passed"
+        },
+        {
+          "name": "connection loss after DATA remains uncertain and is not retried",
+          "status": "passed"
+        },
+        {
+          "name": "explicit SMTP rejection can retry without repeating an accepted recipient",
+          "status": "passed"
+        },
+        {
+          "name": "persisted sending state after a crash is never blindly resent",
+          "status": "passed"
+        },
+        {
+          "name": "process deadline is enforced and nonzero exits fail",
+          "status": "passed"
+        },
+        {
+          "name": "first ingestion attempt persists its absolute deadline",
+          "status": "passed"
+        },
+        {
+          "name": "interrupted run gets a new identity and keeps history and original deadline",
+          "status": "passed"
+        },
+        {
+          "name": "completed ingestion is not rerun and retries cannot escape count/time limits",
+          "status": "passed"
+        },
+        {
+          "name": "a queued backup after the morning cutoff preserves the failed attempt",
+          "status": "passed"
+        },
+        {
+          "name": "healthy public site needs no mutation",
+          "status": "passed"
+        },
+        {
+          "name": "offline does not rotate tunnel",
+          "status": "passed"
+        },
+        {
+          "name": "Docker off is respected",
+          "status": "passed"
+        },
+        {
+          "name": "intentional stop is respected",
+          "status": "passed"
+        },
+        {
+          "name": "database or app failure does not rotate tunnel",
+          "status": "passed"
+        },
+        {
+          "name": "warming tunnel is not interrupted",
+          "status": "passed"
+        },
+        {
+          "name": "one failure is insufficient",
+          "status": "passed"
+        },
+        {
+          "name": "restart rate is bounded",
+          "status": "passed"
+        },
+        {
+          "name": "expired tunnel is restarted",
+          "status": "passed"
+        },
+        {
+          "name": "cooldown boundary permits retry",
+          "status": "passed"
+        },
+        {
+          "name": "healthy tunnel with stale Worker is not rotated",
+          "status": "passed"
+        },
+        {
+          "name": "edge/DNS failure on known ready tunnel does not rotate it",
+          "status": "passed"
+        },
+        {
+          "name": "lost origin can be rediscovered by controlled restart",
+          "status": "passed"
+        },
+        {
+          "name": "last valid Quick Tunnel URL wins",
+          "status": "passed"
+        },
+        {
+          "name": "non-Quick-Tunnel addresses are not accepted",
+          "status": "passed"
+        },
+        {
+          "name": "read stable URL from quoted dotenv",
+          "status": "passed"
+        },
+        {
+          "name": "environment overrides file",
+          "status": "passed"
+        },
+        {
+          "name": "reject non-origin URL http://example.com",
+          "status": "passed"
+        },
+        {
+          "name": "reject non-origin URL https://user:pass@example.com",
+          "status": "passed"
+        },
+        {
+          "name": "reject non-origin URL https://example.com/x",
+          "status": "passed"
+        },
+        {
+          "name": "reject non-origin URL https://example.com/?q=1",
+          "status": "passed"
+        },
+        {
+          "name": "reject non-origin URL https://example.com/#x",
+          "status": "passed"
+        },
+        {
+          "name": "reject non-origin URL https://example.com:8443",
+          "status": "passed"
+        }
+      ],
+      "passed": 61,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "id": "scraper",
+      "cases": [
+        {
+          "name": "test_capacity.CapacityTests.test_capacity_guard_stops_before_more_enrichment_without_deleting_data",
+          "status": "passed"
+        },
+        {
+          "name": "test_categories.CategoryTests.test_api_budget_is_reserved_per_category_and_successes_are_cached",
+          "status": "passed"
+        },
+        {
+          "name": "test_categories.CategoryTests.test_classification_context_covers_end_and_stays_bounded",
+          "status": "passed"
+        },
+        {
+          "name": "test_categories.CategoryTests.test_clear_competing_category_does_not_spend_hosted_budget",
+          "status": "passed"
+        },
+        {
+          "name": "test_categories.CategoryTests.test_deberta_always_uses_supported_fp32",
+          "status": "passed"
+        },
+        {
+          "name": "test_categories.CategoryTests.test_descriptive_labels_are_mapped_back_to_live_topic_names",
+          "status": "passed"
+        },
+        {
+          "name": "test_categories.CategoryTests.test_gaming_personal_anecdote_cannot_pass_science_on_local_confidence",
+          "status": "passed"
+        },
+        {
+          "name": "test_categories.CategoryTests.test_model_outage_does_not_mark_category_verified",
+          "status": "passed"
+        },
+        {
+          "name": "test_categories.CategoryTests.test_near_tie_is_not_treated_as_verified_even_above_threshold",
+          "status": "passed"
+        },
+        {
+          "name": "test_categories.CategoryTests.test_rejects_shared_feed_cross_category_and_ambiguous_results",
+          "status": "passed"
+        },
+        {
+          "name": "test_categories.CategoryTests.test_second_opinion_never_invents_a_confidence_score",
+          "status": "passed"
+        },
+        {
+          "name": "test_categories.CategoryTests.test_source_budget_does_not_exhaust_other_publishers",
+          "status": "passed"
+        },
+        {
+          "name": "test_discovery.DiscoveryTests.test_bounded_pass_does_not_consume_next_pass_candidate",
+          "status": "passed"
+        },
+        {
+          "name": "test_discovery.DiscoveryTests.test_feed_and_section_repeated_url_is_only_enriched_once",
+          "status": "passed"
+        },
+        {
+          "name": "test_discovery.DiscoveryTests.test_full_feed_quota_avoids_unnecessary_section_crawl",
+          "status": "passed"
+        },
+        {
+          "name": "test_discovery.DiscoveryTests.test_large_rejected_feed_does_not_suppress_section_fallback",
+          "status": "passed"
+        },
+        {
+          "name": "test_discovery.DiscoveryTests.test_small_batch_discovers_for_full_forty_article_quota",
+          "status": "passed"
+        },
+        {
+          "name": "test_publication.PublicationTests.test_duplicate_alternate_url_is_quarantined_without_public_write",
+          "status": "passed"
+        },
+        {
+          "name": "test_publication.PublicationTests.test_image_fallback_cannot_keep_a_stale_hero",
+          "status": "passed"
+        },
+        {
+          "name": "test_publication.PublicationTests.test_incomplete_or_unverified_work_is_not_publishable",
+          "status": "passed"
+        },
+        {
+          "name": "test_publication.PublicationTests.test_invalid_record_stays_in_staging_without_public_writes",
+          "status": "passed"
+        },
+        {
+          "name": "test_publication.PublicationTests.test_reader_blocks_and_plain_body_must_match",
+          "status": "passed"
+        },
+        {
+          "name": "test_publication.PublicationTests.test_ready_article_accepts_explicit_missing_image_fallback",
+          "status": "passed"
+        },
+        {
+          "name": "test_quality.ArticleQualityTests.test_aljazeera_embedded_recommendations_are_not_article_body",
+          "status": "passed"
+        },
+        {
+          "name": "test_quality.ArticleQualityTests.test_bbc_caption_children_and_promos_are_not_duplicated",
+          "status": "passed"
+        },
+        {
+          "name": "test_quality.ArticleQualityTests.test_bbc_resize_variants_are_one_image",
+          "status": "passed"
+        },
+        {
+          "name": "test_quality.ArticleQualityTests.test_blank_list_does_not_create_invalid_block",
+          "status": "passed"
+        },
+        {
+          "name": "test_quality.ArticleQualityTests.test_chinese_sentences_and_no_fabrication",
+          "status": "passed"
+        },
+        {
+          "name": "test_quality.ArticleQualityTests.test_dates_reject_old_unknown_future",
+          "status": "passed"
+        },
+        {
+          "name": "test_quality.ArticleQualityTests.test_html_without_header_charset_uses_html_encoding",
+          "status": "passed"
+        },
+        {
+          "name": "test_quality.ArticleQualityTests.test_image_query_parameters_survive",
+          "status": "passed"
+        },
+        {
+          "name": "test_quality.ArticleQualityTests.test_images_do_not_leak_from_yahoo_next_story_or_recommendations",
+          "status": "passed"
+        },
+        {
+          "name": "test_quality.ArticleQualityTests.test_jsonld_graph",
+          "status": "passed"
+        },
+        {
+          "name": "test_quality.ArticleQualityTests.test_original_publication_wins_over_recent_update",
+          "status": "passed"
+        },
+        {
+          "name": "test_quality.ArticleQualityTests.test_sentence_boundaries_preserve_doctors_and_quoted_sentences",
+          "status": "passed"
+        },
+        {
+          "name": "test_quality.ArticleQualityTests.test_structure_and_related_content",
+          "status": "passed"
+        },
+        {
+          "name": "test_quality.ArticleQualityTests.test_summary_input_excludes_caption_and_heading_but_keeps_prose",
+          "status": "passed"
+        },
+        {
+          "name": "test_quality.ArticleQualityTests.test_summary_preserves_decimals_and_uses_end",
+          "status": "passed"
+        },
+        {
+          "name": "test_quality.ArticleQualityTests.test_wrapped_list_items_preserve_source_text_without_empty_list",
+          "status": "passed"
+        },
+        {
+          "name": "test_quality.ArticleQualityTests.test_yahoo_does_not_merge_infinite_scroll_stories",
+          "status": "passed"
+        },
+        {
+          "name": "test_readability.ReadabilityTests.test_chinese_and_unsupported_language_are_not_zero_grades",
+          "status": "passed"
+        },
+        {
+          "name": "test_readability.ReadabilityTests.test_empty_text_has_no_grade",
+          "status": "passed"
+        },
+        {
+          "name": "test_readability.ReadabilityTests.test_long_english_has_smog",
+          "status": "passed"
+        },
+        {
+          "name": "test_readability.ReadabilityTests.test_short_english_has_flesch_but_no_unsupported_smog",
+          "status": "passed"
+        },
+        {
+          "name": "test_run_report.RunReportTests.test_all_categories_get_first_pass_before_any_quota_top_up",
+          "status": "passed"
+        },
+        {
+          "name": "test_run_report.RunReportTests.test_bad_age_argument_is_rejected",
+          "status": "passed"
+        },
+        {
+          "name": "test_run_report.RunReportTests.test_exhausted_pair_stops_without_lowering_other_pair_target",
+          "status": "passed"
+        },
+        {
+          "name": "test_run_report.RunReportTests.test_forty_quota_rotates_five_row_topups_and_preserves_discovery_scope",
+          "status": "passed"
+        },
+        {
+          "name": "test_run_report.RunReportTests.test_interrupted_scraper_records_failure_and_exits_nonzero",
+          "status": "passed"
+        },
+        {
+          "name": "test_run_report.RunReportTests.test_manifest_is_atomic_and_matches_requested_run",
+          "status": "passed"
+        },
+        {
+          "name": "test_toxicity.ToxicityTests.test_model_failure_is_missing_not_non_toxic",
+          "status": "passed"
+        },
+        {
+          "name": "test_toxicity.ToxicityTests.test_non_english_and_empty_are_missing_not_zero",
+          "status": "passed"
+        },
+        {
+          "name": "test_toxicity.ToxicityTests.test_real_zero_is_retained",
+          "status": "passed"
+        },
+        {
+          "name": "test_toxicity.ToxicityTests.test_uses_toxic_probability_not_the_highest_other_label",
+          "status": "passed"
+        }
+      ],
+      "passed": 54,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "id": "evaluation",
+      "cases": [
+        {
+          "name": "test_integrate_reviews.IntegrationTests.test_available_denominators",
+          "status": "passed"
+        },
+        {
+          "name": "test_integrate_reviews.IntegrationTests.test_changed_source_refused",
+          "status": "passed"
+        },
+        {
+          "name": "test_integrate_reviews.IntegrationTests.test_duplicate_refused",
+          "status": "passed"
+        },
+        {
+          "name": "test_integrate_reviews.IntegrationTests.test_empty_and_degenerate",
+          "status": "passed"
+        },
+        {
+          "name": "test_integrate_reviews.IntegrationTests.test_identity_required_for_scoring",
+          "status": "passed"
+        },
+        {
+          "name": "test_integrate_reviews.IntegrationTests.test_invalid_label_refused",
+          "status": "passed"
+        },
+        {
+          "name": "test_integrate_reviews.IntegrationTests.test_metric_crosscheck",
+          "status": "passed"
+        },
+        {
+          "name": "test_integrate_reviews.IntegrationTests.test_missing_not_filled",
+          "status": "passed"
+        },
+        {
+          "name": "test_integrate_reviews.IntegrationTests.test_no_gold_created",
+          "status": "passed"
+        },
+        {
+          "name": "test_integrate_reviews.IntegrationTests.test_partial_counts",
+          "status": "passed"
+        },
+        {
+          "name": "test_integrate_reviews.IntegrationTests.test_reordering_safe",
+          "status": "passed"
+        },
+        {
+          "name": "test_integrate_reviews.IntegrationTests.test_roster_no_leader_requirement",
+          "status": "passed"
+        },
+        {
+          "name": "test_integrate_reviews.IntegrationTests.test_wrong_identity_refused",
+          "status": "passed"
+        }
+      ],
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0
+    }
+  ]
+}

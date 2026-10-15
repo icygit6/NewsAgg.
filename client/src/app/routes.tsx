@@ -67,6 +67,11 @@ export const router = createBrowserRouter([
         lazy: async () => ({ Component: (await import('./pages/LegalPages')).TermsPage }),
       },
       {
+        path: 'editorial-policy',
+        handle: { hideRightRail: true, mobileFooter: true },
+        lazy: async () => ({ Component: (await import('./pages/LegalPages')).EditorialPolicyPage }),
+      },
+      {
         path: 'privacy',
         handle: { hideRightRail: true, mobileFooter: true },
         lazy: async () => ({ Component: (await import('./pages/LegalPages')).PrivacyPage }),

@@ -1,0 +1,20 @@
+.newsagg-auth { position: relative; isolation: isolate; }
+.auth-welcome { position: relative; overflow: hidden; padding: 24px 20px; margin-bottom: 20px; border-radius: 20px; color: #173a63; background: radial-gradient(circle at 100% 0, #bfdbfe 0, transparent 65%), linear-gradient(135deg, #eff6ff, #f0fdfa); border: 1px solid #dbeafe; }
+.auth-welcome::after { content: ''; position: absolute; pointer-events: none; width: 160px; height: 160px; border: 1px solid #60a5fa40; border-radius: 50%; right: -80px; bottom: -80px; box-shadow: 0 0 0 22px #60a5fa10, 0 0 0 44px #60a5fa08; }
+.auth-mark { display: grid; place-items: center; width: 44px; height: 44px; margin-bottom: 20px; background: #ffffffb3; border: 1px solid #bfdbfe; border-radius: 14px; }
+.auth-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .14em; margin-bottom: 8px; }
+.auth-mode { display: flex; gap: 4px; padding: 4px; background: #eaf0f7; border-radius: 14px; margin-bottom: 22px; }
+.auth-mode button { flex: 1; min-height: 44px; border-radius: 10px; font-size: 13px; font-weight: 700; color: #475569; transition: background .18s, color .18s; }
+.auth-mode button[aria-pressed=true] { background: white; color: #1d4ed8; box-shadow: 0 2px 6px #173a6312; }
+.auth-input:focus { border-color: #2563eb; box-shadow: 0 0 0 3px #3b82f620; }
+.newsagg-auth :is(button, a):focus-visible, .auth-page :is(button, a, input):focus-visible { outline: 2px solid #3b82f6; outline-offset: 3px; }
+.auth-submit { background: linear-gradient(110deg, #2563eb, #173a63); box-shadow: 0 6px 18px #2563eb25; transition: box-shadow .2s, transform .2s; }
+.auth-submit:hover:not(:disabled) { box-shadow: 0 8px 22px #2563eb40; transform: translateY(-1px); }
+.auth-submit:active:not(:disabled) { transform: translateY(0); }
+.newsagg-auth[data-theme=dark] .auth-welcome { color: #dbeafe; border-color: #334c70; background: radial-gradient(circle at 100% 0, #214f86 0, transparent 70%), linear-gradient(135deg, #172a46, #102a33); }
+.newsagg-auth[data-theme=dark] .auth-mark { background: #173a63; border-color: #426a9a; }
+.newsagg-auth[data-theme=dark] .auth-mode { background: #0f172a; }
+.newsagg-auth[data-theme=dark] .auth-mode button { color: #94a3b8; }
+.newsagg-auth[data-theme=dark] .auth-mode button[aria-pressed=true] { background: #253a55; color: #dbeafe; }
+.auth-page { background-size: cover; padding-block: 36px; }
+@media (prefers-reduced-motion: reduce) { .newsagg-auth *, .auth-submit { transition: none !important; transform: none !important; } }

@@ -4,13 +4,14 @@ import { useApp } from '../contexts/AppContext';
 import { AppShell } from '../components/shell/AppShell';
 import { ScrollToTop } from '../components/ScrollToTop';
 import { VerifyEmailBanner } from '../components/auth/VerifyEmailBanner';
+import { LoadingIndicator } from '../components/ui/ContentSkeleton';
 
 const ProfileSidebar = lazy(() =>
   import('../components/ProfileSidebar').then((module) => ({ default: module.ProfileSidebar })),
 );
 
 export function Root() {
-  const { isDark, sidebarOpen } = useApp();
+  const { isDark, sidebarOpen, t } = useApp();
   const [hasOpenedSidebar, setHasOpenedSidebar] = useState(sidebarOpen);
 
   useEffect(() => {
@@ -35,7 +36,7 @@ export function Root() {
 
       {/* Global overlays */}
       {hasOpenedSidebar && (
-        <Suspense fallback={null}>
+        <Suspense fallback={<div className="fixed inset-0 z-[70] grid place-items-center bg-slate-950/30 backdrop-blur-sm"><div className="rounded-2xl bg-white px-6 py-4 text-slate-700 shadow-xl dark:bg-slate-900 dark:text-slate-200"><LoadingIndicator label={t.loading} /></div></div>}>
           <ProfileSidebar />
         </Suspense>
       )}

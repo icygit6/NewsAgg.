@@ -9,6 +9,7 @@ import type { NewsCategoryFilter } from '../../types/article';
 import type { SentimentDistributionItem } from '../../types/sentiment';
 import { DonutChart } from './DonutChart';
 import { panelBaseClass, chartTextColor, chartMutedColor } from './shared';
+import { LoadingIndicator } from '../ui/ContentSkeleton';
 
 const toDistribution = (overview: StatsOverview | undefined): SentimentDistributionItem[] =>
   (['positive', 'neutral', 'negative'] as const).map((type) => ({
@@ -34,8 +35,8 @@ export function SentimentChart() {
     : selectedCategory;
 
   // SQL-side aggregates via /api/stats/overview (no full-dataset download).
-  const { data: overallOverview } = useStatsOverview('all');
-  const { data: categoryOverview } = useStatsOverview(rotatingSentimentCategory);
+  const { data: overallOverview, isPending: overallLoading, isError: overallError } = useStatsOverview('all');
+  const { data: categoryOverview, isPending: categoryLoading, isError: categoryError } = useStatsOverview(rotatingSentimentCategory);
   const overallSentimentDistribution = toDistribution(overallOverview);
   const categorySentimentDistribution = toDistribution(categoryOverview);
 
@@ -99,6 +100,7 @@ export function SentimentChart() {
             </span>
           </div>
 
+          {overallLoading ? <div className="grid min-h-44 place-items-center"><LoadingIndicator label={t.loading} /></div> : overallError ? <p role="alert">{t.fetchFailed}</p> : <>
           <DonutChart segments={overallSentimentData} isDark={isDark} />
 
           <div className="space-y-2">
@@ -125,6 +127,7 @@ export function SentimentChart() {
             <span style={{ color: mutedColor }}>{ui("Total analyzed (Overall)")}</span>
             <span className="font-semibold" style={{ color: textColor }}>{overallTotal}</span>
           </div>
+          </>}
         </div>
 
         <div className={`rounded-xl border p-3 ${isDark ? 'border-slate-700 bg-slate-900/30' : 'border-gray-100 bg-gray-50/70'}`}>
@@ -147,6 +150,7 @@ export function SentimentChart() {
             )}
           </div>
 
+          {categoryLoading ? <div className="grid min-h-44 place-items-center"><LoadingIndicator label={t.loading} /></div> : categoryError ? <p role="alert">{t.fetchFailed}</p> : <>
           <DonutChart segments={categorySentimentData} isDark={isDark} />
 
           <div className="space-y-2">
@@ -173,6 +177,7 @@ export function SentimentChart() {
             <span style={{ color: mutedColor }}>{ui("Total analyzed (")}{sentimentCategoryLabel})</span>
             <span className="font-semibold" style={{ color: textColor }}>{categoryTotal}</span>
           </div>
+          </>}
 
           {selectedCategory === 'all' && (
             <div className="mt-2">

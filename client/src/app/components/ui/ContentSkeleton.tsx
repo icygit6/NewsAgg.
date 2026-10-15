@@ -4,12 +4,14 @@ export function SkeletonBlock({ className = '' }: { className?: string }) {
   return <div aria-hidden="true" className={`rounded-lg bg-slate-200/80 dark:bg-slate-700/60 motion-safe:animate-pulse ${className}`} />;
 }
 
-export function FeedSkeleton({ count = 6, hero = false, label = 'Loading articles' }: { count?: number; hero?: boolean; label?: string }) {
+export function FeedSkeleton({ count = 6, hero = false, label }: { count?: number; hero?: boolean; label?: string }) {
+  const ui = useUiText();
+  label ??= ui('Loading articles');
   return (
-    <div role="status" aria-label={label} className="w-full py-4">
+    <div role="status" aria-label={label} aria-busy="true" className="@container w-full py-4">
       <span className="sr-only">{label}</span>
       {hero && <SkeletonBlock className="mb-8 h-52 sm:h-72 w-full rounded-2xl" />}
-      <div aria-hidden="true" className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+      <div aria-hidden="true" className="grid grid-cols-1 gap-5 sm:grid-cols-2 @5xl:grid-cols-3">
         {Array.from({ length: count }, (_, index) => (
           <div key={index} className="min-h-[500px] overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
             <SkeletonBlock className="h-52 rounded-none sm:h-56 lg:h-60" />
@@ -35,9 +37,11 @@ export function FeedSkeleton({ count = 6, hero = false, label = 'Loading article
   );
 }
 
-export function ListSkeleton({ count = 3, label = 'Loading content' }: { count?: number; label?: string }) {
+export function ListSkeleton({ count = 3, label }: { count?: number; label?: string }) {
+  const ui = useUiText();
+  label ??= ui('Loading content');
   return (
-    <div role="status" aria-label={label} className="w-full space-y-3 py-4">
+    <div role="status" aria-label={label} aria-busy="true" className="w-full space-y-3 py-4">
       <span className="sr-only">{label}</span>
       {Array.from({ length: count }, (_, index) => (
         <div key={index} aria-hidden="true" className="space-y-3 rounded-xl border border-slate-200 p-4 dark:border-slate-800">
@@ -52,7 +56,7 @@ export function ListSkeleton({ count = 3, label = 'Loading content' }: { count?:
 export function PanelSkeleton() {
   const ui = useUiText();
   return (
-    <div role="status" aria-label={ui("Loading insights")} className="space-y-4 py-4">
+    <div role="status" aria-label={ui("Loading insights")} aria-busy="true" className="grid gap-4 py-4 lg:grid-cols-2">
       <span className="sr-only">{ui("Loading insights")}</span>
       {[0, 1].map(index => (
         <div key={index} aria-hidden="true" className="space-y-4 rounded-2xl border border-slate-200 p-5 dark:border-slate-800">
@@ -66,9 +70,11 @@ export function PanelSkeleton() {
   );
 }
 
-export function ArticleSkeleton({ label = 'Loading article' }: { label?: string }) {
+export function ArticleSkeleton({ label }: { label?: string }) {
+  const ui = useUiText();
+  label ??= ui('Loading article');
   return (
-    <div role="status" aria-label={label} className="mx-auto max-w-6xl space-y-6 px-4 py-6 md:px-6">
+    <div role="status" aria-label={label} aria-busy="true" className="mx-auto max-w-6xl space-y-6 px-4 py-6 md:px-6">
       <span className="sr-only">{label}</span>
       <SkeletonBlock className="h-8 w-32" />
       <SkeletonBlock className="h-56 w-full rounded-2xl sm:h-80" />
@@ -80,4 +86,13 @@ export function ArticleSkeleton({ label = 'Loading article' }: { label?: string 
       </div>
     </div>
   );
+}
+
+/** Compact progress for actions; same treatment in feeds and account forms. */
+export function LoadingIndicator({ label }: { label?: string }) {
+  const ui = useUiText();
+  return <span role="status" className="inline-flex items-center justify-center gap-2 text-sm">
+    <span aria-hidden="true" className="h-4 w-4 shrink-0 rounded-full border-2 border-current border-r-transparent motion-safe:animate-spin" />
+    <span>{label ?? ui('Loading content')}</span>
+  </span>;
 }

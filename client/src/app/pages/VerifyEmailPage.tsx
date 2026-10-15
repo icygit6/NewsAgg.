@@ -1,10 +1,11 @@
 import { useUiText } from '../i18n/uiText';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
-import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { CheckCircle2, XCircle } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { authService } from '../services/authService';
 import { AuthLayout } from '../components/auth/AuthLayout';
+import { LoadingIndicator } from '../components/ui/ContentSkeleton';
 
 type Status = 'verifying' | 'success' | 'error';
 
@@ -38,6 +39,9 @@ export function VerifyEmailPage() {
         setStatus('error');
         setMessage(res.error || 'This verification link is invalid or has expired.');
       }
+    }).catch(() => {
+      setStatus('error');
+      setMessage('Unable to connect. Please try again.');
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
@@ -45,12 +49,10 @@ export function VerifyEmailPage() {
   return (
     <AuthLayout title={ui("Email verification")} isDark={isDark}>
       <div className="flex flex-col items-center text-center gap-3">
-        {status === 'verifying' && <Loader2 size={44} className="text-cyan-500 animate-spin" />}
+        {status === 'verifying' && <LoadingIndicator label={ui('Verifying your email…')} />}
         {status === 'success' && <CheckCircle2 size={44} className="text-emerald-500" />}
         {status === 'error' && <XCircle size={44} className="text-red-500" />}
-        <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
-          {ui(status === 'verifying' ? 'Verifying your email…' : message)}
-        </p>
+        {status !== 'verifying' && <p role={status === 'error' ? 'alert' : 'status'} className={`text-sm ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>{ui(message)}</p>}
         {status !== 'verifying' && (
           <Link
             to="/"

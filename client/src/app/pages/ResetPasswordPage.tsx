@@ -1,10 +1,11 @@
 import { useUiText } from '../i18n/uiText';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { Eye, EyeOff, KeyRound } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { authService } from '../services/authService';
 import { AuthLayout } from '../components/auth/AuthLayout';
+import { LoadingIndicator } from '../components/ui/ContentSkeleton';
 
 export function ResetPasswordPage() {
   const ui = useUiText();
@@ -18,6 +19,7 @@ export function ResetPasswordPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const submitting = useRef(false);
 
   const inputClass = `w-full px-4 py-3 rounded-xl border transition ${
     isDark
@@ -25,7 +27,9 @@ export function ResetPasswordPage() {
       : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-cyan-500'
   } focus:outline-none`;
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (submitting.current) return;
     if (password.length < 8) {
       setError('Password must be at least 8 characters');
       return;
@@ -35,9 +39,10 @@ export function ResetPasswordPage() {
       return;
     }
     setLoading(true);
+    submitting.current = true;
     setError('');
+    try {
     const res = await authService.resetPassword(token, password);
-    setLoading(false);
     if (res.success) {
       // A reset verifies inbox ownership on the server. Clear any stale
       // pre-reset session/profile and take the user straight to fresh sign-in.
@@ -47,6 +52,12 @@ export function ResetPasswordPage() {
       setSidebarOpen(true);
     } else {
       setError(res.error || 'Could not reset your password. The link may have expired.');
+    }
+    } catch {
+      setError('Unable to connect. Please try again.');
+    } finally {
+      submitting.current = false;
+      setLoading(false);
     }
   };
 
@@ -64,9 +75,15 @@ export function ResetPasswordPage() {
 
   return (
     <AuthLayout title={ui("Choose a new password")} isDark={isDark}>
+      <form onSubmit={handleSubmit} aria-busy={loading}>
+      <fieldset disabled={loading}>
       <div className="space-y-4">
+        <label htmlFor="reset-password" className="block text-sm font-semibold">{ui('New password')}</label>
         <div className="relative">
           <input
+            id="reset-password"
+            required
+            minLength={8}
             type={showPassword ? 'text' : 'password'}
             name="new-password"
             autoComplete="new-password"
@@ -84,32 +101,36 @@ export function ResetPasswordPage() {
             {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
           </button>
         </div>
+        <p className="text-xs text-slate-500 dark:text-slate-400">{ui('At least 8 characters')}</p>
+        <label htmlFor="reset-confirm" className="block text-sm font-semibold">{ui('Confirm new password')}</label>
         <input
+          id="reset-confirm"
+          required
           type={showPassword ? 'text' : 'password'}
           name="confirm-password"
           autoComplete="new-password"
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
           placeholder={ui("Confirm new password")}
-          onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
           className={inputClass}
         />
       </div>
 
       {error && (
-        <div className={`mt-4 p-3 rounded-lg text-sm ${isDark ? 'bg-red-900/30 text-red-300' : 'bg-red-50 text-red-700'}`}>
+        <div role="alert" className={`mt-4 p-3 rounded-lg text-sm ${isDark ? 'bg-red-900/30 text-red-300' : 'bg-red-50 text-red-700'}`}>
           {ui(error)}
         </div>
       )}
 
       <button
-        onClick={handleSubmit}
+        type="submit"
         disabled={loading}
-        className="mt-5 w-full flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-pink-500 text-white font-semibold hover:from-cyan-600 hover:to-pink-600 transition-all shadow-lg shadow-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="auth-submit mt-5 w-full flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        <KeyRound size={18} />
-        {loading ? ui('Resetting…') : ui("Reset password")}
+        {loading ? <LoadingIndicator label={ui('Resetting…')} /> : <><KeyRound size={18} />{ui('Reset password')}</>}
       </button>
+      </fieldset>
+      </form>
     </AuthLayout>
   );
 }

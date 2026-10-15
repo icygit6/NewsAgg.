@@ -22,7 +22,7 @@ const CONTENT: Record<'en' | 'zhTW', { intro: string; sections: Section[]; back:
           'Four publishers: BBC, CNN and Al Jazeera in English, and Yahoo News Taiwan in Traditional Chinese.',
           'Eight topics: Sport, Health, Business, World, Politics, Lifestyle, Science (including technology) and Climate. Not every publisher is collected for every topic: Al Jazeera has no Politics or Lifestyle feed here, and Yahoo Taiwan has no Health or Climate feed.',
           'Collection runs daily at 17:00 Taipei time, up to 20 articles per publisher and topic, from stories published in the previous 48 hours. The public feed keeps 30 days.',
-          'Yahoo Taiwan supplies more than half of the articles, so overall charts lean towards Taiwanese and Chinese-language coverage.',
+          'Publisher shares change with eligible article supply. The dataset is not balanced by publisher; overall charts can be dominated by the largest source.',
           'An article is published only after checks: a readable date, at least 300 characters of body text (80 words for English), a confirmed topic, a summary drawn from the text, and no duplicate.',
         ],
       },
@@ -54,7 +54,7 @@ const CONTENT: Record<'en' | 'zhTW', { intro: string; sections: Section[]; back:
         points: [
           'Four team members and two AI references labelled the same 120 published articles (30 per publisher). The system agreed with individual human labels on 51–57% of sentiment labels and 66–84% of topics.',
           'The main known weakness: the sentiment model calls far fewer stories positive (6 of 120) than people did (25–33 of 120), and many more negative.',
-          'Disagreements are still being reviewed, so these figures are interim and describe this sample only, not the whole site.',
+          'The snapshot contains 93 unique articles with human disagreement across the two tasks. Final adjudication has not started in that snapshot; these figures are interim and describe this sample only, not the whole site.',
         ],
       },
       {
@@ -88,7 +88,7 @@ const CONTENT: Record<'en' | 'zhTW', { intro: string; sections: Section[]; back:
       {
         title: 'Corrections',
         points: [
-          'Use “Report an issue” at the end of any article to flag a wrong label, summary, translation or extracted text. People on the team review every report; nothing changes automatically.',
+          'Use “Report an issue” at the end of any article to flag a wrong label, summary, translation or extracted text. Reports enter the team review queue; submission does not change content automatically or guarantee a response time.',
         ],
       },
     ],
@@ -104,7 +104,7 @@ const CONTENT: Record<'en' | 'zhTW', { intro: string; sections: Section[]; back:
           '四家媒體：英文的 BBC、CNN、Al Jazeera，以及繁體中文的 Yahoo 奇摩新聞臺灣。',
           '八個主題：運動、健康、商業、國際、政治、生活、科學（含科技）與氣候。並非每家媒體都擷取所有主題：本站未擷取 Al Jazeera 的政治與生活，也未擷取 Yahoo 臺灣的健康與氣候。',
           '每日臺北時間 17:00 擷取，每家媒體每個主題最多 20 篇，只收過去 48 小時內發布的新聞；公開列表保留 30 天。',
-          'Yahoo 臺灣提供超過一半的文章，因此整體圖表偏重臺灣與中文報導。',
+          '各媒體占比會隨合格文章供應而改變，資料集並非依媒體平衡抽樣；整體圖表可能由篇數最多的來源主導。',
           '文章須通過檢查才會公開：日期可解析、正文至少 300 字元（英文至少 80 字）、主題經確認、摘要取自原文，且不重複。',
         ],
       },
@@ -136,7 +136,7 @@ const CONTENT: Record<'en' | 'zhTW', { intro: string; sections: Section[]; back:
         points: [
           '四位組員與兩個 AI 參考標註了同一批 120 篇已發布文章（每家媒體 30 篇）。系統與個別人工標籤的情感一致率為 51–57%，主題為 66–84%。',
           '目前已知的主要弱點：情感模型判為正面的文章遠少於人工（120 篇中 6 篇對 25–33 篇），判為負面的則多得多。',
-          '分歧仍在裁決中，以上為暫定數字，只描述這批樣本，不代表全站。',
+          '兩項任務共有 93 篇不同文章存在人工分歧。此快照尚未開始最終裁決；以上為暫定數字，只描述這批樣本，不代表全站。',
         ],
       },
       {
@@ -170,7 +170,7 @@ const CONTENT: Record<'en' | 'zhTW', { intro: string; sections: Section[]; back:
       {
         title: '更正',
         points: [
-          '每篇文章結尾的「回報問題」可標記錯誤的標籤、摘要、翻譯或擷取內容。每則回報都由團隊人工審閱，文章不會自動更改。',
+          '每篇文章結尾的「回報問題」可標記錯誤的標籤、摘要、翻譯或擷取內容。回報會進入團隊審查佇列，不會自動更改文章，也不保證處理時限。',
         ],
       },
     ],
@@ -185,6 +185,7 @@ export function MethodologyPage() {
     <article className={`mx-auto max-w-3xl px-5 py-10 leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
       <h1 className={`mb-3 text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-950'}`}>{t.methodologyTitle}</h1>
       <p className="mb-8">{content.intro}</p>
+      <p className="mb-8"><Link className="text-blue-600 underline" to="/insights?view=research">{language === 'zhTW' || language === 'zhCN' ? '查看完整評估、Macro F1、混淆矩陣與測試紀錄 →' : 'Explore full evaluation, macro F1, confusion matrices and test evidence →'}</Link></p>
       <div className="space-y-7">
         {content.sections.map((section) => (
           <section key={section.title}>

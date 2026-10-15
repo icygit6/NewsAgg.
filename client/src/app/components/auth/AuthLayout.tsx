@@ -2,6 +2,7 @@ import { useUiText } from '../../i18n/uiText';
 import { ReactNode } from 'react';
 import { Link } from 'react-router';
 import { BrandLogo } from '../ui/BrandLogo';
+import './auth.css';
 
 interface AuthLayoutProps {
   title: string;
@@ -15,7 +16,7 @@ export function AuthLayout({ title, isDark, children }: AuthLayoutProps) {
   const ui = useUiText();
   return (
     <div
-      className={`min-h-screen flex flex-col items-center justify-center px-4 font-sans ${isDark ? 'text-slate-100' : 'text-slate-900'}`}
+      className={`auth-page min-h-screen flex flex-col items-center justify-center px-4 font-sans ${isDark ? 'text-slate-100' : 'text-slate-900'}`}
       style={{
         background: isDark
           ? 'radial-gradient(ellipse at 10% 20%, rgba(37, 99, 235, 0.10) 0%, transparent 50%), radial-gradient(ellipse at 85% 15%, rgba(23, 58, 99, 0.16) 0%, transparent 50%), #0a0f1e'
@@ -33,9 +34,13 @@ export function AuthLayout({ title, isDark, children }: AuthLayoutProps) {
             : 'bg-white/85 border-white/60 backdrop-blur-md'
         }`}
       >
-        <h1 className="font-poppins font-bold text-lg mb-4">{title}</h1>
+        <h1 className="font-poppins font-bold text-2xl mb-5 tracking-tight">{title}</h1>
         {children}
       </div>
+      <nav className="mt-6 flex flex-wrap justify-center gap-5 text-sm" aria-label={ui('Account help')}>
+        <Link className="underline underline-offset-4" to="/">{ui('← Back to NewsAgg')}</Link>
+        <Link className="underline underline-offset-4" to="/privacy">{ui('Privacy Policy')}</Link>
+      </nav>
     </div>
   );
 }

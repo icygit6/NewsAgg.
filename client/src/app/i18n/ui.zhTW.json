@@ -1,4 +1,13 @@
 {
+  "YOUR READING SPACE": "你的閱讀空間",
+  "Welcome back.": "歡迎回來。",
+  "Make room for perspective.": "開啟多元觀點的閱讀。",
+  "A fresh start.": "重新開始。",
+  "Save stories, join discussions, and make your reading experience your own.": "收藏新聞、參與討論，打造自己的閱讀體驗。",
+  "Account access": "帳號登入與註冊",
+  "Account help": "帳號協助",
+  "At least 8 characters": "至少 8 個字元",
+  "Unable to connect. Please try again.": "無法連線，請再試一次。",
   "Sport": "體育", "World": "國際", "Politics": "政治", "Business": "商業", "Health": "健康", "Science": "科學", "Lifestyle": "生活", "Climate": "氣候",
   "positive": "正面", "neutral": "中立", "negative": "負面", "Free access": "免費閱讀", "Restricted": "限制存取", "Quick read": "短篇閱讀", "just now": "剛剛", "Loading…": "載入中…",
   "English finance sentiment": "英文財經情緒分析", "Names, organisations and places": "人物、組織與地點辨識", "Semantic search and extractive summary": "語意搜尋與擷取式摘要", "English toxicity detection": "英文毒性偵測",

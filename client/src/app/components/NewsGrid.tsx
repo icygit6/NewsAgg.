@@ -7,7 +7,7 @@ import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { NewsCard } from './NewsCard';
 import { HeroCarousel } from './HeroCarousel';
 import { CATEGORY_LABELS } from '../constants';
-import { FeedSkeleton } from './ui/ContentSkeleton';
+import { FeedSkeleton, LoadingIndicator } from './ui/ContentSkeleton';
 
 export function NewsGrid() {
   const ui = useUiText();
@@ -128,8 +128,8 @@ export function NewsGrid() {
 
       {/* Infinite-scroll sentinel + loading indicator */}
       {hasNextPage && (
-        <div ref={sentinelRef} className="h-16 flex items-center justify-center" role="status" aria-live="polite">
-          {isFetchingNextPage && <span className="text-sm text-slate-500">{t.loading}</span>}
+        <div ref={sentinelRef} className="min-h-16 flex items-center justify-center py-4 text-slate-500 dark:text-slate-400">
+          {isFetchingNextPage ? <LoadingIndicator label={t.loading} /> : <button type="button" onClick={() => void fetchNextPage()} className="min-h-11 rounded-xl border border-slate-300 px-6 text-sm font-semibold hover:bg-blue-50 dark:border-slate-700 dark:hover:bg-slate-800">{ui('Load more')}</button>}
         </div>
       )}
     </div>
