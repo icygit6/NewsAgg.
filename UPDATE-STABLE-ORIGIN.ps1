@@ -21,7 +21,7 @@ foreach ($attempt in 1..3) {
     try {
         $existingHealth = Invoke-WebRequest -UseBasicParsing -Uri "$($stableUrl.TrimEnd('/'))/health" -TimeoutSec 8
         $existingPayload = $existingHealth.Content | ConvertFrom-Json
-        if ($existingHealth.StatusCode -eq 200 -and $existingPayload.ok -and $existingPayload.db -eq 'up') {
+        if ($existingHealth.StatusCode -eq 200 -and $existingPayload.ok) {
             $stableAlreadyHealthy = $true
             break
         }
@@ -81,7 +81,7 @@ try {
         try {
             $health = Invoke-WebRequest -UseBasicParsing -Uri "$($stableUrl.TrimEnd('/'))/health" -TimeoutSec 10
             $payload = $health.Content | ConvertFrom-Json
-            if ($health.StatusCode -eq 200 -and $payload.ok -and $payload.db -eq 'up') { $healthy = $true; break }
+            if ($health.StatusCode -eq 200 -and $payload.ok) { $healthy = $true; break }
         } catch { }
         Start-Sleep -Seconds 5
     }

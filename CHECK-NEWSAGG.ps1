@@ -16,7 +16,7 @@ try {
     Write-Host "Client HTTP: $($web.StatusCode)"
 } catch { Write-Host "Client gagal: $($_.Exception.Message)" }
 try {
-    $api = Invoke-RestMethod 'http://localhost:3000/health' -TimeoutSec 10
+    $api = Invoke-RestMethod 'http://localhost:3000/health?db=1' -TimeoutSec 10
     Write-Host "Server health: $($api | ConvertTo-Json -Compress)"
 } catch { Write-Host "Server gagal: $($_.Exception.Message)" }
 

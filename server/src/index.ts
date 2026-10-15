@@ -90,24 +90,26 @@ app.use('/auth', authLimiter, authRouter)
 // /api/bookmarks so IIS can reserve /bookmarks for the React page.
 app.use('/bookmarks', bookmarksRouter)
 
-// Liveness + readiness: pings the database so the probe fails when Postgres is
-// unreachable instead of reporting healthy with a dead backend.
-app.get('/health', async (_req, res) => {
+// Liveness answers from memory. Docker probes it every 15 s and the web
+// recovery task every 2 min; pinging Postgres on each of those kept the Neon
+// compute permanently awake, because Neon only scales to zero after 5 idle
+// minutes. Callers that genuinely need the database add ?db=1 (readiness).
+app.get('/health', async (req, res) => {
+  const integrations = {
+    googleAuth: Boolean(process.env.GOOGLE_CLIENT_ID),
+    captcha: Boolean(process.env.TURNSTILE_SECRET),
+    smtp: mailerConfigured,
+    translation: Boolean(process.env.GEMINI_API_KEY),
+    chat: Boolean(process.env.GROQ_API_KEY),
+    financePrimary: Boolean(process.env.TWELVE_DATA_API_KEY),
+    publicUrl: /^https:\/\//i.test(process.env.PUBLIC_CLIENT_URL || ''),
+  }
+  if (req.query.db !== '1') {
+    return res.json({ ok: true, db: 'unchecked', integrations })
+  }
   try {
     await pool.query('SELECT 1')
-    res.json({
-      ok: true,
-      db: 'up',
-      integrations: {
-        googleAuth: Boolean(process.env.GOOGLE_CLIENT_ID),
-        captcha: Boolean(process.env.TURNSTILE_SECRET),
-        smtp: mailerConfigured,
-        translation: Boolean(process.env.GEMINI_API_KEY),
-        chat: Boolean(process.env.GROQ_API_KEY),
-        financePrimary: Boolean(process.env.TWELVE_DATA_API_KEY),
-        publicUrl: /^https:\/\//i.test(process.env.PUBLIC_CLIENT_URL || ''),
-      },
-    })
+    res.json({ ok: true, db: 'up', integrations })
   } catch (err) {
     logger.error({ err }, 'health check: database unreachable')
     res.status(503).json({ ok: false, db: 'down' })

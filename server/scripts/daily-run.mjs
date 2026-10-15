@@ -103,7 +103,7 @@ async function morningEdition() {
   } finally {unlock();}
 }
 async function healthy() {
-  try { const r=await fetch(`${publicUrl}/health`,{signal:AbortSignal.timeout(15000),cache:'no-store'});const body=await r.json();return r.ok&&body.ok===true&&body.db==='up'; }
+  try { const r=await fetch(`${publicUrl}/health?db=1`,{signal:AbortSignal.timeout(15000),cache:'no-store'});const body=await r.json();return r.ok&&body.ok===true&&body.db==='up'; }
   catch { return false; }
 }
 async function recoverPublic() {

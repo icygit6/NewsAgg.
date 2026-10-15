@@ -116,7 +116,7 @@ function Get-DigestSnapshot {
 function Wait-NewsApi {
     foreach ($attempt in 1..30) {
         try {
-            $health = Invoke-RestMethod -Uri 'http://127.0.0.1:3000/health' -TimeoutSec 10
+            $health = Invoke-RestMethod -Uri 'http://127.0.0.1:3000/health?db=1' -TimeoutSec 10
             if ($health) { return }
         } catch {
             Start-Sleep -Seconds 4

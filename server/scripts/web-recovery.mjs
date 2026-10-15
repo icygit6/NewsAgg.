@@ -74,7 +74,8 @@ async function healthy(url) {
   try {
     const response = await fetch(url, {signal: AbortSignal.timeout(8000), cache: 'no-store'});
     const body = await response.json();
-    return response.ok && body.ok === true && body.db === 'up';
+    // Liveness only: this runs every 2 minutes and must not keep Neon awake.
+    return response.ok && body.ok === true;
   } catch { return false; }
 }
 async function online() {
