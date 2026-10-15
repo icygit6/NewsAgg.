@@ -50,7 +50,7 @@ export function ArticleBody({ article, isDark }: ArticleBodyProps) {
         <div className={`rounded-2xl border p-5 mb-6 ${panelBase}`}>
           <div className="flex items-center gap-2 mb-2">
             <Sparkles size={15} className="text-cyan-500" />
-            <h2 className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>{ui("AI Summary")}</h2>
+            <h2 className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>{ui("Extractive summary")}</h2>
           </div>
           <div className={`space-y-2 leading-relaxed ${bodyText}`}>{article.aiSummary.split('\n').filter(Boolean).map((line, i) => <p key={i}>{line}</p>)}</div>
           {article.summaryMethod?.startsWith('extractive') && <p className={`mt-3 text-xs ${mutedText}`}>{ui("Key passages selected from the article.")}</p>}

@@ -20,7 +20,7 @@
   "Mark unread": "標記為未讀", "Mark read": "標記為已讀", "Archive": "封存", "Remove bookmark": "移除書籤", "Open original article": "開啟原始文章", "Collection": "收藏集", "Notes": "筆記", "Untitled article": "未命名文章", "edited": "已編輯", "No summary available": "暫無摘要",
   "Multilingual sentiment": "多語言情緒分析", "Financial sentiment (English)": "財經情緒分析（英文）", "Topic classification": "主題分類", "Named entities": "命名實體辨識", "Semantic embeddings": "語意向量", "Toxicity (English)": "毒性分析（英文）",
   "Archived extraction: this article has not passed the current feed quality checks. You can read the original publisher version using the source link below.": "封存文章：此文章尚未通過目前的內容品質檢查。您可以透過下方來源連結閱讀原文。",
-  "AI Summary": "AI 摘要", "Key passages selected from the article.": "從文章中選出的重點段落。",
+  "Extractive summary": "擷取式摘要","Key passages selected from the article.": "從文章中選出的重點段落。",
   "Continue with the original coverage and any linked media from this source.": "前往新聞來源閱讀完整報導及相關影音。",
   "Read on": "閱讀原文：", "Watch video": "觀看影片", "Video": "影片", "coverage": "報導",
   "None listed": "未列出", "Category Sentiment Distribution": "分類情緒分布", "articles in current dataset": "目前資料集中的文章", "Total in category": "分類文章總數",
