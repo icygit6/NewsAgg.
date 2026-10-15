@@ -115,6 +115,19 @@ export function EvaluationPanel() {
         <EvidenceTable caption={tx('Per-class calculation', '各類計算明細')} headers={[tx('Class', '類別'), 'TP', 'FP', 'FN', tx('Reference n', '參考樣本數'), tx('Predicted n', '預測篇數'), tx('Precision', '精確率'), tx('Recall', '召回率'), 'F1']}>
           {metric.classes.map(c => <tr key={c.label}><th scope="row">{label(c.label)}</th><td>{c.tp}</td><td>{c.fp}</td><td>{c.fn}</td><td>{c.support}</td><td>{c.predicted}</td><td>{dec(c.precision)}</td><td>{dec(c.recall)}</td><td>{dec(c.f1)}</td></tr>)}
         </EvidenceTable>
+        {/* Always-visible key: the column headers are standard abbreviations. */}
+        <dl className="evidence-legend-grid" aria-label={tx('Column meanings', '欄位說明')}>
+          {([
+            ['TP', tx('True positive — NewsAgg and the reference both chose this class.', '真陽性（True Positive）：NewsAgg 與參考標註都選此類。')],
+            ['FP', tx('False positive — NewsAgg chose this class, the reference chose another.', '偽陽性（False Positive）：NewsAgg 選此類，參考標註選了其他類。')],
+            ['FN', tx('False negative — the reference chose this class, NewsAgg chose another.', '偽陰性（False Negative）：參考標註選此類，NewsAgg 選了其他類。')],
+            [tx('Reference n', '參考樣本數'), tx('Support — articles the reference put in this class (TP + FN).', '支持數（support）：參考標註歸入此類的篇數（TP + FN）。')],
+            [tx('Predicted n', '預測篇數'), tx('Articles NewsAgg put in this class (TP + FP).', 'NewsAgg 歸入此類的篇數（TP + FP）。')],
+            [tx('Precision', '精確率'), tx('Of NewsAgg’s labels for this class, the share the reference agrees with: TP / (TP + FP).', 'NewsAgg 判為此類者中，與參考一致的比例：TP / (TP + FP)。')],
+            [tx('Recall', '召回率'), tx('Of the reference’s articles in this class, the share NewsAgg also found: TP / (TP + FN).', '參考標註屬於此類者中，NewsAgg 也判對的比例：TP / (TP + FN)。')],
+            ['F1', tx('F1 score — harmonic mean of precision and recall: 2TP / (2TP + FP + FN). 1 is perfect, 0 is none.', 'F1 分數：精確率與召回率的調和平均，2TP / (2TP + FP + FN)；1 為完全一致，0 為完全不符。')],
+          ] as const).map(([term, meaning]) => <div key={term}><dt>{term}</dt><dd>{meaning}</dd></div>)}
+        </dl>
         <details className="evidence-details"><summary>{tx('How to calculate these numbers', '這些數值如何計算')}</summary>
           <p>{tx('TP = matching predictions for a class. FP = assigned to that class but the reference chose another. FN = reference chose that class but the system chose another.', 'TP＝該類預測與參考一致；FP＝預測為該類但參考為其他類；FN＝參考為該類但預測為其他類。')}</p>
           <code>Precision = TP / (TP + FP) · Recall = TP / (TP + FN)</code>

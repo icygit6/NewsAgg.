@@ -32,6 +32,10 @@
 .evidence-details summary::after { content:''; width:8px; height:8px; border-right:2px solid currentColor; border-bottom:2px solid currentColor; transform:rotate(45deg); transition:transform .2s; flex-shrink:0; opacity:.6; }
 .evidence-details[open] summary::after { transform:rotate(-135deg); }
 .evidence-body { display:grid; gap:20px; }
+.evidence-legend-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:8px 16px; margin:4px 0 14px; font-size:12px; }
+.evidence-legend-grid div { display:flex; gap:8px; align-items:baseline; }
+.evidence-legend-grid dt { font-weight:750; min-width:86px; flex-shrink:0; }
+.evidence-legend-grid dd { color:var(--ev-muted); line-height:1.55; }
 .evidence-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
 .evidence-card { background:var(--ev-card); border:1px solid var(--ev-border); border-radius:16px; padding:20px; min-width:0; }
 .evidence-bars { display:grid; gap:15px; margin:24px 0; }
