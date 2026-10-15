@@ -92,8 +92,18 @@ statsRouter.get('/overview', async (req: Request, res: Response) => {
         `,
         params
       )
+      // Every category's sentiment split in one pass, so Insights can rank all
+      // categories at once instead of rotating through them one per request.
       const categories = await query(
-        `SELECT DISTINCT topic FROM articles a WHERE ${ACTIVE_ARTICLES} AND topic IS NOT NULL AND btrim(topic) <> '' ORDER BY topic`
+        `SELECT a.topic,
+                count(*)::int                                               AS total,
+                count(*) FILTER (WHERE a.sentiment_type = 'positive')::int AS positive,
+                count(*) FILTER (WHERE a.sentiment_type = 'neutral')::int  AS neutral,
+                count(*) FILTER (WHERE a.sentiment_type = 'negative')::int AS negative
+         FROM articles a
+         WHERE ${ACTIVE_ARTICLES} AND a.topic IS NOT NULL AND btrim(a.topic) <> ''
+         GROUP BY a.topic
+         ORDER BY total DESC, a.topic`
       )
       const models = await query(
         `SELECT DISTINCT sentiment_model FROM articles a
@@ -109,7 +119,12 @@ statsRouter.get('/overview', async (req: Request, res: Response) => {
           sourceCount: row.source_count,
           keywordCount: kw.rows[0]?.keyword_count ?? 0,
           scrapedAt: row.latest_scraped_at ? new Date(row.latest_scraped_at).toISOString() : null,
-          categories: categories.rows.map((r) => r.topic),
+          categories: categories.rows.map((r) => r.topic).sort(),
+          byCategory: categories.rows.map((r) => ({
+            topic: r.topic,
+            total: r.total,
+            sentiments: { positive: r.positive, neutral: r.neutral, negative: r.negative },
+          })),
           aiModels: Object.fromEntries(
             models.rows.map((r, i) => [`sentiment_${i + 1}`, r.sentiment_model])
           ),

@@ -21,6 +21,12 @@ describe('feed quality contract', () => {
     expect(sql).toContain('duplicate.content_hash = a.content_hash')
     expect(sql).toContain('duplicate.source_id = a.source_id')
     expect(sql).toContain('86400')
+    // The headline normaliser must reach Postgres as \s+ (whitespace), not
+    // "s+" — a single backslash is dropped inside a JS template literal.
+    expect(sql).toContain("regexp_replace(btrim(duplicate.title), '\\s+', ' ', 'g')")
+    // Hash and headline duplicates stay separate anti-joins (an OR between
+    // them forced a 7-10 s nested loop over every article pair).
+    expect(sql.match(/NOT EXISTS/g)?.length).toBeGreaterThanOrEqual(2)
   })
   it('filters freshness by publication rather than scrape time', async () => {
     await request(app).get('/news?sinceHours=24&page=1')
