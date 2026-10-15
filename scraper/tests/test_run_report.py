@@ -9,6 +9,45 @@ import run_all
 
 
 class RunReportTests(unittest.TestCase):
+    def test_forty_quota_rotates_five_row_topups_and_preserves_discovery_scope(self):
+        specs=[SourceSpec(key=k,name=k,categories={'World':['https://example.com/world']},target_per_category=40) for k in ['a','b']]
+        calls=[];serial=0
+        def source(spec, **kwargs):
+            nonlocal serial
+            calls.append((spec.key,spec.target_per_category,kwargs['discovery_target']))
+            records=[]
+            for _ in range(spec.target_per_category):
+                serial+=1;records.append({'id':str(serial),'source':{'id':spec.key},'topic':'World','sentiment':{'type':'neutral'}})
+            return records
+        report={};args=SimpleNamespace(refresh_existing=False,target=40,report_path=None)
+        with patch.object(run_all,'all_specs',return_value=specs),patch.object(run_all,'run_source',side_effect=source):
+            run_all.scrape(args,False,report,None)
+        self.assertEqual(calls[:2],[('a',2,40),('b',2,40)])
+        self.assertTrue(all(n<=5 and discovery==40 for _,n,discovery in calls[2:]))
+        self.assertEqual([k for k,_,_ in calls], ['a','b']*9)
+        self.assertEqual(len(report['articleIds']),80)
+        self.assertEqual(report['status'],'complete')
+
+    def test_exhausted_pair_stops_without_lowering_other_pair_target(self):
+        specs=[SourceSpec(key=k,name=k,categories={'World':['https://example.com/world']},target_per_category=40) for k in ['a','b']]
+        calls=[];serial=0
+        def source(spec,**kwargs):
+            nonlocal serial
+            calls.append(spec.key)
+            n=spec.target_per_category if spec.key=='b' else 0
+            records=[]
+            for _ in range(n):
+                serial+=1;records.append({'id':str(serial),'source':{'id':spec.key},'topic':'World','sentiment':{'type':'neutral'}})
+            return records
+        report={};args=SimpleNamespace(refresh_existing=False,target=40,report_path=None)
+        with patch.object(run_all,'all_specs',return_value=specs),patch.object(run_all,'run_source',side_effect=source):
+            run_all.scrape(args,False,report,None)
+        self.assertEqual(calls.count('a'),2)
+        self.assertEqual(report['counts']['deficit_a_World'],40)
+        self.assertEqual(report['counts']['deficit_b_World'],0)
+        self.assertEqual(report['status'],'partial')
+        self.assertEqual(len(report['articleIds']),40)
+
     def test_all_categories_get_first_pass_before_any_quota_top_up(self):
         specs=[SourceSpec(key='test',name='Test',categories={'Science':['https://example.com/science'],'World':['https://example.com/world']},target_per_category=3)]
         calls=[]

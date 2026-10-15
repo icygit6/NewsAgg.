@@ -304,6 +304,7 @@ def run_source(
     stats: Optional[dict] = None,
     attempted_urls: Optional[set[str]] = None,
     candidate_limit: Optional[int] = None,
+    discovery_target: Optional[int] = None,
 ) -> list[dict]:
     """Crawl, filter, enrich and (optionally) upsert one source. Returns records.
 
@@ -333,7 +334,8 @@ def run_source(
 
     for category, urls in spec.categories.items():
         print(f"\n-- {category} --")
-        per_src_target = min(120, max(40, (target * per_src_mult * 2) // max(1, len(urls))))
+        # Small fair-share batches still discover for the original full quota.
+        per_src_target = min(120, max(40, ((discovery_target or target) * per_src_mult * 2) // max(1, len(urls))))
 
         raw_pool: list[dict] = []
         for feed in spec.feeds.get(category, []):

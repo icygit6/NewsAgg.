@@ -2,7 +2,7 @@
 """Run every source sequentially against the live DB.
 
 Supports --no-db (enrich only, no writes) and --target N (articles per
-category per source). Used by .github/workflows/scraper.yml on a schedule.
+category per source). Scheduled locally; Actions provides manual operations.
 One source failing never aborts the rest — each is wrapped in try/except.
 """
 from __future__ import annotations
@@ -139,8 +139,17 @@ def scrape(args, to_db, report, conn):
     obtained, attempted = Counter(), {}
     for topic, original in pairs:
         stats[f'deficit_{original.key}_{topic}'] = args.target or original.target_per_category
-    for first_pass in (True, False):
+    active = {(original.key, topic) for topic, original in pairs}
+    round_number = 0
+    storage_reached = False
+    while active and not storage_reached:
+        first_pass = round_number == 0
+        round_number += 1
+        stats['quota_rounds'] = round_number
         for topic, original in pairs:
+            key = (original.key, topic)
+            if key not in active:
+                continue
             if conn is not None:
                 # Enrichment can outlive an idle Neon connection. A short-lived
                 # read here does not depend on the parent's old connection.
@@ -153,22 +162,30 @@ def scrape(args, to_db, report, conn):
                     capacity_conn.close()
                 if used >= config.STORAGE_BUDGET_BYTES - config.STORAGE_HEADROOM_BYTES:
                     stats['storage_budget_reached'] = 1
+                    storage_reached = True
                     print('Storage safety threshold reached; preserving existing articles and stopping ingestion.')
                     break
-            key = (original.key, topic)
             target = args.target or original.target_per_category
-            wanted = min(2, target) if first_pass else target
-            remaining = wanted - obtained[key]
+            # Every pair gets its first two opportunities before larger
+            # batches. Then rotate in batches of at most five accepted rows.
+            remaining = min(2 if first_pass else 5, target - obtained[key])
             if remaining <= 0:
+                active.discard(key)
                 continue
             spec = replace(original, categories={topic: original.categories[topic]}, target_per_category=remaining)
             try:
                 records = run_source(spec, to_db=to_db, global_seen=global_seen, stats=stats,
-                                     attempted_urls=attempted.setdefault(key, set()), candidate_limit=12 if first_pass else None)
+                                     attempted_urls=attempted.setdefault(key, set()), candidate_limit=12 if first_pass else None,
+                                     discovery_target=target)
                 all_records += records
                 obtained[key] += len(records)
+                # A full pass that cannot fill this batch has exhausted
+                # eligible candidates. Report the deficit without weak fills.
+                if obtained[key] >= target or (not first_pass and len(records) < remaining):
+                    active.discard(key)
             except Exception as e:
                 stats['errors'] += 1
+                active.discard(key)
                 print(f"!! source {spec.key}/{topic} failed: {e}")
             stats[f'deficit_{original.key}_{topic}'] = max(0, target-obtained[key])
             report['articleIds'] = sorted({r['id'] for r in all_records})

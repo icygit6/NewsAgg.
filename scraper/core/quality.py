@@ -78,7 +78,10 @@ def structured_body(soup, selectors, fallback='', extra=None):
             block = {'type': kind, 'text': text}
             if node.name in ('ul', 'ol'):
                 items = [clean_text(n.get_text(' ', strip=True)) for n in node.find_all('li', recursive=False)]
-                block = {'type': 'list', 'items': [s for s in items if s], 'ordered': node.name == 'ol'}
+                items = [s for s in items if s]
+                # Wrapped publisher markup can contain prose but no direct li.
+                # Preserve that cleaned source text rather than an invalid list.
+                block = {'type': 'list', 'items': items, 'ordered': node.name == 'ol'} if items else {'type': 'paragraph', 'text': text}
             blocks.append(block)
     body = '\n\n'.join('\n'.join(b['items']) if b['type'] == 'list' else b['text'] for b in blocks)
     if len(body) < 300:

@@ -4,6 +4,12 @@ from core.pipeline import SourceSpec, run_source
 
 
 class DiscoveryTests(unittest.TestCase):
+    def test_small_batch_discovers_for_full_forty_article_quota(self):
+        spec=SourceSpec(key='test',name='Test',categories={'Science':['https://example.com/science']},target_per_category=5)
+        with patch('core.pipeline.http.crawl_source',return_value=[]) as crawl:
+            run_source(spec,to_db=False,discovery_target=40)
+        self.assertEqual(crawl.call_args.args[2],120)
+
     def test_bounded_pass_does_not_consume_next_pass_candidate(self):
         feed=[{'url':f'https://example.com/story-{n}', 'title_hint':'Scientific discovery', 'topic':'Science'} for n in range(3)]
         attempts=set()

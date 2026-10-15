@@ -75,7 +75,7 @@ RATE_LIMIT: dict[str, float] = defaultdict(float)
 
 # ── Crawl / enrich tuning ───────────────────────────────────────────
 MAX_AGE_DAYS = 30            # hard admission window; never substitute scrape time
-TARGET_PER_CATEGORY = 20     # per-source ceiling; balanced global runner fills deficits
+TARGET_PER_CATEGORY = 20     # per-source/category ceiling; balanced runner fills deficits
 # Operator safety budget, NOT a claim about the provider's plan entitlement.
 STORAGE_BUDGET_BYTES = int(os.getenv('SCRAPER_STORAGE_BUDGET_MB', '400')) * 1024 * 1024
 STORAGE_HEADROOM_BYTES = 60 * 1024 * 1024

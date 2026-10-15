@@ -5,6 +5,22 @@ from bs4 import BeautifulSoup
 from core import quality, summarizer, extract, semantic, http
 
 class ArticleQualityTests(unittest.TestCase):
+    def test_wrapped_list_items_preserve_source_text_without_empty_list(self):
+        body = 'The researchers measured the effect using controlled observations. ' * 7
+        soup = BeautifulSoup(f'<article><p>{body}</p><ul><div><li>A measured finding from the original report.</li></div></ul></article>', 'html.parser')
+        text, blocks = quality.structured_body(soup, ['article'])
+        self.assertIn('A measured finding from the original report.', text)
+        self.assertEqual(blocks[-1], {'type':'paragraph', 'text':'A measured finding from the original report.'})
+        self.assertFalse(any(b['type']=='list' and not b['items'] for b in blocks))
+        self.assertEqual(text, '\n\n'.join(b['text'] for b in blocks))
+
+    def test_blank_list_does_not_create_invalid_block(self):
+        body = 'The original report documents independently checked measurements. ' * 7
+        soup = BeautifulSoup(f'<article><p>{body}</p><ul><li> </li></ul></article>', 'html.parser')
+        _, blocks = quality.structured_body(soup, ['article'])
+        self.assertEqual(len(blocks), 1)
+        self.assertEqual(blocks[0]['type'], 'paragraph')
+
     def test_summary_input_excludes_caption_and_heading_but_keeps_prose(self):
         blocks=[{'type':'heading','text':'Heading'}, {'type':'caption','text':'Getty Images photograph'},
                 {'type':'paragraph','text':'This is the actual reported evidence.'}, {'type':'list','items':['Reported fact one','Reported fact two']}]

@@ -13,5 +13,5 @@ Set-Location -LiteralPath $PSScriptRoot
 docker info *> $null
 if ($LASTEXITCODE -ne 0) { throw 'Docker Desktop is not running.' }
 
-docker compose --profile scraper run --build --rm scraper python -u run_all.py --target $Target
+docker compose --profile scraper run --build --rm scraper python -u run_all.py --target $Target --max-age-hours 48
 if ($LASTEXITCODE -ne 0) { throw "Scraper failed with exit code $LASTEXITCODE." }

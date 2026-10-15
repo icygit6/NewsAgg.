@@ -39,6 +39,8 @@ class PublicationTests(unittest.TestCase):
         self.assertEqual(publication.rejection(row),'body_blocks_mismatch')
         row['content_blocks']=[{'type':'list','items':'not a list'}]
         self.assertEqual(publication.rejection(row),'invalid_body_blocks')
+        row['content_blocks']=[{'type':'list','items':[]}]
+        self.assertEqual(publication.rejection(row),'invalid_body_blocks')
 
     def test_image_fallback_cannot_keep_a_stale_hero(self):
         row=fixture();row['url_to_image']='https://example.com/old.jpg'
