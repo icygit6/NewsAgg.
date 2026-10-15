@@ -38,11 +38,11 @@ describe('public research evidence', () => {
   });
   it('switches task and reference together in matrices and worked calculations', () => {
     mount();
-    fireEvent.change(screen.getByLabelText('Reference for details'), { target: { value: 'human-d' } });
+    fireEvent.click(within(screen.getByRole('group', { name: 'Reference for details' })).getByRole('button', { name: 'Human D' }));
     const matrix = screen.getByRole('table', { name: 'Human D → NewsAgg' });
     expect(within(matrix).getAllByRole('row')).toHaveLength(4);
     expect(screen.getByText('68/120')).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('Task'), { target: { value: 'topic' } });
+    fireEvent.click(within(screen.getByRole('group', { name: 'Task' })).getByRole('button', { name: 'Topic · 8 classes' }));
     expect(within(screen.getByRole('table', { name: 'Human D → NewsAgg' })).getAllByRole('row')).toHaveLength(9);
     expect(screen.getByText('91/120')).toBeInTheDocument();
     expect(screen.getByText(/Macro F1 = .* = 0.7478/)).toBeInTheDocument();

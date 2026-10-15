@@ -1,12 +1,13 @@
 import { useUiText } from '../../i18n/uiText';
-import { useId, useRef, useState } from 'react';
-import { Eye, EyeOff, Info, LogIn, UserPlus, Mail, Bookmark, Check } from 'lucide-react';
-import { GoogleLogin } from '@react-oauth/google';
+import { useEffect, useId, useRef, useState } from 'react';
+import { Eye, EyeOff, Info, LogIn, UserPlus, Mail, Check } from 'lucide-react';
 import { getRuntimeConfig } from '../../lib/runtimeConfig';
 import { useApp } from '../../contexts/AppContext';
 import { authService } from '../../services/authService';
 import { Turnstile } from '../auth/Turnstile';
+import { LocalizedGoogleLogin } from '../auth/LocalizedGoogleLogin';
 import { LoadingIndicator } from '../ui/ContentSkeleton';
+import { BrandLogo } from '../ui/BrandLogo';
 import '../auth/auth.css';
 
 interface AuthPanelProps {
@@ -41,6 +42,20 @@ export function AuthPanel({ isDark, onAuthenticated }: AuthPanelProps) {
   const [captchaToken, setCaptchaToken] = useState('');
   const [loginCaptchaRequired, setLoginCaptchaRequired] = useState(false);
   const [captchaKey, setCaptchaKey] = useState(0);
+  // Google renders its button in an iframe at a fixed pixel width; measure the
+  // panel so the button lines up with the inputs at every drawer width.
+  const googleSlot = useRef<HTMLDivElement>(null);
+  const [googleWidth, setGoogleWidth] = useState(320);
+  useEffect(() => {
+    const el = googleSlot.current;
+    if (!el) return;
+    const measure = () => setGoogleWidth(Math.round(Math.min(400, Math.max(200, el.clientWidth))));
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   // Register + forgot always challenge; login only after repeated failures.
   const googleAvailable = Boolean(getRuntimeConfig().googleClientId) && mode !== 'forgot';
@@ -231,10 +246,11 @@ export function AuthPanel({ isDark, onAuthenticated }: AuthPanelProps) {
   return (
     <section className="newsagg-auth" data-theme={isDark ? 'dark' : 'light'}>
       <header className="auth-welcome">
-        <span className="auth-mark" aria-hidden="true"><Bookmark size={22} /></span>
-        <p className="auth-eyebrow">NEWSAGG / {ui('YOUR READING SPACE')}</p>
-        <h3 className="text-2xl font-extrabold tracking-tight">{ui(mode === 'login' ? 'Welcome back.' : mode === 'signup' ? 'Make room for perspective.' : 'A fresh start.')}</h3>
-        <p className="mt-2 text-sm leading-relaxed">{ui('Save stories, join discussions, and make your reading experience your own.')}</p>
+        <BrandLogo showWordmark={false} markClassName="w-10 h-10 shrink-0" />
+        <div className="min-w-0">
+          <h3 className="text-lg font-bold leading-snug">{ui(mode === 'login' ? 'Welcome back.' : mode === 'signup' ? 'Make room for perspective.' : 'A fresh start.')}</h3>
+          <p className="mt-0.5 text-xs leading-relaxed">{ui('Save stories, join discussions, and make your reading experience your own.')}</p>
+        </div>
       </header>
       {mode !== 'forgot' && <div className="auth-mode" role="group" aria-label={ui('Account access')}>
         {(['login', 'signup'] as const).map(value => <button key={value} type="button" disabled={loading} aria-pressed={mode === value} onClick={() => changeMode(value)}>{ui(value === 'login' ? 'Sign In' : 'Create Account')}</button>)}
@@ -367,13 +383,17 @@ export function AuthPanel({ isDark, onAuthenticated }: AuthPanelProps) {
         </p>
       )}
 
+      <div ref={googleSlot} className="w-full" aria-hidden="true" />
       {googleAvailable && captchaConfigured && !loading && !(mode === 'signup' && pendingGoogleSignup) && (
         <div className="mb-4">
+          <div className="auth-divider" role="separator"><span>{ui('or')}</span></div>
           {captchaConfigured && !captchaToken ? (
-            <p className={`rounded-xl border p-3 text-center text-sm ${isDark ? 'border-slate-700 text-slate-300' : 'border-slate-200 text-slate-600'}`}>{ui("Complete the “I am not a robot” check above to continue with Google.")}</p>
+            <p className={`rounded-xl border px-3 py-2.5 text-center text-xs leading-relaxed ${isDark ? 'border-slate-700 text-slate-400' : 'border-slate-200 text-slate-500'}`}>{ui("Complete the “I am not a robot” check above to continue with Google.")}</p>
           ) : (
-            <GoogleLogin
-              key={language}
+            <div className="flex justify-center">
+            <LocalizedGoogleLogin
+              // Redraw at the measured width; the language is handled inside.
+              key={googleWidth}
               onSuccess={handleGoogleSuccess}
               onError={() =>
                 setError(
@@ -382,9 +402,12 @@ export function AuthPanel({ isDark, onAuthenticated }: AuthPanelProps) {
               }
               theme={isDark ? 'filled_black' : 'outline'}
               size="large"
-              width="260"
+              shape="pill"
+              logo_alignment="center"
+              width={googleWidth}
               text={mode === 'login' ? 'signin_with' : 'signup_with'}
             />
+            </div>
           )}
         </div>
       )}

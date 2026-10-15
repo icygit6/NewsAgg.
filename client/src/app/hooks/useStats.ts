@@ -13,6 +13,8 @@ export interface StatsOverview {
   keywordCount: number;
   scrapedAt: string | null;
   categories: string[];
+  /** Per-topic sentiment split, largest category first (overview of 'all'). */
+  byCategory?: Array<{ topic: string; total: number; sentiments: { positive: number; neutral: number; negative: number } }>;
   aiModels: Record<string, string>;
   nlpModels?: Array<{ id: string; role: string }>;
 }

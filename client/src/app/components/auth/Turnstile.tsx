@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 // official script loaded once and rendered explicitly. Renders nothing when
 // VITE_TURNSTILE_SITE_KEY is unset, so the auth forms work with zero config.
 import { getRuntimeConfig } from '../../lib/runtimeConfig';
+import { useApp } from '../../contexts/AppContext';
 const SCRIPT_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
 
 interface TurnstileApi {
@@ -44,6 +45,9 @@ function turnstileEnabled(): boolean {
 }
 
 export function Turnstile({ onToken, isDark }: TurnstileProps) {
+  // The challenge text follows the interface language, like the rest of the form.
+  const { language } = useApp();
+  const turnstileLanguage = language === 'zhTW' ? 'zh-tw' : language === 'zhCN' ? 'zh-cn' : language === 'id' ? 'id' : 'en';
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetId = useRef<string | null>(null);
   // Keep the latest callback without re-rendering the widget on every change.
@@ -60,6 +64,9 @@ export function Turnstile({ onToken, isDark }: TurnstileProps) {
         widgetId.current = window.turnstile.render(containerRef.current, {
           sitekey: siteKey,
           theme: isDark ? 'dark' : 'light',
+          language: turnstileLanguage,
+          // Stretch to the form width instead of the fixed 300px box.
+          size: 'flexible',
           callback: (token: string) => onTokenRef.current(token),
           'expired-callback': () => onTokenRef.current(''),
           'error-callback': () => onTokenRef.current(''),
@@ -75,8 +82,8 @@ export function Turnstile({ onToken, isDark }: TurnstileProps) {
         widgetId.current = null;
       }
     };
-  }, [isDark]);
+  }, [isDark, turnstileLanguage]);
 
   if (!turnstileEnabled()) return null;
-  return <div ref={containerRef} className="my-3 flex justify-center" />;
+  return <div ref={containerRef} className="my-3 w-full" />;
 }

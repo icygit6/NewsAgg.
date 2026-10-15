@@ -66,8 +66,25 @@ export function EvaluationPanel() {
     </div>
 
     {(view === 'results' || view === 'pairs') && <div className="evidence-controls">
-      <label>{tx('Task', '評估任務')}<select value={task} onChange={e => setTask(e.target.value as Task)}><option value="sentiment">{tx('Sentiment · 3 classes', '情感 · 3 類')}</option><option value="topic">{tx('Topic · 8 classes', '主題 · 8 類')}</option></select></label>
-      {view === 'results' && <label>{tx('Reference for details', '詳細結果的參考標註')}<select value={reference} onChange={e => setReference(e.target.value)}>{data.references.map(r => <option key={r.id} value={r.id}>{name(r.id)} · {tx(r.kind === 'human' ? 'human' : 'AI reference', r.kind === 'human' ? '人工' : 'AI 參考')}</option>)}</select></label>}
+      {/* Visible choices instead of native selects: two tasks as a segmented
+          switch, six references as grouped chips. */}
+      <div className="evidence-control">
+        <span id="evidence-task-label">{tx('Task', '評估任務')}</span>
+        <div className="evidence-segment" role="group" aria-labelledby="evidence-task-label">
+          {([['sentiment', tx('Sentiment · 3 classes', '情感 · 3 類')], ['topic', tx('Topic · 8 classes', '主題 · 8 類')]] as const).map(([value, title]) =>
+            <button type="button" key={value} aria-pressed={task === value} onClick={() => setTask(value)}>{title}</button>)}
+        </div>
+      </div>
+      {view === 'results' && <div className="evidence-control">
+        <span id="evidence-reference-label">{tx('Reference for details', '詳細結果的參考標註')}</span>
+        <div className="evidence-chips" role="group" aria-labelledby="evidence-reference-label">
+          {(['human', 'ai'] as const).map(kind => <div key={kind} className="evidence-chip-group">
+            <small>{kind === 'human' ? tx('Human', '人工') : tx('AI reference', 'AI 參考')}</small>
+            {data.references.filter(r => (r.kind === 'human') === (kind === 'human')).map(r =>
+              <button type="button" key={r.id} aria-pressed={reference === r.id} onClick={() => setReference(r.id)}>{name(r.id)}</button>)}
+          </div>)}
+        </div>
+      </div>}
     </div>}
 
     {view === 'results' && <div className="evidence-body">

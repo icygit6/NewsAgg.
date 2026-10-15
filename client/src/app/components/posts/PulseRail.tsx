@@ -3,7 +3,8 @@ import { Link } from 'react-router';
 import { PenSquare } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useApp } from '../../contexts/AppContext';
-import { POSTS_ENABLED } from '../../constants';
+import { CATEGORY_BADGE_CLASS, CATEGORY_LABELS, POSTS_ENABLED } from '../../constants';
+import { useUiText } from '../../i18n/uiText';
 import { fetchDailyQuote, fetchQuoteList } from '../../services/quoteService';
 import { usePosts } from '../../hooks/usePosts';
 import { QuoteCard } from './QuoteCard';
@@ -16,7 +17,11 @@ const RAIL_POSTS = 12;
  * interleaves user posts with FavQs quotes (every 5th slot is a quote). With
  * no posts yet the feed degrades to a quotes-only list. */
 export function PulseRail() {
-  const { t, isDark, isAuthenticated, setSidebarOpen } = useApp();
+  const ui = useUiText();
+  const { t, isDark, isAuthenticated, setSidebarOpen, selectedCategory, setSelectedCategory } = useApp();
+  // Pulse follows the site-wide category like the feed and Insights do. Post
+  // categories are stored by label ("Sport"), the filter by key ("sport").
+  const categoryLabel = selectedCategory === 'all' ? null : CATEGORY_LABELS[selectedCategory];
 
   const { data: daily } = useQuery({
     queryKey: ['quote', 'daily'],
@@ -28,7 +33,7 @@ export function PulseRail() {
     queryFn: fetchQuoteList,
     staleTime: 60 * 60 * 1000,
   });
-  const { data: postsData } = usePosts({ pageSize: RAIL_POSTS });
+  const { data: postsData, isPending: postsPending } = usePosts({ pageSize: RAIL_POSTS, category: categoryLabel ?? 'all' });
   const railPosts = POSTS_ENABLED ? (postsData?.pages[0]?.posts ?? []) : [];
   const postCards: ReactNode[] = railPosts.map((post) => (
     <PostCard key={`p-${post.id}`} post={post} />
@@ -52,7 +57,7 @@ export function PulseRail() {
         postIdx += 1;
       }
     }
-  } else {
+  } else if (!categoryLabel) {
     quoteList.slice(0, RAIL_QUOTES).forEach((q, i) => {
       items.push(<QuoteCard key={`q-${i}`} quote={q} />);
     });
@@ -66,6 +71,18 @@ export function PulseRail() {
 
   return (
     <div className="flex flex-col gap-3">
+      {categoryLabel && selectedCategory !== 'all' && (
+        <div className={`flex items-center justify-between gap-2 rounded-xl border px-3 py-2 text-xs ${isDark ? 'border-slate-800 bg-slate-900 text-slate-300' : 'border-slate-200 bg-white text-slate-600'}`}>
+          <span className="flex items-center gap-2">
+            {ui('Showing')}
+            <span className={`rounded-full px-2 py-0.5 font-semibold ${CATEGORY_BADGE_CLASS[selectedCategory]}`}>{ui(categoryLabel)}</span>
+          </span>
+          <button type="button" onClick={() => setSelectedCategory('all')} className="min-h-8 rounded-lg px-2 text-xs font-semibold text-[var(--brand,#2563eb)] hover:underline">
+            {t.allCategories}
+          </button>
+        </div>
+      )}
+
       {daily && <QuoteCard quote={daily} pinned />}
 
       {POSTS_ENABLED ? (
@@ -88,6 +105,12 @@ export function PulseRail() {
       )}
 
       {items}
+
+      {POSTS_ENABLED && categoryLabel && !postsPending && postCards.length === 0 && (
+        <p className={`rounded-xl border border-dashed px-4 py-6 text-center text-sm ${isDark ? 'border-slate-700 text-slate-400' : 'border-slate-300 text-slate-500'}`}>
+          {ui('No posts in this category yet.')}
+        </p>
+      )}
 
       {POSTS_ENABLED && (
         <Link

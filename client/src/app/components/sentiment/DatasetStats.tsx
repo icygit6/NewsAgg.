@@ -1,4 +1,5 @@
 import { useUiText } from '../../i18n/uiText';
+import { ChevronDown } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import type { DatasetSnapshot } from '../../types/api';
 import { panelBaseClass, chartMutedColor } from './shared';
@@ -44,8 +45,11 @@ export function DatasetStats({ articleCount, keywordCount, snapshot, categoryLab
       </div>
       <p className="text-[11px] mt-2" style={{ color: mutedColor }}>{ui("Published dataset (")}{categoryLabel})
       </p>
-      {models.length > 0 && <details className="mt-3 text-xs">
-        <summary className="cursor-pointer">{ui("Model details")}</summary>
+      {models.length > 0 && <details className={`group mt-3 rounded-xl border px-3 py-2 text-xs ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
+        <summary className="flex min-h-8 cursor-pointer list-none items-center justify-between gap-2 font-semibold [&::-webkit-details-marker]:hidden">
+          {ui("Model details")}
+          <ChevronDown size={14} className="shrink-0 transition-transform group-open:rotate-180" style={{ color: mutedColor }} />
+        </summary>
         <p className="my-2" style={{ color: mutedColor }}>{ui("Configured pipeline; models vary by article language and task. Chat and translation services are not included.")}</p>
         <ul className="space-y-2">{models.map(model => <li key={model.id}>
           <span className="font-semibold">{ui(model.role)}</span><br />

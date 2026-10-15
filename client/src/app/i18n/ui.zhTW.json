@@ -87,5 +87,6 @@
   "Load more comments": "載入更多留言",
   "Write a comment": "撰寫留言",
   "Write a reply": "撰寫回覆",
-  "Send comment": "送出留言"
+  "Send comment": "送出留言",
+  "Selected category": "已選分類", "Articles analysed": "分析文章數", "All categories ranked": "全部分類排名", "by article count": "依文章數", "Most positive": "最正面", "Most negative": "最負面", "Show all categories": "顯示全部分類", "Filter by this category": "依此分類篩選", "Choose a category to filter the feed, Insights and Pulse.": "選擇分類即可同步篩選新聞列表、洞察與動態。", "Showing": "目前顯示", "No posts in this category yet.": "這個分類還沒有貼文。", "or": "或"
 }

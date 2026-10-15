@@ -2,7 +2,7 @@ import { useUiText } from '../../i18n/uiText';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Eye, EyeOff, KeyRound, Link2, Loader2, MonitorSmartphone, ShieldCheck, Trash2, Unlink, UserPen } from 'lucide-react';
-import { GoogleLogin } from '@react-oauth/google';
+import { LocalizedGoogleLogin } from '../auth/LocalizedGoogleLogin';
 import { useApp } from '../../contexts/AppContext';
 import { authService } from '../../services/authService';
 import { getRuntimeConfig } from '../../lib/runtimeConfig';
@@ -308,7 +308,7 @@ export function AccountSettings({ isDark }: AccountSettingsProps) {
           </div>
           {!user?.googleLinked && getRuntimeConfig().googleClientId && (
             <div aria-label={t.linkGoogle}>
-              <GoogleLogin
+              <LocalizedGoogleLogin
                 onSuccess={(response) => void linkGoogle(response.credential)}
                 onError={() => setGoogleMsg({ ok: false, text: 'Google authentication failed' })}
                 text="continue_with"

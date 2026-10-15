@@ -5,7 +5,7 @@ import { CATEGORY_LABELS } from '../constants';
 import { useStatsOverview } from '../hooks/useStats';
 import { useLatestArticles } from '../hooks/useArticles';
 import type { DatasetSnapshot } from '../types/api';
-import { SentimentChart } from '../components/sentiment/SentimentChart';
+import { SentimentByCategory } from '../components/sentiment/SentimentByCategory';
 import { LiveView } from '../components/sentiment/LiveView';
 import { TrendingKeywords } from '../components/sentiment/TrendingKeywords';
 import { DatasetStats } from '../components/sentiment/DatasetStats';
@@ -63,7 +63,7 @@ function LiveInsights() {
             <BusinessInsights />
           </div>
           <div className="min-w-0 space-y-4">
-            <SentimentChart />
+            <SentimentByCategory />
             <TrendingKeywords />
           </div>
           <div className="min-w-0 space-y-4">
