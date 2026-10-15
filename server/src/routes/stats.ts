@@ -48,6 +48,13 @@ const KEYWORD_STOPLIST = new Set([
   'news', 'article', 'story', 'video', 'update', 'latest', 'breaking', 'live',
   'cnn', 'bbc', 'aljazeera', 'yahoo', 'read', 'watch', 'report', 'reports',
   'said', 'says', 'year', 'years', 'people', 'world', 'time', 'today',
+  'president', 'government', 'official', 'officials', 'week', 'new',
+  // Newsroom boilerplate from Chinese bylines and attributions
+  // ("記者XXX／台北報導", "綜合報導", "表示", "指出").
+  '記者', '報導', '綜合', '編輯', '新聞', '中心', '表示', '指出', '今天', '今年', '目前',
+  // Function words the keyword extractor sometimes keeps.
+  'like', 'also', 'just', 'one', 'two', 'first', 'last', 'could', 'would',
+  '我們', '他們', '你們', '一個', '這個', '那個', '可以', '沒有', '已經', '因為', '如果', '還是', '不是', '就是', '自己', '這樣',
 ])
 
 // GET /api/stats/overview?category=
@@ -131,7 +138,7 @@ statsRouter.get('/trending', async (req: Request, res: Response) => {
       }
       const result = await query(
         `
-        SELECT lower(kw) AS keyword, count(*)::int AS count
+        SELECT lower(kw) AS keyword, mode() WITHIN GROUP (ORDER BY kw) AS label, count(*)::int AS count
         FROM articles a, jsonb_array_elements_text(a.keywords) AS kw
         ${where}
         GROUP BY lower(kw)

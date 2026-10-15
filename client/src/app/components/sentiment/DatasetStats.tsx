@@ -2,6 +2,7 @@ import { useUiText } from '../../i18n/uiText';
 import { useApp } from '../../contexts/AppContext';
 import type { DatasetSnapshot } from '../../types/api';
 import { panelBaseClass, chartMutedColor } from './shared';
+import { formatNewsDate } from '../../lib/formatDate';
 
 interface DatasetStatsProps {
   articleCount: number;
@@ -10,15 +11,12 @@ interface DatasetStatsProps {
   categoryLabel: string;
 }
 
-const formatSnapshotDate = (value: string | null): string => {
-  if (!value) return 'Unavailable';
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
-};
 
 export function DatasetStats({ articleCount, keywordCount, snapshot, categoryLabel }: DatasetStatsProps) {
   const ui = useUiText();
-  const { isDark } = useApp();
+  const { isDark, language } = useApp();
+  const formatSnapshotDate = (value: string | null): string =>
+    value ? formatNewsDate(value, language, true) : ui('Unavailable');
   const mutedColor = chartMutedColor(isDark);
   const models = snapshot.nlpModels ?? [];
   const modelCount = new Set(models.map(model => model.id)).size;

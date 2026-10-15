@@ -19,6 +19,8 @@ export interface StatsOverview {
 
 export interface TrendingStat {
   keyword: string;
+  /** Most common original spelling, e.g. "Trump" or "AI". */
+  label?: string;
   count: number;
 }
 

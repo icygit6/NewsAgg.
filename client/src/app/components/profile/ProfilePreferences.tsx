@@ -4,11 +4,12 @@ import { ChevronDown, Download, Languages, Loader2, Mail, Sparkles, Trash2 } fro
 import { mem0Service } from '../../services/mem0Service';
 import { authService } from '../../services/authService';
 import { useApp } from '../../contexts/AppContext';
-import { LANG_PILLS } from '../ui/LanguageSwitcher';
+import { useReadingChoice } from '../ui/LanguageSwitcher';
 
 export function ProfilePreferences({ isDark }: { isDark: boolean }) {
   const ui = useUiText();
-  const { language, setLanguage, user, setUser } = useApp();
+  const { t, user, setUser } = useApp();
+  const reading = useReadingChoice();
   const [enabled, setEnabled] = useState(true);
   const [topics, setTopics] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -95,7 +96,7 @@ export function ProfilePreferences({ isDark }: { isDark: boolean }) {
 
   const panel = `rounded-3xl border p-5 shadow-sm ${isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white/95 border-slate-200'}`;
   const row = `flex items-center gap-3 rounded-2xl p-3.5 ${isDark ? 'bg-slate-950/50 text-slate-200' : 'bg-slate-50 text-slate-800'}`;
-  const currentLanguage = LANG_PILLS.find((option) => option.code === language)?.short ?? 'EN';
+  const currentLanguage = reading.current.short;
 
   return (
     <section className={panel} aria-labelledby="preferences-heading">
@@ -105,8 +106,8 @@ export function ProfilePreferences({ isDark }: { isDark: boolean }) {
         <div className={row}>
           <Languages size={16} className="shrink-0 text-cyan-500" />
           <div className="min-w-0 flex-1">
-            <span className="block text-sm font-medium">{ui("Site and news language")}</span>
-            <span className="block text-xs leading-relaxed opacity-70">{ui("The interface and news will use this language on every device.")}</span>
+            <span className="block text-sm font-medium">{t.newsLanguageTitle}</span>
+            <span className="block text-xs leading-relaxed opacity-70">{t.newsLanguageHint}</span>
           </div>
           <div ref={languageMenuRef} className="relative shrink-0">
             <button
@@ -114,7 +115,7 @@ export function ProfilePreferences({ isDark }: { isDark: boolean }) {
               onClick={() => setLanguageOpen((open) => !open)}
               aria-haspopup="listbox"
               aria-expanded={languageOpen}
-              aria-label={ui("Site and news language")}
+              aria-label={t.newsLanguageTitle}
               className={`flex min-w-[82px] items-center justify-between gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition-colors ${
                 isDark
                   ? 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'
@@ -127,29 +128,30 @@ export function ProfilePreferences({ isDark }: { isDark: boolean }) {
             {languageOpen && (
               <div
                 role="listbox"
-                aria-label={ui("Site and news language")}
+                aria-label={t.newsLanguageTitle}
                 className={`absolute right-0 top-full z-50 mt-1 min-w-[112px] rounded-xl border p-1 shadow-lg ${
                   isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'
                 }`}
               >
-                {LANG_PILLS.map(({ code, short }) => (
+                {reading.options.map(({ code, short, label }) => (
                   <button
                     key={code}
                     type="button"
                     role="option"
-                    aria-selected={language === code}
+                    title={label}
+                    aria-selected={reading.choice === code}
                     onClick={() => {
-                      setLanguage(code);
+                      reading.choose(code);
                       setLanguageOpen(false);
                     }}
                     className={`w-full rounded-lg px-3 py-1.5 text-left text-sm font-medium transition-colors ${
-                      language === code
+                      reading.choice === code
                         ? 'text-white'
                         : isDark
                           ? 'text-slate-200 hover:bg-slate-800'
                           : 'text-slate-700 hover:bg-slate-100'
                     }`}
-                    style={language === code ? { background: 'var(--brand-grad, #2563eb)' } : undefined}
+                    style={reading.choice === code ? { background: 'var(--brand-grad, #2563eb)' } : undefined}
                   >
                     {short}
                   </button>

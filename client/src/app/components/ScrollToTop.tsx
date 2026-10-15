@@ -7,13 +7,43 @@ import { useLocation, useNavigationType } from 'react-router';
 const getMain = () => document.getElementById('main-scroll');
 const positions = new Map<string, number>();
 
+/** True once the main scroll area has moved past `threshold` pixels. */
+export function useMainScrolledPast(threshold = 400, resetKey?: string) {
+  const showRef = useRef(false);
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const el = getMain();
+    if (!el) return;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const nextShow = el.scrollTop > threshold;
+      if (nextShow !== showRef.current) {
+        showRef.current = nextShow;
+        setShow(nextShow);
+      }
+    };
+    const handleScroll = () => {
+      if (!frame) frame = window.requestAnimationFrame(update);
+    };
+    update();
+    el.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      el.removeEventListener('scroll', handleScroll);
+    };
+  }, [threshold, resetKey]);
+  return show;
+}
+
+export const scrollMainToTop = (smooth: boolean) => getMain()?.scrollTo({ top: 0, behavior: smooth ? 'smooth' : 'auto' });
+
 export function ScrollToTop() {
   const ui = useUiText();
   const { pathname, key } = useLocation();
   const navigation = useNavigationType();
   const previousPath = useRef('');
-  const showRef = useRef(false);
-  const [show, setShow] = useState(false);
+  const show = useMainScrolledPast(400, pathname);
   const shouldReduceMotion = useReducedMotion();
 
   useLayoutEffect(() => {
@@ -51,40 +81,16 @@ export function ScrollToTop() {
     };
   }, [key, pathname, navigation]);
 
-  useEffect(() => {
-    const el = getMain();
-    if (!el) return;
-    let frame = 0;
-    const update = () => {
-      frame = 0;
-      const nextShow = el.scrollTop > 400;
-      if (nextShow !== showRef.current) {
-        showRef.current = nextShow;
-        setShow(nextShow);
-      }
-    };
-    const handleScroll = () => {
-      if (!frame) frame = window.requestAnimationFrame(update);
-    };
-    update();
-    el.addEventListener('scroll', handleScroll, { passive: true });
-    return () => {
-      if (frame) window.cancelAnimationFrame(frame);
-      el.removeEventListener('scroll', handleScroll);
-    };
-  }, [pathname]);
+  const scrollToTop = () => scrollMainToTop(!shouldReduceMotion);
 
-  const scrollToTop = () => getMain()?.scrollTo({
-    top: 0,
-    behavior: shouldReduceMotion ? 'auto' : 'smooth',
-  });
-
+  // Article pages place this control beside the chat trigger (ArticleChat),
+  // so two stacked floating buttons no longer cover the reading column.
   const isArticle = pathname.startsWith('/article/');
-  const offset = isArticle ? 'bottom-[calc(9rem+env(safe-area-inset-bottom))] lg:bottom-24' : 'bottom-[calc(5rem+env(safe-area-inset-bottom))] lg:bottom-6';
+  const offset = 'bottom-[calc(5rem+env(safe-area-inset-bottom))] lg:bottom-6';
 
   return (
     <AnimatePresence>
-      {show && (
+      {show && !isArticle && (
         <motion.button
           initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.75 }}
           animate={{ opacity: 1, scale: 1 }}

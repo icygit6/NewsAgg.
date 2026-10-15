@@ -248,7 +248,7 @@ export function AuthPanel({ isDark, onAuthenticated }: AuthPanelProps) {
                 onClick={() => setShowPassword((p) => !p)}
                 aria-label={showPassword ? t.hidePassword : t.showPassword}
                 title={showPassword ? t.hidePassword : t.showPassword}
-                className={`absolute right-3.5 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-gray-400 hover:text-gray-600'}`}
+                className={`absolute right-1.5 top-1/2 -translate-y-1/2 grid h-9 w-9 place-items-center rounded-full ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-gray-400 hover:text-gray-600'}`}
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>

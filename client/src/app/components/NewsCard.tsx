@@ -8,19 +8,13 @@ import { getArticleId } from '../services/newsAPI';
 import type { NewsArticle } from '../types/article';
 import type { SentimentType } from '../types/sentiment';
 import { ImageWithFallback } from './utils/ImageWithFallback';
+import { SourceLogo } from './ui/SourceLogo';
+import { formatNewsDate } from '../lib/formatDate';
 
 const SENTIMENT_STYLE: Record<SentimentType, { bg: string; dot: string; dark: string }> = {
   positive: { bg: 'bg-emerald-100 text-emerald-700', dot: 'bg-emerald-500', dark: 'bg-emerald-900/40 text-emerald-300' },
   neutral: { bg: 'bg-gray-100 text-gray-600', dot: 'bg-gray-400', dark: 'bg-gray-700 text-gray-300' },
   negative: { bg: 'bg-red-100 text-red-700', dot: 'bg-red-500', dark: 'bg-red-900/40 text-red-300' },
-};
-
-const formatDate = (value: string): string => {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-  return date.toLocaleDateString();
 };
 
 interface NewsCardProps {
@@ -29,7 +23,7 @@ interface NewsCardProps {
 
 export function NewsCard({ article }: NewsCardProps) {
   const ui = useUiText();
-  const { t, isDark, isAuthenticated, setSidebarOpen } = useApp();
+  const { t, isDark, isAuthenticated, setSidebarOpen, language } = useApp();
   const { isBookmarked: isArticleBookmarked, bookmarkIdFor, add, remove } = useBookmarks();
   const navigate = useNavigate();
   const articleId = getArticleId(article);
@@ -123,7 +117,7 @@ export function NewsCard({ article }: NewsCardProps) {
             </div>
 
             <div className="absolute bottom-3 left-3 right-3 flex flex-wrap items-center gap-2">
-              <span className={`hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${isDark ? sentStyle.dark : sentStyle.bg}`}>
+              <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${isDark ? sentStyle.dark : sentStyle.bg}`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${sentStyle.dot}`} />
                 {t[article.sentiment.type]}
               </span>
@@ -138,19 +132,7 @@ export function NewsCard({ article }: NewsCardProps) {
 
           <div className="flex min-w-0 flex-1 flex-col p-5">
             <div className="mb-4 flex min-w-0 items-center gap-3">
-              {article.source.logo ? (
-                <img
-                  src={article.source.logo}
-                  alt={article.source.name}
-                  loading="lazy"
-                  decoding="async"
-                  className={`h-9 w-9 rounded-full object-cover flex-shrink-0 ${isDark ? 'bg-slate-900/80' : 'bg-white'}`}
-                />
-              ) : (
-                <div className={`h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${isDark ? 'bg-slate-700 text-slate-200' : 'bg-gray-100 text-gray-600'}`}>
-                  {article.source.name.slice(0, 1)}
-                </div>
-              )}
+              <SourceLogo source={article.source} isDark={isDark} />
 
               <div className="min-w-0">
                 <p className={`truncate text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-gray-700'}`}>
@@ -194,7 +176,7 @@ export function NewsCard({ article }: NewsCardProps) {
                 </span>
               </div>
 
-              <span className="flex-shrink-0 font-medium">{formatDate(article.publishedAt)}</span>
+              <span className="flex-shrink-0 font-medium">{formatNewsDate(article.publishedAt, language)}</span>
             </div>
 
             <div className={`flex items-center justify-between gap-3 mt-2.5 text-[11px] ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>

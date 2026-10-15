@@ -16,6 +16,10 @@ interface AppContextType {
   // Language
   language: Language;
   setLanguage: (lang: Language) => void;
+  // How news text is shown. 'original' (the default) keeps every story in the
+  // language it was published in; 'translated' follows the interface language.
+  newsMode: NewsMode;
+  setNewsMode: (mode: NewsMode) => void;
   t: Translations;
   // Sidebar
   sidebarOpen: boolean;
@@ -46,12 +50,22 @@ interface AppContextType {
   avatarSrc: string; // effective src: custom avatar, else generated fallback
 }
 
+export type NewsMode = 'original' | 'translated';
+
+const GUEST_AVATAR = `data:image/svg+xml;utf8,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><rect width="40" height="40" fill="#e2e8f0"/>' +
+  '<circle cx="20" cy="15" r="7" fill="#94a3b8"/><path d="M6 37c1.5-8 7-12 14-12s12.5 4 14 12" fill="#94a3b8"/></svg>',
+)}`;
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [isDark, setIsDark] = useState(() => localStorage.getItem('isDark') === 'true');
   const [language, setLanguageState] = useState<Language>(() =>
     localStorage.getItem('language') === 'zhTW' ? 'zhTW' : 'en',
+  );
+  const [newsMode, setNewsMode] = useState<NewsMode>(() =>
+    localStorage.getItem('newsMode') === 'translated' ? 'translated' : 'original',
   );
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all');
@@ -95,6 +109,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Retire the former global content-translation preference.
     localStorage.removeItem('translateMode');
   }, [language]);
+
+  useEffect(() => {
+    localStorage.setItem('newsMode', newsMode);
+  }, [newsMode]);
 
   // A signed-in account's saved locale follows it to every browser/device.
   useEffect(() => {
@@ -209,10 +227,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const isAuthenticated = !!user;
   // Server-stored avatar wins; the localStorage copy only bridges the
   // one-time migration; dicebear is the generated fallback.
-  const avatarSrc =
-    user?.avatar ||
-    avatarUrl ||
-    `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.username || 'NewsAgg2026')}`;
+  // Signed-out visitors get a neutral silhouette rather than a generated
+  // person, which read as somebody else's account.
+  const avatarSrc = user
+    ? user.avatar ||
+      avatarUrl ||
+      `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.username || 'NewsAgg2026')}`
+    : GUEST_AVATAR;
 
   const value = useMemo<AppContextType>(
     () => ({
@@ -220,6 +241,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       toggleTheme,
       language,
       setLanguage,
+      newsMode,
+      setNewsMode,
       t,
       sidebarOpen,
       setSidebarOpen,
@@ -245,6 +268,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [
       isDark,
       language,
+      newsMode,
       t,
       sidebarOpen,
       selectedCategory,

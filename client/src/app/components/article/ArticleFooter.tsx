@@ -1,9 +1,12 @@
 import { useUiText } from '../../i18n/uiText';
 import { useState } from 'react';
+import { Link } from 'react-router';
 import { ExternalLink, PlayCircle, ChevronDown, Info } from 'lucide-react';
 import type { NewsArticle } from '../../types/article';
 import { useApp } from '../../contexts/AppContext';
 import { panelBaseClass } from './helpers';
+import { ReportIssue } from './ReportIssue';
+import { getArticleId } from '../../services/newsAPI';
 
 interface ArticleFooterProps {
   article: NewsArticle;
@@ -37,6 +40,7 @@ export function ArticleFooter({ article, isDark }: ArticleFooterProps) {
           <a href={article.videoUrl} target="_blank" rel="noopener noreferrer" className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold ${isDark ? 'bg-slate-700 text-slate-100 hover:bg-slate-600' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}>
             <PlayCircle size={15} />{ui("Watch video")} </a>
         )}
+        <ReportIssue articleId={getArticleId(article)} isDark={isDark} />
       </div>
 
       {/* Metric glossary + sentiment math (collapsible) */}
@@ -73,7 +77,11 @@ export function ArticleFooter({ article, isDark }: ArticleFooterProps) {
                 <li>{t.neutral}: P({t.neutral}) ≥ 0.52 &amp; |polarity| ≤ 0.18</li>
                 <li>{t.positive}: polarity ≥ +0.10</li>
                 <li>{t.negative}: polarity ≤ −0.10</li>
+                <li>{t.sentimentFallbackRule}</li>
               </ul>
+              <Link to="/methodology" className="mt-3 inline-block text-xs font-semibold text-cyan-600 hover:underline">
+                {t.methodologyTitle} →
+              </Link>
             </div>
           </div>
         )}

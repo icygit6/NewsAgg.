@@ -9,7 +9,7 @@ import { AuthPanel } from './profile/AuthPanel';
 import { FooterCompact } from './shell/Footer';
 import { useIsMobile } from './ui/use-mobile';
 import { BrandLogo } from './ui/BrandLogo';
-import type { Language } from '../i18n/translations';
+import { useReadingChoice } from './ui/LanguageSwitcher';
 import { useEffect, useRef } from 'react';
 
 /** Slim account drawer: identity card linking to /profile plus quick
@@ -18,7 +18,7 @@ export function ProfileSidebar() {
   const ui = useUiText();
   const {
     sidebarOpen, setSidebarOpen, isDark, toggleTheme, t, user, setUser,
-    language, setLanguage, avatarSrc,
+    avatarSrc,
   } = useApp();
   const { bookmarks } = useBookmarks();
   const navigate = useNavigate();
@@ -64,10 +64,7 @@ export function ProfileSidebar() {
     if (result.success) setUser(null);
   };
 
-  const languageOptions: { code: Language; label: string }[] = [
-    { code: 'en', label: t.english },
-    { code: 'zhTW', label: t.zhTraditional },
-  ];
+  const reading = useReadingChoice();
 
   const rowClass = `w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors ${
     isDark ? 'text-slate-200 hover:bg-slate-800' : 'text-gray-700 hover:bg-gray-50'
@@ -176,15 +173,16 @@ export function ProfileSidebar() {
 
               {/* Language */}
               <p className={`mt-4 mb-2 text-[11px] font-semibold uppercase tracking-wide ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
-                {t.language}
+                {t.newsLanguageTitle}
               </p>
-              <div className="grid grid-cols-2 gap-2">
-                {languageOptions.map((opt) => {
-                  const active = language === opt.code;
+              <div className="grid grid-cols-3 gap-2">
+                {reading.options.map((opt) => {
+                  const active = reading.choice === opt.code;
                   return (
                     <button
                       key={opt.code}
-                      onClick={() => setLanguage(opt.code)}
+                      title={opt.label}
+                      onClick={() => reading.choose(opt.code)}
                       className={`flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                         active
                           ? 'bg-cyan-500 text-white'
@@ -193,7 +191,7 @@ export function ProfileSidebar() {
                             : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
                       }`}
                     >
-                      <span className="truncate">{opt.label}</span>
+                      <span className="truncate">{opt.short}</span>
                       {active && <Check size={14} className="shrink-0" />}
                     </button>
                   );

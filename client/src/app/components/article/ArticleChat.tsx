@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { ChevronDown, Eraser, Loader2, Send, Sparkles, X } from 'lucide-react';
+import { ArrowUp, ChevronDown, Eraser, Loader2, Send, Sparkles, X } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { getArticleId } from '../../services/newsAPI';
 import { getRuntimeConfig } from '../../lib/runtimeConfig';
+import { useUiText } from '../../i18n/uiText';
+import { scrollMainToTop, useMainScrolledPast } from '../ScrollToTop';
 import type { Language } from '../../i18n/translations';
 import type { NewsArticle } from '../../types/article';
 
@@ -50,7 +52,11 @@ export function ArticleChat({ article, isDark }: ArticleChatProps) {
 }
 
 function ArticleChatSession({ article, isDark }: ArticleChatProps) {
-  const { t, language, isAuthenticated, user } = useApp();
+  const { t, language, newsMode, isAuthenticated, user } = useApp();
+  // In Multi mode answers follow the article's own language, like its text.
+  const answerLang = newsMode === 'original'
+    ? ((article.language || '').toLowerCase().startsWith('zh') ? 'zh-TW' : 'en')
+    : LANG_CODE[language];
   const storageKey = `chat:${user?.id ?? 'guest'}:${getArticleId(article)}`;
   // Name the actual model (from the API's public config) instead of a generic
   // "AI"; falls back to the translated generic label when the API hasn't
@@ -62,6 +68,8 @@ function ArticleChatSession({ article, isDark }: ArticleChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>(() => loadHistory(storageKey));
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const ui = useUiText();
+  const scrolledDown = useMainScrolledPast(400, storageKey);
   // Tracks which article the state currently belongs to, so a reply that
   // resolves after navigating to another article (component stays mounted)
   // can't write the old article's conversation into the new one's state —
@@ -115,7 +123,7 @@ function ArticleChatSession({ article, isDark }: ArticleChatProps) {
         body: JSON.stringify({
           message: trimmed,
           articleId: getArticleId(article),
-          lang: LANG_CODE[language],
+          lang: answerLang,
           ...(history.length > 0 ? { messages: history } : {}),
         }),
       });
@@ -156,16 +164,36 @@ function ArticleChatSession({ article, isDark }: ArticleChatProps) {
 
   return (
     <>
-      {/* Floating trigger (hidden while the panel is open) */}
+      {/* Floating controls (hidden while the panel is open): scroll-to-top sits
+          beside the chat trigger in one row instead of stacking above it. */}
       {!open && (
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="group fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] lg:bottom-6 right-6 z-40 inline-flex items-center gap-2 pl-4 pr-5 py-3 rounded-full text-sm font-semibold text-white shadow-lg shadow-cyan-500/25 ring-1 ring-white/20 bg-gradient-to-r from-cyan-500 to-pink-500 hover:from-cyan-600 hover:to-pink-600 hover:shadow-xl hover:-translate-y-0.5 transition-all"
-        >
-          <Sparkles size={16} className="transition-transform group-hover:rotate-12" />
-          {askLabel}
-        </button>
+        <div className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] lg:bottom-6 right-6 z-40 flex items-center gap-3">
+          <AnimatePresence>
+            {scrolledDown && (
+              <motion.button
+                key="to-top"
+                type="button"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                onClick={() => scrollMainToTop(true)}
+                aria-label={ui('Scroll to top')}
+                title={ui('Scroll to top')}
+                className={`grid place-items-center w-11 h-11 rounded-full shadow-lg ring-1 transition-colors ${isDark ? 'bg-slate-800 text-slate-100 ring-slate-700 hover:bg-slate-700' : 'bg-white text-slate-700 ring-slate-200 hover:bg-slate-50'}`}
+              >
+                <ArrowUp size={18} />
+              </motion.button>
+            )}
+          </AnimatePresence>
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="group inline-flex items-center gap-2 pl-4 pr-5 py-3 rounded-full text-sm font-semibold text-white shadow-lg shadow-cyan-500/25 ring-1 ring-white/20 bg-gradient-to-r from-cyan-500 to-pink-500 hover:from-cyan-600 hover:to-pink-600 hover:shadow-xl hover:-translate-y-0.5 transition-all"
+          >
+            <Sparkles size={16} className="transition-transform group-hover:rotate-12" />
+            {askLabel}
+          </button>
+        </div>
       )}
 
       <AnimatePresence>

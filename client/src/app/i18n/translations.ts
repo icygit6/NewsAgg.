@@ -156,6 +156,24 @@ export interface Translations {
   chatSend: string;
   chatGrounded: string;
   chatSuggestions: string[];
+  confidenceNote: string;
+  labelRuleNote: string;
+  sentimentFallbackRule: string;
+  insightsNote: string;
+  methodologyTitle: string;
+  reportIssue: string;
+  reportIssueTitle: string;
+  reportIssueHint: string;
+  reportReasons: string[];
+  reportMessagePlaceholder: string;
+  reportSubmit: string;
+  reportSent: string;
+  reportFailed: string;
+  newsMultiShort: string;
+  newsMultiLabel: string;
+  newsOriginalShort: string;
+  newsLanguageTitle: string;
+  newsLanguageHint: string;
   aiUnavailable: string;
   pageNotFound: string;
   errorTitle: string;
@@ -268,7 +286,7 @@ export const translations: Record<Language, Translations> = {
     loggedInAs: 'Logged in as',
     scrollToTop: 'Scroll to top',
     articleSentiment: 'Article Sentiment',
-    emotionBreakdown: 'Emotion Breakdown',
+    emotionBreakdown: 'Sentiment probabilities',
     topicKeywords: 'Topic Keywords',
     comments: 'Comments',
     writeComment: 'Write a comment...',
@@ -319,7 +337,7 @@ export const translations: Record<Language, Translations> = {
       'Estimates the years of education needed to understand the text, based on sentence length and complex words. Lower is more accessible.',
     sentimentMathTitle: 'How sentiment is decided',
     sentimentMathDesc:
-      'A RoBERTa model scores each article for positive, neutral, and negative probability. Polarity is the positive minus negative score, and the gradient bar plots it. The label is chosen by these rules:',
+      'XLM-RoBERTa (FinBERT for English business stories) scores up to three 1,400-character passages of each article (first, middle, last) for positive, neutral and negative probability, weighted by passage length. Polarity is positive minus negative, and the gradient bar plots it. The label is chosen by these rules, in order:',
     posts: 'Posts',
     pulse: 'Pulse',
     insights: 'Insights',
@@ -345,6 +363,24 @@ export const translations: Record<Language, Translations> = {
     chatSend: 'Send message',
     chatGrounded: 'Answers use only this article.',
     chatSuggestions: ['Summarise this article', 'What are the key facts?', 'Why does this matter?'],
+    confidenceNote: 'Confidence is the probability the model gave its chosen label. It is not measured accuracy and does not say whether the story is true.',
+    labelRuleNote: 'The label follows an ordered rule (neutral band first, then polarity ±0.10), so it can differ from the largest bar.',
+    sentimentFallbackRule: 'Otherwise: the class with the highest probability',
+    insightsNote: 'Counts describe NewsAgg\'s published dataset from four publishers. Sentiment describes wording, not truth, publisher ideology or public opinion. Trending ranks keyword frequency; it is not a forecast.',
+    methodologyTitle: 'How NewsAgg works',
+    reportIssue: 'Report an issue',
+    reportIssueTitle: 'Report a problem with this article',
+    reportIssueHint: 'Tell the team what looks wrong. People review every report; nothing on the article changes automatically.',
+    reportReasons: ['Sentiment looks wrong', 'Wrong topic', 'Summary misses or distorts something', 'Translation problem', 'Text extraction problem', 'Something else'],
+    reportMessagePlaceholder: 'Optional details (up to 1,000 characters)',
+    reportSubmit: 'Send report',
+    reportSent: 'Thanks — the team will review it.',
+    reportFailed: 'The report could not be sent. Please try again later.',
+    newsMultiShort: 'Multi',
+    newsMultiLabel: 'Multi · original language',
+    newsOriginalShort: 'Original',
+    newsLanguageTitle: 'News language',
+    newsLanguageHint: 'Multi shows every story in the language it was published in, without translation. EN or 繁中 translates news and switches the interface.',
     aiUnavailable: 'Sorry, the AI assistant is unavailable right now.',
     pageNotFound: 'Page not found',
     errorTitle: 'Error',
@@ -452,7 +488,7 @@ export const translations: Record<Language, Translations> = {
     loggedInAs: 'Masuk sebagai',
     scrollToTop: 'Ke atas',
     articleSentiment: 'Sentimen Artikel',
-    emotionBreakdown: 'Rincian Emosi',
+    emotionBreakdown: 'Probabilitas sentimen',
     topicKeywords: 'Kata Kunci',
     comments: 'Komentar',
     writeComment: 'Tulis komentar...',
@@ -503,7 +539,7 @@ export const translations: Record<Language, Translations> = {
       'Memperkirakan tahun pendidikan yang dibutuhkan untuk memahami teks, berdasarkan panjang kalimat dan kata kompleks. Lebih rendah lebih mudah diakses.',
     sentimentMathTitle: 'Bagaimana sentimen ditentukan',
     sentimentMathDesc:
-      'Model RoBERTa menilai setiap artikel untuk probabilitas positif, netral, dan negatif. Polaritas adalah skor positif dikurangi negatif, dan bilah gradien menampilkannya. Label dipilih dengan aturan ini:',
+      'XLM-RoBERTa (FinBERT untuk berita bisnis berbahasa Inggris) menilai hingga tiga potongan 1.400 karakter (awal, tengah, akhir) untuk probabilitas positif, netral, dan negatif, dibobot menurut panjangnya. Polaritas adalah positif dikurangi negatif, dan bilah gradien menampilkannya. Label dipilih dengan aturan ini secara berurutan:',
     posts: 'Postingan',
     pulse: 'Pulse',
     insights: 'Wawasan',
@@ -529,6 +565,24 @@ export const translations: Record<Language, Translations> = {
     chatSend: 'Kirim pesan',
     chatGrounded: 'Jawaban hanya berdasarkan artikel ini.',
     chatSuggestions: ['Ringkas artikel ini', 'Apa fakta pentingnya?', 'Kenapa ini penting?'],
+    confidenceNote: 'Keyakinan adalah probabilitas yang diberikan model pada label pilihannya. Ini bukan akurasi terukur dan tidak menyatakan benar-tidaknya berita.',
+    labelRuleNote: 'Label mengikuti aturan berurutan (pita netral dulu, lalu polaritas ±0,10), sehingga bisa berbeda dari batang terbesar.',
+    sentimentFallbackRule: 'Selain itu: kelas dengan probabilitas tertinggi',
+    insightsNote: 'Angka menggambarkan dataset NewsAgg yang sudah terbit dari empat penerbit. Sentimen menggambarkan pilihan kata, bukan kebenaran, ideologi penerbit, atau opini publik. Trending mengurutkan frekuensi kata kunci, bukan prediksi.',
+    methodologyTitle: 'Cara kerja NewsAgg',
+    reportIssue: 'Laporkan masalah',
+    reportIssueTitle: 'Laporkan masalah pada artikel ini',
+    reportIssueHint: 'Beri tahu tim apa yang terlihat salah. Setiap laporan ditinjau manusia; artikel tidak berubah otomatis.',
+    reportReasons: ['Sentimen tampak salah', 'Topik salah', 'Ringkasan melewatkan atau memelintir sesuatu', 'Masalah terjemahan', 'Masalah ekstraksi teks', 'Lainnya'],
+    reportMessagePlaceholder: 'Detail opsional (maks. 1.000 karakter)',
+    reportSubmit: 'Kirim laporan',
+    reportSent: 'Terima kasih — tim akan meninjaunya.',
+    reportFailed: 'Laporan gagal dikirim. Coba lagi nanti.',
+    newsMultiShort: 'Multi',
+    newsMultiLabel: 'Multi · bahasa asli',
+    newsOriginalShort: 'Asli',
+    newsLanguageTitle: 'Bahasa berita',
+    newsLanguageHint: 'Multi menampilkan setiap berita dalam bahasa aslinya tanpa terjemahan. EN atau 繁中 menerjemahkan berita dan mengganti bahasa antarmuka.',
     aiUnavailable: 'Maaf, asisten AI sedang tidak tersedia.',
     pageNotFound: 'Halaman tidak ditemukan',
     errorTitle: 'Galat',
@@ -635,7 +689,7 @@ export const translations: Record<Language, Translations> = {
     loggedInAs: '登录身份',
     scrollToTop: '返回顶部',
     articleSentiment: '文章情感',
-    emotionBreakdown: '情绪分析',
+    emotionBreakdown: '情感机率',
     topicKeywords: '关键词',
     comments: '评论',
     writeComment: '写评论...',
@@ -683,7 +737,7 @@ export const translations: Record<Language, Translations> = {
     smogDesc: '根据句子长度和复杂词汇，估算理解文本所需的受教育年数。越低越易懂。',
     sentimentMathTitle: '情感如何判定',
     sentimentMathDesc:
-      'RoBERTa 模型为每篇文章评出积极、中立和消极的概率。极性为积极减去消极的分数，渐变条即按此绘制。标签依据以下规则确定：',
+      'XLM-RoBERTa（英文商业新闻使用 FinBERT）对每篇文章最多三段 1,400 字元的片段（开头、中段、结尾）评出正面、中性与负面机率，并依片段长度加权。polarity 为正面减负面，渐变条即按此绘制。标签依下列规则依序判定：',
     posts: '帖子',
     pulse: '动态',
     insights: '洞察',
@@ -709,6 +763,24 @@ export const translations: Record<Language, Translations> = {
     chatSend: '发送消息',
     chatGrounded: '回答仅依据这篇文章。',
     chatSuggestions: ['总结这篇文章', '有哪些关键事实？', '为什么这很重要？'],
+    confidenceNote: '置信度是模型给所选标签的机率，不是实测准确率，也不代表新闻是否属实。',
+    labelRuleNote: '标签依序套用规则（先判断中性区间，再看 polarity ±0.10），因此可能与最长的条不同。',
+    sentimentFallbackRule: '其余情况：取机率最高的类别',
+    insightsNote: '数据来自 NewsAgg 已发布的四家媒体新闻。情感反映用词，不代表真伪、媒体立场或民意；热门话题依关键词次数排序，并非预测。',
+    methodologyTitle: 'NewsAgg 如何运作',
+    reportIssue: '回报问题',
+    reportIssueTitle: '回报这篇文章的问题',
+    reportIssueHint: '告诉团队哪里看起来有误。每则回报都由人工审阅，文章不会自动更改。',
+    reportReasons: ['情感看起来不对', '主题错误', '摘要遗漏或扭曲内容', '翻译问题', '正文撷取问题', '其他'],
+    reportMessagePlaceholder: '补充说明（选填，最多 1,000 字）',
+    reportSubmit: '送出回报',
+    reportSent: '谢谢，团队会审阅。',
+    reportFailed: '回报未能送出，请稍后再试。',
+    newsMultiShort: '多语',
+    newsMultiLabel: '多语 · 原文语言',
+    newsOriginalShort: '原文',
+    newsLanguageTitle: '新闻语言',
+    newsLanguageHint: '多语以新闻发布时的原文显示，不做翻译。选择 EN 或 繁中 会翻译新闻并切换界面语言。',
     aiUnavailable: '抱歉，AI 助手暂时不可用。',
     pageNotFound: '页面未找到',
     errorTitle: '错误',
@@ -815,7 +887,7 @@ export const translations: Record<Language, Translations> = {
     loggedInAs: '登入身份',
     scrollToTop: '返回頂部',
     articleSentiment: '文章情感',
-    emotionBreakdown: '情緒分析',
+    emotionBreakdown: '情感機率',
     topicKeywords: '關鍵詞',
     comments: '評論',
     writeComment: '寫評論...',
@@ -863,7 +935,7 @@ export const translations: Record<Language, Translations> = {
     smogDesc: '根據句子長度和複雜詞彙，估算理解文字所需的受教育年數。越低越易懂。',
     sentimentMathTitle: '情感如何判定',
     sentimentMathDesc:
-      'RoBERTa 模型為每篇文章評出積極、中立和消極的機率。極性為積極減去消極的分數，漸層條即按此繪製。標籤依據以下規則確定：',
+      'XLM-RoBERTa（英文商業新聞使用 FinBERT）對每篇文章最多三段 1,400 字元的片段（開頭、中段、結尾）評出正面、中性與負面機率，並依片段長度加權。polarity 為正面減負面，漸層條即按此繪製。標籤依下列規則依序判定：',
     posts: '貼文',
     pulse: '動態',
     insights: '洞察',
@@ -889,6 +961,24 @@ export const translations: Record<Language, Translations> = {
     chatSend: '傳送訊息',
     chatGrounded: '回答僅依據這篇文章。',
     chatSuggestions: ['總結這篇文章', '有哪些關鍵事實？', '為什麼這很重要？'],
+    confidenceNote: '信心值是模型給所選標籤的機率，不是實測準確率，也不代表新聞是否屬實。',
+    labelRuleNote: '標籤依序套用規則（先判斷中性區間，再看 polarity ±0.10），因此可能與最長的條不同。',
+    sentimentFallbackRule: '其餘情況：取機率最高的類別',
+    insightsNote: '數據來自 NewsAgg 已發布的四家媒體新聞。情感反映用詞，不代表真偽、媒體立場或民意；熱門話題依關鍵詞次數排序，並非預測。',
+    methodologyTitle: 'NewsAgg 如何運作',
+    reportIssue: '回報問題',
+    reportIssueTitle: '回報這篇文章的問題',
+    reportIssueHint: '告訴團隊哪裡看起來有誤。每則回報都由人工審閱，文章不會自動更改。',
+    reportReasons: ['情感看起來不對', '主題錯誤', '摘要遺漏或扭曲內容', '翻譯問題', '正文擷取問題', '其他'],
+    reportMessagePlaceholder: '補充說明（選填，最多 1,000 字）',
+    reportSubmit: '送出回報',
+    reportSent: '謝謝，團隊會審閱。',
+    reportFailed: '回報未能送出，請稍後再試。',
+    newsMultiShort: '多語',
+    newsMultiLabel: '多語 · 原文語言',
+    newsOriginalShort: '原文',
+    newsLanguageTitle: '新聞語言',
+    newsLanguageHint: '多語以新聞發布時的原文顯示，不做翻譯。選擇 EN 或 繁中 會翻譯新聞並切換介面語言。',
     aiUnavailable: '抱歉，AI 助手暫時不可用。',
     pageNotFound: '頁面未找到',
     errorTitle: '錯誤',

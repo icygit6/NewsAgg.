@@ -146,6 +146,11 @@ export const postReportSchema = z.object({
   details: z.string().trim().max(500).optional(),
 })
 
+export const articleReportSchema = z.object({
+  reason: z.enum(['sentiment', 'topic', 'summary', 'translation', 'content', 'other']),
+  message: z.string().trim().max(1000).optional().default(''),
+})
+
 export const blockUserSchema = z.object({ blockedUserId: z.number().int().positive() })
 
 // Bookmark payloads come from the client's article cards. articleId is usually

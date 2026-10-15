@@ -151,6 +151,9 @@ export function FeedHeader() {
       {/* Desktop: filter + chips + search icon */}
       <div className="hidden md:flex items-stretch h-full">
         <div className="flex-1 min-w-0 flex items-center gap-2 px-3">
+          <Link to="/" className="shrink-0 lg:hidden" aria-label={ui("NewsAgg home")}>
+            <BrandLogo showWordmark={false} markClassName="w-9 h-9" />
+          </Link>
           {filterBtn}
 
           {/* Scrollable chips */}

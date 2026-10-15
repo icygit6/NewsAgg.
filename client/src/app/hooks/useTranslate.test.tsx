@@ -4,7 +4,7 @@ import { useTranslate } from './useTranslate';
 import { fetchArticleTranslation } from '../services/translateService';
 import type { NewsArticle } from '../types/article';
 vi.mock('../services/translateService', () => ({ LANGUAGE_API_CODE: { en:'en', zhTW:'zh-TW' }, fetchArticleTranslation: vi.fn() }));
-const appState = vi.hoisted(() => ({ language: 'zhTW' as 'en' | 'zhTW' }));
+const appState = vi.hoisted(() => ({ language: 'zhTW' as 'en' | 'zhTW', newsMode: 'translated' as 'original' | 'translated' }));
 vi.mock('../contexts/AppContext', () => ({ useApp: () => appState }));
 afterEach(() => vi.clearAllMocks());
 const article = (id: string) => ({ id, language: 'en', title: `Original ${id}`, content: 'Original content', contentHash: id }) as NewsArticle;
@@ -34,4 +34,15 @@ it('does not show a late result after navigating to another article', async () =
   rerender({ data: article('new') });
   await act(async () => resolve({ articleId:'race', lang:'zh-TW', title:'過時譯文', autoTranslated:true, description:null, content:null, aiSummary:null, cached:false, provider:'test' }));
   expect(result.current.title).toBe('Original new');
+});
+it('keeps the published language in Multi mode until a translation pill is chosen', async () => {
+  appState.newsMode = 'original';
+  vi.mocked(fetchArticleTranslation).mockResolvedValue({ articleId:'multi', lang:'zh-TW', title:'譯文', content:'翻譯內容', autoTranslated:true } as Awaited<ReturnType<typeof fetchArticleTranslation>>);
+  const { result } = renderHook(() => useTranslate(article('multi')));
+  expect(result.current.selectedLanguage).toBe('original');
+  expect(result.current.title).toBe('Original multi');
+  expect(fetchArticleTranslation).not.toHaveBeenCalled();
+  act(() => result.current.setSelectedLanguage('zhTW'));
+  await waitFor(() => expect(result.current.title).toBe('譯文'));
+  appState.newsMode = 'translated';
 });

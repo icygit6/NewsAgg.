@@ -3,6 +3,14 @@ import { useApp } from '../../contexts/AppContext';
 import { useTrendingStats } from '../../hooks/useStats';
 import { panelBaseClass, chartTextColor, chartMutedColor } from './shared';
 
+// Keywords are stored lower-cased; restore conventional casing for Latin
+// words ("Trump", "AI") without touching Chinese or mixed-case labels.
+const ACRONYMS = new Set(['ai', 'us', 'uk', 'eu', 'un', 'who', 'nato', 'nba', 'mlb', 'nfl', 'fbi', 'cia', 'gdp', 'tsmc', 'ev', 'ceo']);
+const displayKeyword = (word: string) =>
+  /^[a-z][a-z\s'-]*$/.test(word)
+    ? word.split(' ').map((part) => (ACRONYMS.has(part) ? part.toUpperCase() : part.charAt(0).toUpperCase() + part.slice(1))).join(' ')
+    : word;
+
 export function TrendingKeywords() {
   const { t, isDark, selectedCategory } = useApp();
 
@@ -38,7 +46,7 @@ export function TrendingKeywords() {
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-0.5">
                   <span className="text-xs font-medium" style={{ color: textColor }}>
-                    {topic.keyword}
+                    {displayKeyword(topic.label || topic.keyword)}
                   </span>
                   <span className="text-xs" style={{ color: mutedColor }}>
                     {topic.count}

@@ -22,6 +22,8 @@ export function FooterCompact() {
       }`}
     >
       <p className="flex flex-wrap items-center gap-x-2">
+        <Link to="/methodology" className="hover:underline">{t.methodologyTitle}</Link>
+        <span aria-hidden>·</span>
         <Link to="/terms" className="hover:underline">{t.termsOfService}</Link>
         <span aria-hidden>·</span>
         <Link to="/privacy" className="hover:underline">{t.privacyPolicy}</Link>
@@ -109,6 +111,9 @@ export function Footer({ hiddenOnMobile = false }: { hiddenOnMobile?: boolean })
         <div>
           <h3 className={heading}>{t.legalInfo}</h3>
           <ul className="flex flex-col gap-2">
+            <li>
+              <Link className={link} to="/methodology">{t.methodologyTitle}</Link>
+            </li>
             <li>
               <Link className={link} to="/terms">{t.termsOfService}</Link>
             </li>

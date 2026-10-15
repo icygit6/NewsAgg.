@@ -2,7 +2,7 @@ import { useUiText } from '../i18n/uiText';
 import { useTitleTranslations } from '../hooks/useTitleTranslations';
 import { useEffect, useRef } from 'react';
 import { useApp } from '../contexts/AppContext';
-import { useArticles } from '../hooks/useArticles';
+import { useArticles, useRankedHeadlines } from '../hooks/useArticles';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { NewsCard } from './NewsCard';
 import { HeroCarousel } from './HeroCarousel';
@@ -37,7 +37,19 @@ export function NewsGrid() {
   // Offset pages may overlap when a new publication arrives during browsing.
   const articles = [...new Map((data?.pages.flatMap((page) => page.articles) ?? [])
     .map(article => [article.id || article.url, article])).values()];
-  const displayArticles = useTitleTranslations(articles);
+  // The carousel above already shows its ten ranked headlines; repeating them
+  // as the first cards made the top of the feed look duplicated. Shares the
+  // carousel's query cache, so this adds no request.
+  const showHero = searchQuery.trim().length === 0;
+  const { data: heroData } = useRankedHeadlines({
+    limit: 10,
+    category: selectedCategory,
+    sources: selectedSources,
+    sentiment: selectedSentiment,
+  });
+  const heroIds = new Set(showHero ? (heroData?.articles ?? []).map((article) => article.id) : []);
+  const gridArticles = articles.filter((article) => !heroIds.has(article.id));
+  const displayArticles = useTitleTranslations(gridArticles);
 
   // Infinite scroll: pull the next page when the sentinel becomes visible.
   useEffect(() => {
@@ -99,17 +111,19 @@ export function NewsGrid() {
 
       {/* Hero Carousel — hidden while searching (raw query so it reacts on the
           first keystroke). Its data follows the active category filter. */}
-      {searchQuery.trim().length === 0 && (
+      {showHero && (
         <div className="mb-8 overflow-hidden">
           <HeroCarousel />
         </div>
       )}
 
       {/* Vertical cards stay roomy while using the wider feed efficiently. */}
-      <div className="grid min-w-0 grid-cols-1 items-stretch gap-5 sm:grid-cols-2">
+      <div className="@container min-w-0">
+      <div className="grid min-w-0 grid-cols-1 items-stretch gap-5 sm:grid-cols-2 @5xl:grid-cols-3">
         {displayArticles.map((article) => (
           <NewsCard key={article.id || article.url} article={article} />
         ))}
+      </div>
       </div>
 
       {/* Infinite-scroll sentinel + loading indicator */}

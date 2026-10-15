@@ -22,7 +22,7 @@ export function ImageWithFallback(props: React.ImgHTMLAttributes<HTMLImageElemen
 
   return !src || failedSrc === src ? (
     <div
-      className={`inline-block bg-gray-100 text-center align-middle ${className ?? ''}`}
+      className={`inline-block bg-gradient-to-br from-slate-200 via-slate-100 to-sky-100 dark:from-slate-800 dark:via-slate-900 dark:to-slate-800 text-center align-middle ${className ?? ''}`}
       style={style}
     >
       <div className="flex items-center justify-center w-full h-full">

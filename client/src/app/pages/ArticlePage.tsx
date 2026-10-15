@@ -89,7 +89,7 @@ export function ArticlePage() {
     return (
       <div className="px-4 md:px-6 py-6 max-w-6xl mx-auto">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="mb-6">
-          <button type="button" onClick={handleBackToHome} className={`inline-flex items-center gap-2 text-sm font-medium transition-colors ${isDark ? 'text-cyan-400 hover:text-cyan-300' : 'text-cyan-600 hover:text-cyan-700'}`}>
+          <button type="button" onClick={handleBackToHome} className={`-ml-2 inline-flex min-h-9 items-center gap-2 rounded-lg px-2 text-sm font-medium transition-colors ${isDark ? 'text-cyan-400 hover:text-cyan-300' : 'text-cyan-600 hover:text-cyan-700'}`}>
             <ArrowLeft size={16} />{t.backToHome}
           </button>
         </motion.div>
@@ -132,7 +132,7 @@ export function ArticlePage() {
     <div className="px-4 md:px-6 py-6">
       <SeoMetadata article={article} />
       <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="mb-5">
-        <button type="button" onClick={handleBackToHome} className={`inline-flex items-center gap-2 text-sm font-medium transition-colors ${isDark ? 'text-cyan-400 hover:text-cyan-300' : 'text-cyan-600 hover:text-cyan-700'}`}>
+        <button type="button" onClick={handleBackToHome} className={`-ml-2 inline-flex min-h-9 items-center gap-2 rounded-lg px-2 text-sm font-medium transition-colors ${isDark ? 'text-cyan-400 hover:text-cyan-300' : 'text-cyan-600 hover:text-cyan-700'}`}>
           <ArrowLeft size={16} />{t.backToHome}
         </button>
       </motion.div>

@@ -8,6 +8,7 @@ import { getArticleId } from '../../services/newsAPI';
 import { ImageWithFallback } from '../utils/ImageWithFallback';
 import type { NewsArticle } from '../../types/article';
 import { SENTIMENT_STYLE, bodyTextClass, formatPublishedDate, mutedTextClass } from './helpers';
+import { SourceLogo } from '../ui/SourceLogo';
 
 interface ArticleHeaderProps {
   article: NewsArticle;
@@ -60,9 +61,7 @@ export function ArticleHeader({ article, isDark }: ArticleHeaderProps) {
       </div>
 
       <div className="flex flex-wrap items-center gap-3 mb-4">
-        {article.source.logo && (
-          <img src={article.source.logo} alt={article.source.name} className={`w-10 h-10 rounded-full object-cover ${isDark ? 'bg-slate-900/80' : 'bg-white border border-gray-100'}`} />
-        )}
+        <SourceLogo source={article.source} isDark={isDark} className="w-10 h-10" />
         <div className="min-w-0">
           <p className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>{article.source.name}</p>
           <p className={`text-xs ${mutedText}`}>{ui(CATEGORY_LABELS[TOPIC_TO_CATEGORY[article.topic]] ?? article.topic)} {ui("coverage")}</p>

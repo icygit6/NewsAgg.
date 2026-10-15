@@ -83,6 +83,7 @@ export function ArticleSentimentPanel({ article, isDark }: ArticleSentimentPanel
 
                 <p className={`text-xs ${mutedText}`}>{ui("Confidence:")} {(confidence * 100).toFixed(1)}%
                 </p>
+                <p className={`text-[11px] leading-relaxed ${mutedText}`}>{t.confidenceNote}</p>
             </div>
 
             <div className="mt-4 space-y-2.5">
@@ -102,6 +103,11 @@ export function ArticleSentimentPanel({ article, isDark }: ArticleSentimentPanel
                         </span>
                     </div>
                 ))}
+                {/* The decision rule is ordered, so the label is not always the
+                    largest probability (report §II 4.3); say so when it happens. */}
+                {rows.reduce((top, row) => (row.value > top.value ? row : top)).type !== article.sentiment.type && (
+                    <p className={`pt-1 text-[11px] leading-relaxed ${mutedText}`}>{t.labelRuleNote}</p>
+                )}
             </div>
         </div>
     );

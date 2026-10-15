@@ -140,7 +140,7 @@ export function SentimentChart() {
               <button
                 type="button"
                 onClick={handleNextSentimentCategory}
-                className={`text-[11px] px-2 py-0.5 rounded-full font-semibold transition-colors ${isDark ? 'bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30' : 'bg-cyan-50 text-cyan-700 hover:bg-cyan-100'}`}
+                className={`text-xs px-3 py-1.5 rounded-full font-semibold transition-colors ${isDark ? 'bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30' : 'bg-cyan-50 text-cyan-700 hover:bg-cyan-100'}`}
               >
                 {t.next}
               </button>

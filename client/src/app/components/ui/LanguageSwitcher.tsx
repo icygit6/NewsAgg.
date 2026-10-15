@@ -1,7 +1,7 @@
 import { useUiText } from '../../i18n/uiText';
 import { Languages, Loader2, Sparkles } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
-import type { Language } from '../../i18n/translations';
+import type { Language, Translations } from '../../i18n/translations';
 
 interface LanguageSwitcherProps {
   isDark: boolean;
@@ -10,14 +10,39 @@ interface LanguageSwitcherProps {
   isAutoTranslated?: boolean;
   error?: string | null;
   onRetry?: () => void;
-  selectedLanguage: Language;
-  onSelectLanguage: (language: Language) => void;
+  selectedLanguage: ReadingLanguage;
+  onSelectLanguage: (language: ReadingLanguage) => void;
 }
 
-export const LANG_PILLS: { code: Language; short: string }[] = [
-  { code: 'en', short: 'EN' },
-  { code: 'zhTW', short: '繁中' },
+/** 'original' shows a story in the language it was published in. */
+export type ReadingLanguage = 'original' | Language;
+
+const TRANSLATION_PILLS: { code: Language; short: string; label: (t: Translations) => string }[] = [
+  { code: 'en', short: 'EN', label: (t) => t.english },
+  { code: 'zhTW', short: '繁中', label: (t) => t.zhTraditional },
 ];
+
+/**
+ * The site-wide news-language choice shared by every picker: Multi keeps news
+ * untranslated (the default); EN / 繁中 translate news and set the interface.
+ */
+export function useReadingChoice() {
+  const { t, language, setLanguage, newsMode, setNewsMode } = useApp();
+  const choice: ReadingLanguage = newsMode === 'original' ? 'original' : language;
+  const options: { code: ReadingLanguage; short: string; label: string }[] = [
+    { code: 'original', short: t.newsMultiShort, label: t.newsMultiLabel },
+    ...TRANSLATION_PILLS.map((pill) => ({ code: pill.code, short: pill.short, label: pill.label(t) })),
+  ];
+  const choose = (code: ReadingLanguage) => {
+    if (code === 'original') {
+      setNewsMode('original');
+    } else {
+      setLanguage(code);
+      setNewsMode('translated');
+    }
+  };
+  return { choice, options, choose, current: options.find((option) => option.code === choice) ?? options[0] };
+}
 
 export function LanguageSwitcher({ isDark, isLoading = false, isAutoTranslated = false, error, onRetry, selectedLanguage, onSelectLanguage }: LanguageSwitcherProps) {
   const ui = useUiText();
@@ -28,7 +53,7 @@ export function LanguageSwitcher({ isDark, isLoading = false, isAutoTranslated =
       {/* Language pills */}
       <div className={`inline-flex items-center gap-1 rounded-full p-1 border ${isDark ? 'border-slate-700 bg-slate-800/60' : 'border-gray-200 bg-white'}`}>
         <Languages size={14} className={`ml-1.5 ${isDark ? 'text-slate-400' : 'text-gray-400'}`} />
-        {LANG_PILLS.map((pill) => {
+        {[{ code: 'original' as const, short: t.newsOriginalShort }, ...TRANSLATION_PILLS].map((pill) => {
           const active = selectedLanguage === pill.code;
           return (
             <button
@@ -36,7 +61,7 @@ export function LanguageSwitcher({ isDark, isLoading = false, isAutoTranslated =
               type="button"
               onClick={() => onSelectLanguage(pill.code)}
               aria-pressed={active}
-              className={`px-2.5 py-1 rounded-full text-xs font-semibold font-mono transition-colors ${
+              className={`min-h-8 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
                 active
                   ? 'bg-cyan-500 text-white'
                   : isDark

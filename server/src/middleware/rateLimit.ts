@@ -45,6 +45,13 @@ export const likeLimiter = rateLimit({
   message: { success: false, error: 'Too many reactions — try again later' },
 })
 
+// Article corrections are open to signed-out readers, so they are keyed by IP.
+export const articleReportLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { success: false, message: 'Too many reports — try again later' },
+})
+
 export const translateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 30,

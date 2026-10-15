@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import type { Language } from '../i18n/translations';
 import { useApp } from '../contexts/AppContext';
 import type { NewsArticle } from '../types/article';
+import type { ReadingLanguage } from '../components/ui/LanguageSwitcher';
 import {
   fetchArticleTranslation,
   LANGUAGE_API_CODE,
@@ -18,8 +18,8 @@ export interface UseTranslateResult {
   isAutoTranslated: boolean;
   error: string | null;
   retry: () => void;
-  selectedLanguage: Language;
-  setSelectedLanguage: (language: Language) => void;
+  selectedLanguage: ReadingLanguage;
+  setSelectedLanguage: (language: ReadingLanguage) => void;
 }
 
 // Module-level cache so revisiting an article in a language already fetched is
@@ -40,15 +40,17 @@ export function articleMatchesLang(article: { language?: string | null; source?:
 
 /**
  * Returns the article's effective (possibly translated) text fields.
- * Defaults to the website language. A pill override belongs only to this article;
- * navigating to another article or changing the website language resets it.
+ * Defaults to the site's news language: the untranslated original in Multi
+ * mode, otherwise the interface language. A pill override belongs only to this
+ * article; navigating to another article or changing the site choice resets it.
  */
 export function useTranslate(article: NewsArticle | null): UseTranslateResult {
-  const { language } = useApp();
-  const [selection, setSelection] = useState<{ articleId: string; siteLanguage: Language; language: Language } | null>(null);
-  const selectedLanguage = selection?.articleId === article?.id && selection?.siteLanguage === language ? selection.language : language;
-  const target = LANGUAGE_API_CODE[selectedLanguage];
-  useEffect(() => setSelection(null), [article?.id, language]);
+  const { language, newsMode } = useApp();
+  const siteChoice: ReadingLanguage = newsMode === 'original' ? 'original' : language;
+  const [selection, setSelection] = useState<{ articleId: string; siteChoice: ReadingLanguage; language: ReadingLanguage } | null>(null);
+  const selectedLanguage = selection?.articleId === article?.id && selection?.siteChoice === siteChoice ? selection.language : siteChoice;
+  const target: ApiLang | null = selectedLanguage === 'original' ? null : LANGUAGE_API_CODE[selectedLanguage];
+  useEffect(() => setSelection(null), [article?.id, siteChoice]);
 
   const [override, setOverride] = useState<ArticleTranslation | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -58,7 +60,7 @@ export function useTranslate(article: NewsArticle | null): UseTranslateResult {
   useEffect(() => {
     setError(null);
 
-    if (!article || articleMatchesLang(article, target)) {
+    if (!article || !target || articleMatchesLang(article, target)) {
       setOverride(null);
       setIsLoading(false);
       return;
@@ -100,12 +102,12 @@ export function useTranslate(article: NewsArticle | null): UseTranslateResult {
   const retry = () => setAttempt((value) => value + 1);
   const controls = {
     selectedLanguage,
-    setSelectedLanguage: (next: Language) => {
-      if (article) setSelection({ articleId: article.id, siteLanguage: language, language: next });
+    setSelectedLanguage: (next: ReadingLanguage) => {
+      if (article) setSelection({ articleId: article.id, siteChoice, language: next });
     },
   };
 
-  if (override?.autoTranslated && override.articleId === article?.id && override.lang === target && article && !articleMatchesLang(article, target)) {
+  if (target && override?.autoTranslated && override.articleId === article?.id && override.lang === target && article && !articleMatchesLang(article, target)) {
     return {
       title: override.title ?? article?.title ?? '',
       description: override.description ?? article?.description ?? null,

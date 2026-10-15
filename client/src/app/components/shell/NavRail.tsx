@@ -1,10 +1,10 @@
 import { useUiText } from '../../i18n/uiText';
 import { useState } from 'react';
 import { NavLink, Link } from 'react-router';
-import { Home, MessageSquareQuote, Bookmark, Sun, Moon, Languages } from 'lucide-react';
+import { Home, MessageSquareQuote, Bookmark, Sun, Moon, Languages, BarChart2 } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { POSTS_ENABLED } from '../../constants';
-import { LANG_PILLS } from '../ui/LanguageSwitcher';
+import { useReadingChoice } from '../ui/LanguageSwitcher';
 import { BrandLogo } from '../ui/BrandLogo';
 
 interface NavItem {
@@ -15,14 +15,15 @@ interface NavItem {
 
 export function NavRail() {
   const ui = useUiText();
-  const { t, isDark, toggleTheme, setSidebarOpen, avatarSrc, user, language, setLanguage } =
-    useApp();
+  const { t, isDark, toggleTheme, setSidebarOpen, avatarSrc, user } = useApp();
+  const reading = useReadingChoice();
   const [langOpen, setLangOpen] = useState(false);
-  const currentLang = LANG_PILLS.find((p) => p.code === language)?.short ?? 'EN';
+  const currentLang = reading.current.short;
 
   const items: NavItem[] = [
     { to: '/', icon: Home, label: t.home },
     ...(POSTS_ENABLED ? [{ to: '/posts', icon: MessageSquareQuote, label: t.posts }] : []),
+    { to: '/insights', icon: BarChart2, label: t.insights },
     { to: '/bookmarks', icon: Bookmark, label: t.bookmarks },
   ];
 
@@ -48,6 +49,7 @@ export function NavRail() {
         <NavLink
           key={to}
           to={to}
+          end={to === '/'}
           title={label}
           aria-label={label}
           className={({ isActive }) =>
@@ -79,7 +81,7 @@ export function NavRail() {
         <div className="relative w-full">
           <button
             onClick={() => setLangOpen((p) => !p)}
-            title={t.language}
+            title={`${t.newsLanguageTitle}: ${reading.current.label}`}
             aria-expanded={langOpen}
             className={`${baseItem} w-full ${isDark ? 'text-slate-200' : 'text-slate-700'}`}
           >
@@ -92,22 +94,23 @@ export function NavRail() {
                 isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'
               }`}
             >
-              {LANG_PILLS.map(({ code, short }) => (
+              {reading.options.map(({ code, short, label }) => (
                 <button
                   key={code}
+                  title={label}
                   onClick={() => {
-                    setLanguage(code);
+                    reading.choose(code);
                     setLangOpen(false);
                   }}
                   className={`w-full text-left px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    language === code
+                    reading.choice === code
                       ? 'text-white'
                       : isDark
                         ? 'text-slate-200 hover:bg-slate-800'
                         : 'text-slate-700 hover:bg-slate-100'
                   }`}
                   style={
-                    language === code ? { background: 'var(--brand-grad, #2563eb)' } : undefined
+                    reading.choice === code ? { background: 'var(--brand-grad, #2563eb)' } : undefined
                   }
                 >
                   {short}

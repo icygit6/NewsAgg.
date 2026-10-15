@@ -1,3 +1,4 @@
+import { Link } from 'react-router';
 import { useUiText } from '../i18n/uiText';
 import { useApp } from '../contexts/AppContext';
 import { CATEGORY_LABELS } from '../constants';
@@ -32,26 +33,36 @@ export function InsightsPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6">
-      <h1 className={`font-poppins text-2xl font-bold mb-6 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+    <div className="max-w-6xl mx-auto px-4 py-6">
+      <h1 className={`font-poppins text-2xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
         {t.insights}
       </h1>
-      <div className="space-y-4">
-        {overviewLoading || latestLoading ? <PanelSkeleton /> : (
-          <>
+      <p className={`mt-1 mb-6 max-w-3xl text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+        {t.insightsNote}{' '}
+        <Link to="/methodology" className="font-semibold text-cyan-600 hover:underline">{t.methodologyTitle} →</Link>
+      </p>
+      {overviewLoading || latestLoading ? <PanelSkeleton /> : (
+        // Two columns on wide screens; the former single 42rem column left
+        // most of a desktop viewport empty.
+        <div className="grid items-start gap-4 lg:grid-cols-2">
+          <div className="min-w-0 lg:col-span-2">
             <BusinessInsights />
+          </div>
+          <div className="min-w-0 space-y-4">
             <SentimentChart />
-            <LiveView articles={latest?.articles ?? []} categoryLabel={categoryLabel} />
             <TrendingKeywords />
+          </div>
+          <div className="min-w-0 space-y-4">
+            <LiveView articles={latest?.articles ?? []} categoryLabel={categoryLabel} />
             <DatasetStats
               articleCount={overview?.total ?? 0}
               keywordCount={overview?.keywordCount ?? 0}
               snapshot={snapshot}
               categoryLabel={categoryLabel}
             />
-          </>
-        )}
-      </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

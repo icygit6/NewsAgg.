@@ -10,6 +10,7 @@ import { TOPIC_BADGE_CLASS } from '../constants';
 import { getArticleId } from '../services/newsAPI';
 import { useRankedHeadlines } from '../hooks/useArticles';
 import { ImageWithFallback } from './utils/ImageWithFallback';
+import { formatNewsDate } from '../lib/formatDate';
 import type { SentimentType } from '../types/sentiment';
 
 interface SentimentBadgeProps {
@@ -35,7 +36,7 @@ const HERO_HEIGHT = 'h-[300px] sm:h-[360px] md:h-[420px]';
 
 export function HeroCarousel() {
   const ui = useUiText();
-  const { t, isDark, selectedCategory, selectedSources, selectedSentiment } = useApp();
+  const { t, isDark, language, selectedCategory, selectedSources, selectedSentiment } = useApp();
   const shouldReduceMotion = useReducedMotion();
   const [current, setCurrent] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
@@ -64,14 +65,6 @@ export function HeroCarousel() {
 
   const prev = () => setCurrent(p => (p - 1 + headlines.length) % headlines.length);
   const next = () => setCurrent(p => (p + 1) % headlines.length);
-
-  const formatDate = (value: string) => {
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      return value;
-    }
-    return date.toLocaleDateString();
-  };
 
   if (isLoading) {
     return <div role="status" aria-label={t.loading}><span className="sr-only">{t.loading}</span><SkeletonBlock className={`${HERO_HEIGHT} w-full rounded-2xl`} /></div>;
@@ -136,7 +129,7 @@ export function HeroCarousel() {
           animate={{ opacity: 1, y: 0 }}
           exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
           transition={{ duration: shouldReduceMotion ? 0 : 0.3 }}
-          className="absolute bottom-0 left-0 right-0 p-4 md:p-5 z-10"
+          className="absolute bottom-0 left-0 right-0 px-4 pt-4 pb-10 md:p-5 z-10"
         >
           <Link to={`/article/${getArticleId(article)}`} className="block group">
             <div className="flex items-center gap-1.5 mb-2 flex-wrap">
@@ -147,8 +140,8 @@ export function HeroCarousel() {
             <h2 className="font-poppins text-white text-xl md:text-2xl lg:text-3xl font-semibold leading-tight mb-1.5 group-hover:text-blue-200 transition-colors line-clamp-2">
               {article.title}
             </h2>
-            <div className="flex items-center gap-3 text-white/60 text-[10px] md:text-xs flex-wrap">
-              <span className="truncate">{formatDate(article.publishedAt)}</span>
+            <div className="flex items-center gap-3 text-white/70 text-xs flex-wrap">
+              <span className="truncate">{formatNewsDate(article.publishedAt, language)}</span>
               <span className="text-white/40">•</span>
               <span className="inline-flex items-center gap-0.5">
                 <Clock3 size={11} />
