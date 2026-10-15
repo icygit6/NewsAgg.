@@ -18,7 +18,9 @@ export function InsightsPage() {
   const [params] = useSearchParams();
   const research = params.get('view') === 'research';
   const zh = language === 'zhTW' || language === 'zhCN';
-  return <div className="max-w-6xl mx-auto px-4 py-6">
+  // Full width: this route has no right rail, and the former 72rem cap left
+  // a wide empty band beside the panels on desktop screens.
+  return <div className="w-full px-4 py-6 md:px-6 xl:px-10">
     <h1 className={`font-poppins text-2xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{t.insights}</h1>
     <p className={`mt-1 mb-5 max-w-3xl text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
       {t.insightsNote}{' '}<Link to="/methodology" className="font-semibold text-blue-600 hover:underline">{t.methodologyTitle} →</Link>
