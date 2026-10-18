@@ -156,6 +156,9 @@ export interface Translations {
   chatSend: string;
   chatGrounded: string;
   chatSuggestions: string[];
+  translateNews: string;
+  translateNewsOff: string;
+  translateNewsOn: string;
   confidenceNote: string;
   labelRuleNote: string;
   sentimentFallbackRule: string;
@@ -169,11 +172,7 @@ export interface Translations {
   reportSubmit: string;
   reportSent: string;
   reportFailed: string;
-  newsMultiShort: string;
-  newsMultiLabel: string;
   newsOriginalShort: string;
-  newsLanguageTitle: string;
-  newsLanguageHint: string;
   aiUnavailable: string;
   pageNotFound: string;
   errorTitle: string;
@@ -363,6 +362,9 @@ export const translations: Record<Language, Translations> = {
     chatSend: 'Send message',
     chatGrounded: 'Answers use only this article.',
     chatSuggestions: ['Summarise this article', 'What are the key facts?', 'Why does this matter?'],
+    translateNews: 'Translate news',
+    translateNewsOff: 'Off — stories stay in the language they were published in.',
+    translateNewsOn: 'On — headlines and articles are translated into the interface language.',
     confidenceNote: 'Confidence is the probability the model gave its chosen label. It is not measured accuracy and does not say whether the story is true.',
     labelRuleNote: 'The label follows an ordered rule (neutral band first, then polarity ±0.10), so it can differ from the largest bar.',
     sentimentFallbackRule: 'Otherwise: the class with the highest probability',
@@ -376,11 +378,7 @@ export const translations: Record<Language, Translations> = {
     reportSubmit: 'Send report',
     reportSent: 'Thanks — the team will review it.',
     reportFailed: 'The report could not be sent. Please try again later.',
-    newsMultiShort: 'Multi',
-    newsMultiLabel: 'Multi · original language',
     newsOriginalShort: 'Original',
-    newsLanguageTitle: 'News language',
-    newsLanguageHint: 'Multi shows every story in the language it was published in, without translation. EN or 繁中 translates news and switches the interface.',
     aiUnavailable: 'Sorry, the AI assistant is unavailable right now.',
     pageNotFound: 'Page not found',
     errorTitle: 'Error',
@@ -565,6 +563,9 @@ export const translations: Record<Language, Translations> = {
     chatSend: 'Kirim pesan',
     chatGrounded: 'Jawaban hanya berdasarkan artikel ini.',
     chatSuggestions: ['Ringkas artikel ini', 'Apa fakta pentingnya?', 'Kenapa ini penting?'],
+    translateNews: 'Terjemahkan berita',
+    translateNewsOff: 'Mati — berita tetap dalam bahasa aslinya.',
+    translateNewsOn: 'Nyala — judul dan isi berita diterjemahkan ke bahasa antarmuka.',
     confidenceNote: 'Keyakinan adalah probabilitas yang diberikan model pada label pilihannya. Ini bukan akurasi terukur dan tidak menyatakan benar-tidaknya berita.',
     labelRuleNote: 'Label mengikuti aturan berurutan (pita netral dulu, lalu polaritas ±0,10), sehingga bisa berbeda dari batang terbesar.',
     sentimentFallbackRule: 'Selain itu: kelas dengan probabilitas tertinggi',
@@ -578,11 +579,7 @@ export const translations: Record<Language, Translations> = {
     reportSubmit: 'Kirim laporan',
     reportSent: 'Terima kasih — tim akan meninjaunya.',
     reportFailed: 'Laporan gagal dikirim. Coba lagi nanti.',
-    newsMultiShort: 'Multi',
-    newsMultiLabel: 'Multi · bahasa asli',
     newsOriginalShort: 'Asli',
-    newsLanguageTitle: 'Bahasa berita',
-    newsLanguageHint: 'Multi menampilkan setiap berita dalam bahasa aslinya tanpa terjemahan. EN atau 繁中 menerjemahkan berita dan mengganti bahasa antarmuka.',
     aiUnavailable: 'Maaf, asisten AI sedang tidak tersedia.',
     pageNotFound: 'Halaman tidak ditemukan',
     errorTitle: 'Galat',
@@ -763,6 +760,9 @@ export const translations: Record<Language, Translations> = {
     chatSend: '发送消息',
     chatGrounded: '回答仅依据这篇文章。',
     chatSuggestions: ['总结这篇文章', '有哪些关键事实？', '为什么这很重要？'],
+    translateNews: '翻译新闻',
+    translateNewsOff: '关闭：新闻保持原文语言。',
+    translateNewsOn: '开启：标题与内文翻译成界面语言。',
     confidenceNote: '置信度是模型给所选标签的机率，不是实测准确率，也不代表新闻是否属实。',
     labelRuleNote: '标签依序套用规则（先判断中性区间，再看 polarity ±0.10），因此可能与最长的条不同。',
     sentimentFallbackRule: '其余情况：取机率最高的类别',
@@ -776,11 +776,7 @@ export const translations: Record<Language, Translations> = {
     reportSubmit: '送出回报',
     reportSent: '谢谢，团队会审阅。',
     reportFailed: '回报未能送出，请稍后再试。',
-    newsMultiShort: '多语',
-    newsMultiLabel: '多语 · 原文语言',
     newsOriginalShort: '原文',
-    newsLanguageTitle: '新闻语言',
-    newsLanguageHint: '多语以新闻发布时的原文显示，不做翻译。选择 EN 或 繁中 会翻译新闻并切换界面语言。',
     aiUnavailable: '抱歉，AI 助手暂时不可用。',
     pageNotFound: '页面未找到',
     errorTitle: '错误',
@@ -961,6 +957,9 @@ export const translations: Record<Language, Translations> = {
     chatSend: '傳送訊息',
     chatGrounded: '回答僅依據這篇文章。',
     chatSuggestions: ['總結這篇文章', '有哪些關鍵事實？', '為什麼這很重要？'],
+    translateNews: '翻譯新聞',
+    translateNewsOff: '關閉：新聞保持原文語言。',
+    translateNewsOn: '開啟：標題與內文翻譯成介面語言。',
     confidenceNote: '信心值是模型給所選標籤的機率，不是實測準確率，也不代表新聞是否屬實。',
     labelRuleNote: '標籤依序套用規則（先判斷中性區間，再看 polarity ±0.10），因此可能與最長的條不同。',
     sentimentFallbackRule: '其餘情況：取機率最高的類別',
@@ -974,11 +973,7 @@ export const translations: Record<Language, Translations> = {
     reportSubmit: '送出回報',
     reportSent: '謝謝，團隊會審閱。',
     reportFailed: '回報未能送出，請稍後再試。',
-    newsMultiShort: '多語',
-    newsMultiLabel: '多語 · 原文語言',
     newsOriginalShort: '原文',
-    newsLanguageTitle: '新聞語言',
-    newsLanguageHint: '多語以新聞發布時的原文顯示，不做翻譯。選擇 EN 或 繁中 會翻譯新聞並切換介面語言。',
     aiUnavailable: '抱歉，AI 助手暫時不可用。',
     pageNotFound: '頁面未找到',
     errorTitle: '錯誤',

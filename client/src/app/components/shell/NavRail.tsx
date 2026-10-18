@@ -4,7 +4,8 @@ import { NavLink, Link } from 'react-router';
 import { Home, MessageSquareQuote, Bookmark, Sun, Moon, Languages, BarChart2 } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { POSTS_ENABLED } from '../../constants';
-import { useReadingChoice } from '../ui/LanguageSwitcher';
+import { useInterfaceLanguage } from '../ui/LanguageSwitcher';
+import { TranslateNewsToggle } from '../ui/TranslateNewsToggle';
 import { BrandLogo } from '../ui/BrandLogo';
 
 interface NavItem {
@@ -16,8 +17,11 @@ interface NavItem {
 export function NavRail() {
   const ui = useUiText();
   const { t, isDark, toggleTheme, setSidebarOpen, avatarSrc, user } = useApp();
-  const reading = useReadingChoice();
-  const [langOpen, setLangOpen] = useState(false);
+  const reading = useInterfaceLanguage();
+  // The rail scrolls (overflow-y-auto), which would clip an absolutely
+  // positioned menu; anchor a fixed menu to the button instead.
+  const [langMenu, setLangMenu] = useState<{ left: number; bottom: number } | null>(null);
+  const langOpen = langMenu !== null;
   const currentLang = reading.current.short;
 
   const items: NavItem[] = [
@@ -80,8 +84,11 @@ export function NavRail() {
 
         <div className="relative w-full">
           <button
-            onClick={() => setLangOpen((p) => !p)}
-            title={`${t.newsLanguageTitle}: ${reading.current.label}`}
+            onClick={(e) => {
+              const r = e.currentTarget.getBoundingClientRect();
+              setLangMenu((open) => (open ? null : { left: r.left, bottom: window.innerHeight - r.top + 4 }));
+            }}
+            title={`${t.language}: ${reading.current.label}`}
             aria-expanded={langOpen}
             className={`${baseItem} w-full ${isDark ? 'text-slate-200' : 'text-slate-700'}`}
           >
@@ -90,9 +97,10 @@ export function NavRail() {
           </button>
           {langOpen && (
             <div
-              className={`absolute bottom-full mb-1 left-0 z-50 min-w-[112px] rounded-xl border p-1 shadow-lg ${
+              className={`fixed z-50 w-72 rounded-xl border p-1 shadow-lg ${
                 isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'
               }`}
+              style={{ left: langMenu.left, bottom: langMenu.bottom }}
             >
               {reading.options.map(({ code, short, label }) => (
                 <button
@@ -100,7 +108,7 @@ export function NavRail() {
                   title={label}
                   onClick={() => {
                     reading.choose(code);
-                    setLangOpen(false);
+                    setLangMenu(null);
                   }}
                   className={`w-full text-left px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                     reading.choice === code
@@ -116,6 +124,8 @@ export function NavRail() {
                   {short}
                 </button>
               ))}
+              <div className={`my-1 border-t ${isDark ? 'border-slate-700' : 'border-slate-200'}`} />
+              <TranslateNewsToggle isDark={isDark} compact />
             </div>
           )}
         </div>

@@ -4,12 +4,13 @@ import { ChevronDown, Download, Languages, Loader2, Mail, Sparkles, Trash2 } fro
 import { mem0Service } from '../../services/mem0Service';
 import { authService } from '../../services/authService';
 import { useApp } from '../../contexts/AppContext';
-import { useReadingChoice } from '../ui/LanguageSwitcher';
+import { useInterfaceLanguage } from '../ui/LanguageSwitcher';
+import { TranslateNewsToggle } from '../ui/TranslateNewsToggle';
 
 export function ProfilePreferences({ isDark }: { isDark: boolean }) {
   const ui = useUiText();
   const { t, user, setUser } = useApp();
-  const reading = useReadingChoice();
+  const reading = useInterfaceLanguage();
   const [enabled, setEnabled] = useState(true);
   const [topics, setTopics] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -106,8 +107,7 @@ export function ProfilePreferences({ isDark }: { isDark: boolean }) {
         <div className={row}>
           <Languages size={16} className="shrink-0 text-cyan-500" />
           <div className="min-w-0 flex-1">
-            <span className="block text-sm font-medium">{t.newsLanguageTitle}</span>
-            <span className="block text-xs leading-relaxed opacity-70">{t.newsLanguageHint}</span>
+            <span className="block text-sm font-medium">{t.language}</span>
           </div>
           <div ref={languageMenuRef} className="relative shrink-0">
             <button
@@ -115,7 +115,7 @@ export function ProfilePreferences({ isDark }: { isDark: boolean }) {
               onClick={() => setLanguageOpen((open) => !open)}
               aria-haspopup="listbox"
               aria-expanded={languageOpen}
-              aria-label={t.newsLanguageTitle}
+              aria-label={t.language}
               className={`flex min-w-[82px] items-center justify-between gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition-colors ${
                 isDark
                   ? 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'
@@ -128,7 +128,7 @@ export function ProfilePreferences({ isDark }: { isDark: boolean }) {
             {languageOpen && (
               <div
                 role="listbox"
-                aria-label={t.newsLanguageTitle}
+                aria-label={t.language}
                 className={`absolute right-0 top-full z-50 mt-1 min-w-[112px] rounded-xl border p-1 shadow-lg ${
                   isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'
                 }`}
@@ -159,6 +159,9 @@ export function ProfilePreferences({ isDark }: { isDark: boolean }) {
               </div>
             )}
           </div>
+        </div>
+        <div className={`rounded-2xl p-0.5 ${isDark ? 'bg-slate-950/50' : 'bg-slate-50'}`}>
+          <TranslateNewsToggle isDark={isDark} />
         </div>
         <button type="button" role="switch" aria-checked={Boolean(user?.emailUpdates)} disabled={savingEmailUpdates} onClick={() => void toggleEmailUpdates()} className={`${row} w-full text-left disabled:opacity-60`}>
           {savingEmailUpdates ? <Loader2 size={16} className="animate-spin text-cyan-500" /> : <Mail size={16} className="text-cyan-500" />}

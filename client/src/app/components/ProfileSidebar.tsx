@@ -9,7 +9,8 @@ import { AuthPanel } from './profile/AuthPanel';
 import { FooterCompact } from './shell/Footer';
 import { useIsMobile } from './ui/use-mobile';
 import { BrandLogo } from './ui/BrandLogo';
-import { useReadingChoice } from './ui/LanguageSwitcher';
+import { useInterfaceLanguage } from './ui/LanguageSwitcher';
+import { TranslateNewsToggle } from './ui/TranslateNewsToggle';
 import { useEffect, useRef } from 'react';
 
 /** Slim account drawer: identity card linking to /profile plus quick
@@ -65,7 +66,7 @@ export function ProfileSidebar() {
     if (result.success) setUser(null);
   };
 
-  const reading = useReadingChoice();
+  const reading = useInterfaceLanguage();
 
   const rowClass = `w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors ${
     isDark ? 'text-slate-200 hover:bg-slate-800' : 'text-gray-700 hover:bg-gray-50'
@@ -174,9 +175,9 @@ export function ProfileSidebar() {
 
               {/* Language */}
               <p className={`mt-4 mb-2 text-[11px] font-semibold uppercase tracking-wide ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
-                {t.newsLanguageTitle}
+                {t.language}
               </p>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 {reading.options.map((opt) => {
                   const active = reading.choice === opt.code;
                   return (
@@ -192,11 +193,14 @@ export function ProfileSidebar() {
                             : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
                       }`}
                     >
-                      <span className="truncate">{opt.short}</span>
+                      <span className="truncate">{opt.label}</span>
                       {active && <Check size={14} className="shrink-0" />}
                     </button>
                   );
                 })}
+              </div>
+              <div className="mt-2">
+                <TranslateNewsToggle isDark={isDark} />
               </div>
 
 

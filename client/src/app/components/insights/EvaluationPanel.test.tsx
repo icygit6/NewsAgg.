@@ -72,12 +72,14 @@ describe('public research evidence', () => {
     expect(screen.getByText('What has not been measured')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Download test results JSON' })).toHaveAttribute('download');
   });
-  it('explains names and keeps all 28 report references with their role disclosures', () => {
+  it('explains names and matches the revised 24 report references with relevance disclosures', () => {
     mount();
     fireEvent.click(screen.getByRole('button', { name: 'Glossary & references' }));
     expect(screen.getByText('F1 / macro F1')).toBeInTheDocument();
-    expect(screen.getByText(/Google News is not one of NewsAgg/)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Cohen \(1960\)/ })).toHaveAttribute('href', 'https://doi.org/10.1177/001316446002000104');
-    expect(screen.getByText(/^\[28\]/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Automated Text Classification of News Articles: A Practical Guide' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'A coefficient of agreement for nominal scales' })).toHaveAttribute('href', 'https://doi.org/10.1177/001316446002000104');
+    expect(screen.getByText(/^\[24\]/)).toBeInTheDocument();
+    expect(screen.queryByText(/^\[25\]/)).not.toBeInTheDocument();
+    expect(screen.getByText(/NewsAgg implements BM25 itself, not with Lucene/)).toBeInTheDocument();
   });
 });

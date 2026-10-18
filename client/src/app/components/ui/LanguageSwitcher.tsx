@@ -23,25 +23,15 @@ const TRANSLATION_PILLS: { code: Language; short: string; label: (t: Translation
 ];
 
 /**
- * The site-wide news-language choice shared by every picker: Multi keeps news
- * untranslated (the default); EN / 繁中 translate news and set the interface.
+ * The interface-language choice shared by every picker (EN / 繁中). Whether
+ * news is translated is a separate on/off switch (TranslateNewsToggle); the
+ * former three-way "Multi / EN / 繁中" picker mixed the two and confused readers.
  */
-export function useReadingChoice() {
-  const { t, language, setLanguage, newsMode, setNewsMode } = useApp();
-  const choice: ReadingLanguage = newsMode === 'original' ? 'original' : language;
-  const options: { code: ReadingLanguage; short: string; label: string }[] = [
-    { code: 'original', short: t.newsMultiShort, label: t.newsMultiLabel },
-    ...TRANSLATION_PILLS.map((pill) => ({ code: pill.code, short: pill.short, label: pill.label(t) })),
-  ];
-  const choose = (code: ReadingLanguage) => {
-    if (code === 'original') {
-      setNewsMode('original');
-    } else {
-      setLanguage(code);
-      setNewsMode('translated');
-    }
-  };
-  return { choice, options, choose, current: options.find((option) => option.code === choice) ?? options[0] };
+export function useInterfaceLanguage() {
+  const { t, language, setLanguage } = useApp();
+  const options = TRANSLATION_PILLS.map((pill) => ({ code: pill.code, short: pill.short, label: pill.label(t) }));
+  const choose = (code: Language) => setLanguage(code);
+  return { choice: language, options, choose, current: options.find((option) => option.code === language) ?? options[0] };
 }
 
 export function LanguageSwitcher({ isDark, isLoading = false, isAutoTranslated = false, error, onRetry, selectedLanguage, onSelectLanguage }: LanguageSwitcherProps) {

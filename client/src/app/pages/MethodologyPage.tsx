@@ -29,8 +29,8 @@ const CONTENT: Record<'en' | 'zhTW', { intro: string; sections: Section[]; back:
       {
         title: 'Language',
         points: [
-          'Multi (the default) shows each story exactly as published, in its original language.',
-          'Choosing EN or 繁中 translates headlines and articles on request with Google Gemini, with Lingva as a fallback for short text. Translated text is marked as auto-translated and can contain errors.',
+          'With Translate news off (the default), each story is shown exactly as published, in its original language. The interface language (EN or 繁中) is chosen separately.',
+          'Turning Translate news on translates headlines and articles into the interface language with Google Gemini, with Lingva as a fallback for short text. Translated text is marked as auto-translated and can contain errors.',
         ],
       },
       {
@@ -111,8 +111,8 @@ const CONTENT: Record<'en' | 'zhTW', { intro: string; sections: Section[]; back:
       {
         title: '語言',
         points: [
-          '多語（預設）依新聞發布時的原文語言顯示，不做翻譯。',
-          '選擇 EN 或 繁中 時，標題與內文會在需要時以 Google Gemini 翻譯，短文字以 Lingva 備援。譯文會標示為自動翻譯，可能有誤。',
+          '「翻譯新聞」關閉時（預設），新聞依發布時的原文語言顯示，不做翻譯；介面語言（EN 或 繁中）另外選擇。',
+          '開啟「翻譯新聞」後，標題與內文會以 Google Gemini 翻譯成介面語言，短文字以 Lingva 備援。譯文會標示為自動翻譯，可能有誤。',
         ],
       },
       {
