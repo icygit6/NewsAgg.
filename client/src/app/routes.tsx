@@ -57,6 +57,11 @@ export const router = createBrowserRouter([
         lazy: async () => ({ Component: (await import('./pages/PublicProfilePage')).PublicProfilePage }),
       },
       {
+        path: 'admin',
+        handle: { hideRightRail: true, mobileFooter: true },
+        lazy: async () => ({ Component: (await import('./pages/AdminPage')).AdminPage }),
+      },
+      {
         path: 'methodology',
         handle: { hideRightRail: true, mobileFooter: true },
         lazy: async () => ({ Component: (await import('./pages/MethodologyPage')).MethodologyPage }),

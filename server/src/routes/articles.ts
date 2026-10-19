@@ -5,6 +5,7 @@ import { PublicationCache } from '../lib/publicationCache'
 import { optionalAuth } from '../middleware/auth'
 import { articleReportLimiter } from '../middleware/rateLimit'
 import { validateBody, articleReportSchema } from '../middleware/validate'
+import { notifyAdminsOfReport } from '../services/adminNotify'
 
 // GET /api/articles/:id — single full article (joined with source + author).
 // The legacy client located articles by scanning the entire /api/news-from-db
@@ -35,7 +36,9 @@ articlesRouter.post('/:id/report', articleReportLimiter, optionalAuth, validateB
       'INSERT INTO article_reports (article_id, reason, message, user_id) VALUES ($1, $2, $3, $4)',
       [id, reason, message, req.userId ?? null]
     )
-    return res.status(201).json({ success: true })
+    res.status(201).json({ success: true })
+    notifyAdminsOfReport(`NewsAgg: article report (${reason})`, [`Article ${id} was reported.`, `Reason: ${reason}`, ...(message ? [`Message: ${message}`] : []), req.userId ? `Reporter account id: ${req.userId}` : 'Reporter: guest'])
+    return
   } catch (err: any) {
     logger.error({ err: err?.message }, '[POST /api/articles/:id/report]')
     return res.status(500).json({ success: false, message: 'Could not save the report' })

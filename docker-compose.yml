@@ -22,13 +22,15 @@ services:
     mem_limit: 1g
     restart: unless-stopped
 
-  # Read-only table browser for the local database: http://127.0.0.1:8081
-  # Bound to this laptop only; never routed through the public tunnel.
+  # Read-only table browser. Admins open it at /dbviewer/ on the site, where
+  # Nginx first asks the API whether the session belongs to an admin; on this
+  # laptop it is also at http://127.0.0.1:8081/dbviewer/. It logs in as
+  # newsagg_viewer (deploy/postgres/viewer-role.sql): read-only, no secrets.
   dbviewer:
     image: mirror.gcr.io/sosedoff/pgweb:0.16.2
-    command: ["pgweb", "--bind=0.0.0.0", "--listen=8081", "--readonly", "--skip-open"]
+    command: ["pgweb", "--bind=0.0.0.0", "--listen=8081", "--prefix=dbviewer", "--readonly", "--lock-session", "--skip-open"]
     environment:
-      PGWEB_DATABASE_URL: "postgres://newsagg:${NEWSAGG_DB_PASSWORD}@db:5432/newsagg?sslmode=disable"
+      PGWEB_DATABASE_URL: "postgres://newsagg_viewer:${NEWSAGG_DBVIEWER_PASSWORD}@db:5432/newsagg?sslmode=disable"
     ports:
       - "127.0.0.1:8081:8081"
     depends_on:
@@ -151,6 +153,9 @@ services:
     environment:
       NEONDB_URL: "postgres://newsagg:${NEWSAGG_DB_PASSWORD}@db:5432/newsagg"
       DATABASE_URL: "postgres://newsagg:${NEWSAGG_DB_PASSWORD}@db:5432/newsagg"
+      # The 400 MB default mirrored Neon's free storage; the local volume can
+      # hold far more, so ingestion only stops near 5 GB.
+      SCRAPER_STORAGE_BUDGET_MB: "${SCRAPER_STORAGE_BUDGET_MB:-5000}"
       GEMINI_TRANSLATE_MODEL: "${GEMINI_TRANSLATE_MODEL:-gemini-3.5-flash-lite}"
       LOCAL_AI_URL: http://local-ai:8090
     volumes:

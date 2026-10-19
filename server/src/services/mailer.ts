@@ -100,3 +100,14 @@ export async function sendVerificationEmail(to: string, rawToken: string) {
     `Verify your NewsAgg email: ${link}\n\nThis link expires in 24 hours.`
   )
 }
+
+const escapeHtml = (s: string) =>
+  s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string))
+
+// Admin alert for a new reader report. Report text is user input, so it is
+// escaped before it enters the HTML body.
+export async function sendAdminReportEmail(to: string, subject: string, lines: string[]) {
+  const link = `${publicClientUrl()}/admin`
+  const html = wrap('New report on NewsAgg', lines.map(escapeHtml).join('<br>'), 'Open admin page', link)
+  await send(to, subject, html, `${lines.join('\n')}\n\nReview it at ${link}`)
+}

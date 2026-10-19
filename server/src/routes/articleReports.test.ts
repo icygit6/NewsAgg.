@@ -3,9 +3,11 @@ import express from 'express'
 import request from 'supertest'
 
 vi.mock('../db/client', () => ({ query: vi.fn() }))
+vi.mock('../services/adminNotify', () => ({ notifyAdminsOfReport: vi.fn() }))
 
 import { query } from '../db/client'
 import { articlesRouter } from './articles'
+import { notifyAdminsOfReport } from '../services/adminNotify'
 
 const mockQuery = query as unknown as ReturnType<typeof vi.fn>
 
@@ -30,6 +32,7 @@ describe('article correction reports', () => {
       expect.stringContaining('INSERT INTO article_reports'),
       ['0123456789abcdef', 'sentiment', 'The story is good news, not negative.', null]
     )
+    expect(notifyAdminsOfReport).toHaveBeenCalledOnce()
   })
 
   it('rejects unknown reasons without touching the database', async () => {

@@ -20,6 +20,7 @@ import { statsRouter } from './routes/stats'
 import { authRouter } from './routes/auth'
 import { accountRouter } from './routes/account'
 import { postsRouter } from './routes/posts'
+import { adminRouter } from './routes/admin'
 import { bookmarksRouter } from './routes/bookmarks'
 import { profilesRouter } from './routes/profiles'
 import { userRouter } from './routes/user'
@@ -85,6 +86,7 @@ app.use('/api/account', accountRouter)
 app.use('/api/posts', postsRouter)
 app.use('/api/bookmarks', bookmarksRouter)
 app.use('/api/profiles', profilesRouter)
+app.use('/api/admin', adminRouter)
 app.use('/auth', authLimiter, authRouter)
 // Backward-compatible direct-Docker API path. New clients use
 // /api/bookmarks so IIS can reserve /bookmarks for the React page.

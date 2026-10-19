@@ -1,17 +1,19 @@
 import { useUiText } from '../../i18n/uiText';
 import { useState } from 'react';
 import { NavLink, Link } from 'react-router';
-import { Home, MessageSquareQuote, Bookmark, Sun, Moon, Languages, BarChart2 } from 'lucide-react';
+import { Home, MessageSquareQuote, Bookmark, Sun, Moon, Languages, BarChart2, ShieldCheck } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { POSTS_ENABLED } from '../../constants';
 import { useInterfaceLanguage } from '../ui/LanguageSwitcher';
 import { TranslateNewsToggle } from '../ui/TranslateNewsToggle';
 import { BrandLogo } from '../ui/BrandLogo';
+import { useAdminOverview, useIsAdmin } from '../../hooks/useAdmin';
 
 interface NavItem {
   to: string;
   icon: typeof Home;
   label: string;
+  badge?: number;
 }
 
 export function NavRail() {
@@ -23,12 +25,16 @@ export function NavRail() {
   const [langMenu, setLangMenu] = useState<{ left: number; bottom: number } | null>(null);
   const langOpen = langMenu !== null;
   const currentLang = reading.current.short;
+  const admin = useIsAdmin();
+  const adminOverview = useAdminOverview();
+  const openReports = (adminOverview.data?.open_article_reports ?? 0) + (adminOverview.data?.open_post_reports ?? 0);
 
   const items: NavItem[] = [
     { to: '/', icon: Home, label: t.home },
     ...(POSTS_ENABLED ? [{ to: '/posts', icon: MessageSquareQuote, label: t.posts }] : []),
     { to: '/insights', icon: BarChart2, label: t.insights },
     { to: '/bookmarks', icon: Bookmark, label: t.bookmarks },
+    ...(admin ? [{ to: '/admin', icon: ShieldCheck, label: ui('Admin'), badge: openReports }] : []),
   ];
 
   const baseItem = `flex items-center gap-4 rounded-full px-3 py-3 xl:px-4 transition-[background-color,color,transform,box-shadow] duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 motion-reduce:transition-none
@@ -49,7 +55,7 @@ export function NavRail() {
         />
       </Link>
 
-      {items.map(({ to, icon: Icon, label }) => (
+      {items.map(({ to, icon: Icon, label, badge }) => (
         <NavLink
           key={to}
           to={to}
@@ -63,7 +69,10 @@ export function NavRail() {
           }
           style={({ isActive }) => (isActive ? { background: 'var(--brand, #2563eb)' } : undefined)}
         >
-          <Icon size={22} className="shrink-0" />
+          <span className="relative shrink-0">
+            <Icon size={22} />
+            {badge ? <span className="absolute -top-1.5 -right-2 min-w-4 rounded-full bg-rose-500 px-1 text-center text-[10px] font-bold leading-4 text-white" aria-label={`${badge} ${ui('open reports')}`}>{badge}</span> : null}
+          </span>
           <span className="hidden xl:inline text-[15px]">{label}</span>
         </NavLink>
       ))}

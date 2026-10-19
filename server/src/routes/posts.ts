@@ -5,6 +5,8 @@ import { authMiddleware, optionalAuth } from '../middleware/auth'
 import { validateBody, postSchema, postEditSchema, postCommentSchema, postReportSchema, blockUserSchema } from '../middleware/validate'
 import { commentLimiter, likeLimiter, postLimiter } from '../middleware/rateLimit'
 import { POST_CATEGORIES, inferPostCategory } from '../lib/postCategory'
+import { isAdmin } from './admin'
+import { notifyAdminsOfReport } from '../services/adminNotify'
 
 export const postsRouter = Router()
 const postId = (raw: string) => /^\d+$/.test(raw) ? Number(raw) : null
@@ -176,7 +178,8 @@ postsRouter.patch('/:id', authMiddleware, validateBody(postEditSchema), async (r
 postsRouter.delete('/:id', authMiddleware, async (req: any, res: Response) => {
   const id = postId(req.params.id); if (!id) return res.status(404).json({ success: false, error: 'Post not found' })
   try {
-    const result = await query('UPDATE posts SET deleted_at=now() WHERE id=$1 AND user_id=$2 AND deleted_at IS NULL RETURNING id', [id, req.userId])
+    // Authors remove their own posts; admins may remove anyone's.
+    const result = await query('UPDATE posts SET deleted_at=now() WHERE id=$1 AND (user_id=$2 OR $3) AND deleted_at IS NULL RETURNING id', [id, req.userId, await isAdmin(req.userId)])
     if (!result.rows[0]) return res.status(404).json({ success: false, error: 'Post not found' })
     res.json({ success: true })
   } catch { res.status(500).json({ success: false, error: 'Failed to delete post' }) }
@@ -184,7 +187,7 @@ postsRouter.delete('/:id', authMiddleware, async (req: any, res: Response) => {
 
 postsRouter.post('/:id/restore', authMiddleware, async (req: any, res: Response) => {
   const id = postId(req.params.id); if (!id) return res.status(404).json({ success: false, error: 'Post not found' })
-  const result = await query('UPDATE posts SET deleted_at=NULL WHERE id=$1 AND user_id=$2 RETURNING id', [id, req.userId])
+  const result = await query('UPDATE posts SET deleted_at=NULL WHERE id=$1 AND (user_id=$2 OR $3) RETURNING id', [id, req.userId, await isAdmin(req.userId)])
   if (!result.rows[0]) return res.status(404).json({ success: false, error: 'Post not found' })
   res.json({ success: true })
 })
@@ -194,6 +197,7 @@ postsRouter.post('/:id/report', authMiddleware, validateBody(postReportSchema), 
   try {
     await query('INSERT INTO post_reports(post_id,reporter_id,reason,details) VALUES($1,$2,$3,$4) ON CONFLICT(post_id,reporter_id) DO UPDATE SET reason=$3,details=$4', [id, req.userId, req.body.reason, req.body.details ?? null])
     res.status(201).json({ success: true })
+    notifyAdminsOfReport(`NewsAgg: post #${id} reported (${req.body.reason})`, [`Post #${id} was reported.`, `Reason: ${req.body.reason}`, ...(req.body.details ? [`Details: ${req.body.details}`] : []), `Reporter account id: ${req.userId}`])
   } catch (err: any) { res.status(err?.code === '23503' ? 404 : 500).json({ success: false, error: err?.code === '23503' ? 'Post not found' : 'Failed to report post' }) }
 })
 
