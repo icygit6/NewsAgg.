@@ -25,6 +25,7 @@ export function AccountSettings({ isDark }: AccountSettingsProps) {
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPasswords, setShowPasswords] = useState(false);
   const [passwordMsg, setPasswordMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [savingPassword, setSavingPassword] = useState(false);
@@ -105,6 +106,7 @@ export function AccountSettings({ isDark }: AccountSettingsProps) {
       setPasswordMsg({ ok: true, text: t.passwordChanged });
       setCurrentPassword('');
       setNewPassword('');
+      setConfirmPassword('');
       if (user && !user.hasPassword) {
         const next = { ...user, hasPassword: true };
         setUser(next);
@@ -281,9 +283,26 @@ export function AccountSettings({ isDark }: AccountSettingsProps) {
               </button>
             </div>
           </div>
+          <div>
+            <label htmlFor="confirm-new-password" className={labelClass}>{ui("Confirm new password")}</label>
+            <input
+              type={showPasswords ? 'text' : 'password'}
+              id="confirm-new-password"
+              name="confirm-new-password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className={inputClass}
+              autoComplete="new-password"
+              aria-invalid={confirmPassword !== '' && confirmPassword !== newPassword}
+              aria-describedby="confirm-new-password-hint"
+            />
+            {confirmPassword !== '' && confirmPassword !== newPassword && (
+              <p id="confirm-new-password-hint" role="alert" className="mt-1 text-xs text-rose-500">{ui("The new passwords do not match.")}</p>
+            )}
+          </div>
           <button
             onClick={savePassword}
-            disabled={savingPassword || !currentPassword || newPassword.length < 8 || newPassword === currentPassword}
+            disabled={savingPassword || !currentPassword || newPassword.length < 8 || newPassword === currentPassword || confirmPassword !== newPassword}
             className={primaryBtn}
           >
             {savingPassword && <Loader2 size={14} className="animate-spin" />}

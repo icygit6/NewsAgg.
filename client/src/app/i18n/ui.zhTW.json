@@ -140,5 +140,6 @@
   "Enter your current password first. Use at least 8 characters, different from the current one. Changing it signs out every other session.": "請先輸入目前的密碼。新密碼至少 8 個字元，且不可與目前密碼相同。變更後會登出其他所有工作階段。",
   "Choose a new password that differs from the current one": "新密碼不可與目前密碼相同",
   "This account signs in with Google. Use the emailed link to add a password.": "此帳號以 Google 登入，請使用寄到信箱的連結新增密碼。",
-  "Current password is incorrect": "目前密碼不正確"
+  "Current password is incorrect": "目前密碼不正確",
+  "The new passwords do not match.": "兩次輸入的新密碼不一致。"
 }
