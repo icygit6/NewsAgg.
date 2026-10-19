@@ -43,8 +43,10 @@ def rejection(record):
         return 'unfinished_image_check'
     if meta['image_status'] == 'verified' and (not record.get('images') or not record.get('url_to_image')):
         return 'incomplete_image'
-    if meta['image_status'] == 'unavailable' and (record.get('images') or record.get('url_to_image')):
-        return 'stale_image_fallback'
+    # A story without a publisher photo is not published at all (mostly Yahoo
+    # text pieces); it counts as a failed candidate and the quota moves on.
+    if meta['image_status'] == 'unavailable':
+        return 'no_image'
     if meta['image_status'] == 'verified' and not any(image.get('url') == record['url_to_image'] for image in record['images']):
         return 'image_primary_mismatch'
     return None

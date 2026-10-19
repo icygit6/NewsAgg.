@@ -1,3 +1,7 @@
+// The public feed shows the same 45 days that scraper/cleanup.py keeps, so
+// nothing still stored is hidden only by age.
+export const PUBLIC_WINDOW_DAYS = 45
+
 // Shared by feed and analytics: scraping time is NOT publication time.
 // A newer copy hides an older one when it has the same content hash, or the
 // same source and normalised headline within a day. The two duplicate tests
@@ -8,7 +12,7 @@
 const DUPLICATE_BASE = `duplicate.feed_eligible = true
       AND duplicate.extraction_version = 'structured-v3'
       AND jsonb_array_length(duplicate.content_blocks) > 0
-      AND duplicate.published_at >= NOW() - interval '30 days'
+      AND duplicate.published_at >= NOW() - interval '${PUBLIC_WINDOW_DAYS} days'
       AND duplicate.published_at <= NOW() + interval '2 hours'
       AND (COALESCE(duplicate.scraped_at, '-infinity'::timestamptz), duplicate.id)
         > (COALESCE(a.scraped_at, '-infinity'::timestamptz), a.id)`
@@ -16,7 +20,8 @@ const DUPLICATE_BASE = `duplicate.feed_eligible = true
 export const ACTIVE_ARTICLES = `a.feed_eligible = true
   AND a.extraction_version = 'structured-v3'
   AND jsonb_array_length(a.content_blocks) > 0
-  AND a.published_at >= NOW() - interval '30 days'
+  AND NULLIF(btrim(a.url_to_image), '') IS NOT NULL
+  AND a.published_at >= NOW() - interval '${PUBLIC_WINDOW_DAYS} days'
   AND a.published_at <= NOW() + interval '2 hours'
   AND NOT EXISTS (
     SELECT 1 FROM articles duplicate

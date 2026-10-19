@@ -21,7 +21,7 @@ const CONTENT: Record<'en' | 'zhTW', { intro: string; sections: Section[]; back:
         points: [
           'Four publishers: BBC, CNN and Al Jazeera in English, and Yahoo News Taiwan in Traditional Chinese.',
           'Eight topics: Sport, Health, Business, World, Politics, Lifestyle, Science (including technology) and Climate. Not every publisher is collected for every topic: Al Jazeera has no Politics or Lifestyle feed here, and Yahoo Taiwan has no Health or Climate feed.',
-          'Collection runs daily at 17:00 Taipei time, up to 20 articles per publisher and topic, from stories published in the previous 48 hours. The public feed keeps 30 days.',
+          'Collection runs daily at 17:00 Taipei time, up to 20 articles per publisher and topic, from stories published in the previous 48 hours. Stories without a publisher photo are not published. The public feed keeps 45 days; older stories are removed by the weekly cleanup.',
           'Publisher shares change with eligible article supply. The dataset is not balanced by publisher; overall charts can be dominated by the largest source.',
           'An article is published only after checks: a readable date, at least 300 characters of body text (80 words for English), a confirmed topic, a summary drawn from the text, and no duplicate.',
         ],
@@ -103,7 +103,7 @@ const CONTENT: Record<'en' | 'zhTW', { intro: string; sections: Section[]; back:
         points: [
           '四家媒體：英文的 BBC、CNN、Al Jazeera，以及繁體中文的 Yahoo 奇摩新聞臺灣。',
           '八個主題：運動、健康、商業、國際、政治、生活、科學（含科技）與氣候。並非每家媒體都擷取所有主題：本站未擷取 Al Jazeera 的政治與生活，也未擷取 Yahoo 臺灣的健康與氣候。',
-          '每日臺北時間 17:00 擷取，每家媒體每個主題最多 20 篇，只收過去 48 小時內發布的新聞；公開列表保留 30 天。',
+          '每日臺北時間 17:00 擷取，每家媒體每個主題最多 20 篇，只收過去 48 小時內發布的新聞；沒有出版者照片的新聞不發布。公開列表保留 45 天，較舊的新聞由每週清理移除。',
           '各媒體占比會隨合格文章供應而改變，資料集並非依媒體平衡抽樣；整體圖表可能由篇數最多的來源主導。',
           '文章須通過檢查才會公開：日期可解析、正文至少 300 字元（英文至少 80 字）、主題經確認、摘要取自原文，且不重複。',
         ],

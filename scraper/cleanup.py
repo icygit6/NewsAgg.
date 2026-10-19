@@ -7,9 +7,12 @@ The default run is a DRY RUN that only reports what would be deleted;
   1. Articles published more than --days ago (default 45). The public feed
      shows 30 days and ingestion looks back 48 hours, so these are no longer
      shown anywhere except by direct link.
-  2. Articles that failed the publication gate (feed_eligible = false) and are
-     older than --ineligible-days (default 7): quarantined duplicates and
-     rows that never met the body/date/topic rules.
+  2. Articles the website can never show, once older than --ineligible-days
+     (default 7): failed the publication gate (feed_eligible = false, which
+     includes stories without a publisher photo), use an extraction format
+     older than structured-v3 or have no reader blocks, lack a photo, or were
+     quarantined as contaminated. The feed in server/src/lib/articleQuality.ts
+     applies the same rules, so everything kept is eligible to appear.
   3. Staging candidates: rejected ones older than --staging-days (default 14),
      and published ones whose article is gone.
   4. Orphans: translations and authors no article references any more.
@@ -75,12 +78,19 @@ def keep_conditions(conn) -> list[str]:
     return conds
 
 
+# Mirrors ACTIVE_ARTICLES in server/src/lib/articleQuality.ts (minus age and
+# duplicate checks): a row failing this can never appear on the website.
+SHOWABLE = ("(a.feed_eligible = true AND a.extraction_version = 'structured-v3'"
+            " AND jsonb_array_length(COALESCE(a.content_blocks, '[]'::jsonb)) > 0"
+            " AND NULLIF(btrim(a.url_to_image), '') IS NOT NULL"
+            " AND COALESCE(a.quality_metadata->>'content_review_status', '') <> 'quarantined')")
+
+
 def article_where(conn) -> str:
     stale = "(a.published_at IS NOT NULL AND a.published_at < now() - make_interval(days => %(days)s))"
-    ineligible = ("(a.feed_eligible = false AND COALESCE(a.published_at, a.scraped_at, now())"
-                  " < now() - make_interval(days => %(ineligible_days)s))") if db.column_exists(conn, "articles", "scraped_at") else (
-                  "(a.feed_eligible = false AND COALESCE(a.published_at, now()) < now() - make_interval(days => %(ineligible_days)s))")
-    return f"({stale} OR {ineligible}) AND " + " AND ".join(keep_conditions(conn))
+    age = "COALESCE(a.published_at, a.scraped_at, now())" if db.column_exists(conn, "articles", "scraped_at") else "COALESCE(a.published_at, now())"
+    unshowable = f"(NOT {SHOWABLE} AND {age} < now() - make_interval(days => %(ineligible_days)s))"
+    return f"({stale} OR {unshowable}) AND " + " AND ".join(keep_conditions(conn))
 
 
 STAGING_WHERE = (

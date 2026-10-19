@@ -184,6 +184,14 @@ def enrich_article(item: dict, spec: SourceSpec) -> Optional[dict]:
         related_urls = extract.extract_related(soup, url)
         author_info = extract.extract_author(soup, url, art.authors, jsonld)
 
+        # Stories without a publisher photo are not published, so reject them
+        # before spending model time on sentiment, entities and summaries.
+        images = quality.validate_images(quality.image_candidates(soup, url, jsonld, art.top_image))
+        if not images:
+            item['rejection'] = 'no_image'
+            print(f"     reject: {item['rejection']}")
+            return None
+
         # Language first — sentiment/summary/toxicity are routed by it
         # (FinBERT/BART/toxic-bert are English-only; XLM-R models handle the rest).
         language = nlp.detect_language(text)
@@ -218,7 +226,6 @@ def enrich_article(item: dict, spec: SourceSpec) -> Optional[dict]:
         canonical = normalize_canonical(og_data.get("canonical_url") or url)
         if not http.same_family(canonical, url):
             canonical = normalize_canonical(url)
-        images = quality.validate_images(quality.image_candidates(soup, url, jsonld, art.top_image))
 
         record = {
             "id": url_id(canonical),

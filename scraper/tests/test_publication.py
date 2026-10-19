@@ -13,7 +13,8 @@ def fixture():
             'published_at':datetime.now(timezone.utc).isoformat(),'topic':'Science','ai_top_label':'Science',
             'extraction_version':quality.VERSION,'content':text,'content_hash':quality.content_hash(text),
             'content_blocks':[{'type':'paragraph','text':text}],'ai_summary':sentence,'summary_method':'extractive-test',
-            'quality_metadata':{'category_model':'test-model','summary_evidence':[sentence],'image_status':'unavailable'},
+            'url_to_image':'https://example.com/hero.jpg','images':[{'url':'https://example.com/hero.jpg'}],
+            'quality_metadata':{'category_model':'test-model','summary_evidence':[sentence],'image_status':'verified'},
             'sentiment':{'type':'neutral','score':.5,'comparative':0,'probabilities':{'positive':.2,'neutral':.5,'negative':.3},'model':'test'},
             'toxicity':{'label':None,'score':None},'og':{},'readability':{'word_count':144,'reading_time_min':1,'flesch_score':None,'flesch_kincaid':None,'smog_index':None}}
 
@@ -42,15 +43,17 @@ class PublicationTests(unittest.TestCase):
         row['content_blocks']=[{'type':'list','items':[]}]
         self.assertEqual(publication.rejection(row),'invalid_body_blocks')
 
-    def test_image_fallback_cannot_keep_a_stale_hero(self):
+    def test_hero_must_be_one_of_the_verified_images(self):
         row=fixture();row['url_to_image']='https://example.com/old.jpg'
-        self.assertEqual(publication.rejection(row),'stale_image_fallback')
-        row['quality_metadata']['image_status']='verified'
-        row['images']=[{'url':'https://example.com/new.jpg'}]
         self.assertEqual(publication.rejection(row),'image_primary_mismatch')
 
-    def test_ready_article_accepts_explicit_missing_image_fallback(self):
+    def test_ready_article_with_a_verified_photo_is_publishable(self):
         self.assertIsNone(publication.rejection(fixture()))
+
+    def test_article_without_a_publisher_photo_is_rejected(self):
+        row=fixture();row.update({'url_to_image':None,'images':[]})
+        row['quality_metadata']['image_status']='unavailable'
+        self.assertEqual(publication.rejection(row),'no_image')
 
     def test_incomplete_or_unverified_work_is_not_publishable(self):
         for change in [{'ai_summary':None},{'content_blocks':[]},{'ai_top_label':'Politics'},
