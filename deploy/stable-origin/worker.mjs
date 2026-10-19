@@ -30,6 +30,11 @@ export default {
         const next = new URL(location, origin);
         if (next.origin === origin) response.headers.set('Location', `${publicUrl.origin}${next.pathname}${next.search}${next.hash}`);
       }
+      // Quick Tunnels stamp every response "X-Robots-Tag: none", which hides
+      // the public site from search engines. Drop it for reader pages; keep
+      // private and machine paths out of the index explicitly.
+      response.headers.delete('X-Robots-Tag');
+      if (/^\/(?:api|auth|admin|dbviewer)(?:\/|$)/.test(publicUrl.pathname)) response.headers.set('X-Robots-Tag','noindex, nofollow');
       // Do not cache sessions, personalized responses, or authentication exchanges.
       if (publicUrl.pathname.startsWith('/auth/') || publicUrl.pathname.startsWith('/api/') || response.headers.has('Set-Cookie')) response.headers.set('Cache-Control','private, no-store');
       return response;

@@ -43,7 +43,7 @@ export function ProfilePage() {
   return (
     <div className="mx-auto w-full max-w-6xl space-y-5 px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
       <ProfileHeader isDark={isDark} />
-      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
         <AccountSettings isDark={isDark} />
         <div className="lg:sticky lg:top-5">
           <ProfilePreferences isDark={isDark} />

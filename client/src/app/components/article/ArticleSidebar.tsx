@@ -8,9 +8,11 @@ import {
   ExternalLink,
   Gauge,
   Globe,
+  Info,
   Link2,
   MapPin,
-  Sparkles,
+  PieChart,
+  ScanSearch,
   Tag,
   TrendingUp,
   Users,
@@ -18,6 +20,7 @@ import {
 import { DonutChart } from '../sentiment/DonutChart';
 import { ArticleSentimentPanel } from '../ArticleSentimentPanel';
 import { ReadabilityPanel } from './ReadabilityPanel';
+import { PanelHeading } from '../ui/PanelHeading';
 import { getArticleId } from '../../services/newsAPI';
 import type { Translations } from '../../i18n/translations';
 import type { LiveEngagementItem, NewsArticle, TrendingKeyword } from '../../types/article';
@@ -148,9 +151,7 @@ export function ArticleSidebar({
       {/* Category Sentiment Distribution — right under the article's own
           sentiment so the single-article and category views read together. */}
       <div className={`rounded-2xl border p-5 ${panelBase}`}>
-        <h3
-          className={`font-poppins text-sm font-semibold mb-2 ${isDark ? 'text-slate-200' : 'text-gray-800'}`}
-        >{ui("Category Sentiment Distribution")} </h3>
+        <PanelHeading icon={PieChart} isDark={isDark} className="mb-2">{ui("Category Sentiment Distribution")}</PanelHeading>
         <p className={`text-xs mb-4 ${mutedText}`}>{ui(article.topic)} {ui("articles in current dataset")}</p>
 
         <div className="mb-4">
@@ -193,10 +194,7 @@ export function ArticleSidebar({
       </div>
 
       <div className={`rounded-2xl border p-5 ${panelBase}`}>
-        <h3
-          className={`font-poppins text-sm font-semibold mb-4 flex items-center gap-2 ${isDark ? 'text-slate-200' : 'text-gray-800'}`}
-        >
-          <Sparkles size={14} className="text-cyan-500" />{ui("Article details")} </h3>
+        <PanelHeading icon={Info} isDark={isDark}>{ui("Article details")}</PanelHeading>
         <div className="space-y-2.5">
           <MetricRow
             label={ui("Sentiment model")}
@@ -227,10 +225,7 @@ export function ArticleSidebar({
       </div>
 
       <div className={`rounded-2xl border p-5 ${panelBase}`}>
-        <h3
-          className={`font-poppins text-sm font-semibold mb-4 flex items-center gap-2 ${isDark ? 'text-slate-200' : 'text-gray-800'}`}
-        >
-          <Globe size={14} className="text-cyan-500" />{ui("Source and Access")} </h3>
+        <PanelHeading icon={Globe} isDark={isDark}>{ui("Source and Access")}</PanelHeading>
         <div className="space-y-2.5">
           <MetricRow label={ui("Source")} value={article.source.name} isDark={isDark} />
           <MetricRow
@@ -260,10 +255,7 @@ export function ArticleSidebar({
       </div>
 
       <div className={`rounded-2xl border p-5 ${panelBase}`}>
-        <h3
-          className={`font-poppins text-sm font-semibold mb-4 flex items-center gap-2 ${isDark ? 'text-slate-200' : 'text-gray-800'}`}
-        >
-          <Tag size={14} className="text-cyan-500" />{ui("Keywords and Tags")} </h3>
+        <PanelHeading icon={Tag} isDark={isDark}>{ui("Keywords and Tags")}</PanelHeading>
         {article.keywords.length > 0 ? (
           <div className="flex flex-wrap gap-2 mb-4">
             {article.keywords.map((keyword) => (
@@ -297,15 +289,7 @@ export function ArticleSidebar({
 
       {/* Trending Topics */}
       <div className={`rounded-2xl border p-5 ${panelBase}`}>
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center">
-            <TrendingUp size={13} className="text-white" />
-          </div>
-          <h3
-            className={`font-poppins text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-gray-800'}`}
-          >{ui("Trending Topics (")}{ui(article.topic)})
-          </h3>
-        </div>
+        <PanelHeading icon={TrendingUp} isDark={isDark} className="mb-3">{ui("Trending Topics (")}{ui(article.topic)})</PanelHeading>
         <div className="space-y-2">
           {categoryTrendingKeywords.length === 0 ? (
             <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
@@ -345,15 +329,7 @@ export function ArticleSidebar({
       {/* Live View */}
       <div className={`rounded-2xl border p-5 ${panelBase}`}>
         <div className="flex items-center justify-between gap-2 mb-3">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center">
-              <Clock3 size={13} className="text-white" />
-            </div>
-            <h3
-              className={`font-poppins text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-gray-800'}`}
-            >{ui("Live View (")}{ui(article.topic)})
-            </h3>
-          </div>
+          <PanelHeading icon={Clock3} isDark={isDark} className="">{ui("Live View (")}{ui(article.topic)})</PanelHeading>
           <span
             className={`text-[11px] px-2 py-0.5 rounded-full ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-gray-100 text-gray-600'}`}
           >
@@ -393,9 +369,7 @@ export function ArticleSidebar({
 
       {/* Entities */}
       <div className={`rounded-2xl border p-5 ${panelBase}`}>
-        <h3
-          className={`font-poppins text-sm font-semibold mb-4 ${isDark ? 'text-slate-200' : 'text-gray-800'}`}
-        >{ui("Entities")} </h3>
+        <PanelHeading icon={ScanSearch} isDark={isDark}>{ui("Entities")}</PanelHeading>
         <div className="space-y-4">
           <EntityBlock
             title={ui("Persons")}
@@ -426,10 +400,7 @@ export function ArticleSidebar({
 
       {/* Related Coverage */}
       <div className={`rounded-2xl border p-5 ${panelBase}`}>
-        <h3
-          className={`font-poppins text-sm font-semibold mb-4 flex items-center gap-2 ${isDark ? 'text-slate-200' : 'text-gray-800'}`}
-        >
-          <Link2 size={14} className="text-cyan-500" />{ui("Related Coverage")} </h3>
+        <PanelHeading icon={Link2} isDark={isDark}>{ui("Related Coverage")}</PanelHeading>
         <div className="space-y-2.5">
           {article.relatedUrls.length === 0 ? (
             <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{ui("No related links extracted.")} </p>

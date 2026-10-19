@@ -86,6 +86,25 @@ export async function sendPasswordResetEmail(to: string, rawToken: string) {
   )
 }
 
+// Google-only accounts add their first password through this link, which
+// proves control of the inbox instead of trusting the browser session alone.
+export async function sendSetPasswordEmail(to: string, rawToken: string) {
+  const link = `${publicClientUrl()}/reset-password?token=${rawToken}`
+  await send(
+    to,
+    'Set a password for your NewsAgg account',
+    wrap(
+      'Set your password',
+      'You asked to add a password to your NewsAgg account, which currently signs in with Google. This link expires in 30 minutes. If you did not ask for this, ignore this email.',
+      'Set password',
+      link
+    ),
+    `Set a password for your NewsAgg account: ${link}
+
+This link expires in 30 minutes. If you did not request it, ignore this email.`
+  )
+}
+
 export async function sendVerificationEmail(to: string, rawToken: string) {
   const link = `${publicClientUrl()}/verify-email?token=${rawToken}`
   await send(

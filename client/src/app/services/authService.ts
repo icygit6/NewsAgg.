@@ -222,6 +222,10 @@ export const authService = {
       body: JSON.stringify({ username }),
     }),
 
+  // Google-only accounts add a first password through an emailed link.
+  requestPasswordLink: (): Promise<AccountResponse & { message?: string }> =>
+    accountFetch('/api/account/password-link', { method: 'POST' }),
+
   changePassword: (currentPassword: string, newPassword: string): Promise<AccountResponse> =>
     accountFetch('/api/account/password', {
       method: 'PATCH',

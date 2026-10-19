@@ -14,10 +14,10 @@ import {
   verifyEmailSchema,
 } from '../middleware/validate'
 import {
-  generateToken,
   hashToken,
   RESET_TOKEN_TTL_MS,
   VERIFY_TOKEN_TTL_MS,
+  issueToken,
 } from '../lib/tokens'
 import { sendPasswordResetEmail, sendVerificationEmail } from '../services/mailer'
 import { verifyGoogleIdToken } from '../services/googleIdentity'
@@ -56,22 +56,6 @@ function shapeUser(row: any) {
   }
 }
 
-// Issue a single-use token of the given kind, storing only its hash. Any
-// previous unused token of the same kind for this user is dropped first, so a
-// user only ever has one outstanding reset / verify link.
-async function issueToken(userId: number | string, kind: 'reset' | 'verify', ttlMs: number) {
-  const { raw, hash } = generateToken()
-  const expiresAt = new Date(Date.now() + ttlMs)
-  await query('DELETE FROM auth_tokens WHERE user_id = $1 AND kind = $2 AND used_at IS NULL', [
-    userId,
-    kind,
-  ])
-  await query(
-    'INSERT INTO auth_tokens (user_id, token_hash, kind, expires_at) VALUES ($1, $2, $3, $4)',
-    [userId, hash, kind, expiresAt]
-  )
-  return raw
-}
 
 // POST /auth/register
 authRouter.post(

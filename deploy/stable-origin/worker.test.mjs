@@ -39,3 +39,14 @@ test('returns a non-cacheable offline response',async(t)=>{
   assert.equal(r.status,503);
   assert.equal(r.headers.get('Cache-Control'),'no-store');
 });
+
+test('lets search engines index reader pages but not private paths',async(t)=>{
+  t.mock.method(globalThis,'fetch',async()=>new Response('ok',{headers:{'X-Robots-Tag':'none'}}));
+  const env={NEWSAGG_ORIGIN:'https://old-tunnel.trycloudflare.com'};
+  const home=await worker.fetch(new Request('https://newsagg.example.workers.dev/article/0123456789abcdef'),env);
+  assert.equal(home.headers.get('X-Robots-Tag'),null);
+  for(const path of ['/api/news-from-db','/admin','/dbviewer/']){
+    const r=await worker.fetch(new Request(`https://newsagg.example.workers.dev${path}`),env);
+    assert.equal(r.headers.get('X-Robots-Tag'),'noindex, nofollow');
+  }
+});

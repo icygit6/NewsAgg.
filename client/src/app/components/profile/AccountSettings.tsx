@@ -1,7 +1,7 @@
 import { useUiText } from '../../i18n/uiText';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Eye, EyeOff, KeyRound, Link2, Loader2, MonitorSmartphone, ShieldCheck, Trash2, Unlink, UserPen } from 'lucide-react';
+import { Eye, EyeOff, KeyRound, Link2, Loader2, MonitorSmartphone, ShieldCheck, TriangleAlert, Unlink, UserPen } from 'lucide-react';
 import { LocalizedGoogleLogin } from '../auth/LocalizedGoogleLogin';
 import { useApp } from '../../contexts/AppContext';
 import { authService } from '../../services/authService';
@@ -28,6 +28,7 @@ export function AccountSettings({ isDark }: AccountSettingsProps) {
   const [showPasswords, setShowPasswords] = useState(false);
   const [passwordMsg, setPasswordMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [savingPassword, setSavingPassword] = useState(false);
+  const [sendingLink, setSendingLink] = useState(false);
 
   const [googleMsg, setGoogleMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [disconnectingGoogle, setDisconnectingGoogle] = useState(false);
@@ -84,6 +85,16 @@ export function AccountSettings({ isDark }: AccountSettingsProps) {
     authService.setUser(updatedUser);
     setProfileMsg({ ok: true, text: t.profileUpdated });
     setSavingProfile(false);
+  };
+
+  const sendPasswordLink = async () => {
+    setSendingLink(true);
+    setPasswordMsg(null);
+    const res = await authService.requestPasswordLink();
+    setPasswordMsg(res.success
+      ? { ok: true, text: 'We emailed you a link to set your password. It expires in 30 minutes.' }
+      : { ok: false, text: res.error || 'Could not send the link' });
+    setSendingLink(false);
   };
 
   const savePassword = async () => {
@@ -175,14 +186,14 @@ export function AccountSettings({ isDark }: AccountSettingsProps) {
   const msgClass = (ok: boolean) => `mt-2 text-xs ${ok ? 'text-emerald-500' : 'text-rose-500'}`;
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       <div className={`rounded-2xl border p-1.5 ${isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white/90 border-slate-200'}`}>
         <div className="grid grid-cols-2 gap-1 sm:grid-cols-4" role="tablist" aria-label={ui("Account settings")}>
           {([
             ['profile', ui('Profile'), UserPen],
             ['security', ui('Security'), ShieldCheck],
             ['connections', ui('Sign-in'), Link2],
-            ['danger', ui('Danger zone'), Trash2],
+            ['danger', ui('Danger zone'), TriangleAlert],
           ] as const).map(([key, label, Icon]) => (
             <button
               key={key}
@@ -227,8 +238,15 @@ export function AccountSettings({ isDark }: AccountSettingsProps) {
       {activeSection === 'security' && <>
       <div className={panel}>
         <h2 className={heading}><KeyRound size={14} className="text-cyan-500" />{t.changePassword}</h2>
-        <div className="space-y-3">
-          {user?.hasPassword !== false && <div>
+        {user?.hasPassword === false ? <div className="space-y-3">
+          <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{ui("You sign in with Google, so this account has no NewsAgg password yet. To add one, we email a single-use link to your address; opening it proves the inbox is yours.")}</p>
+          <button onClick={() => void sendPasswordLink()} disabled={sendingLink} className={primaryBtn}>
+            {sendingLink && <Loader2 size={14} className="animate-spin" />}
+            {ui("Email me a link to set a password")}
+          </button>
+          {passwordMsg && <p role="status" aria-live="polite" className={msgClass(passwordMsg.ok)}>{ui(passwordMsg.text)}</p>}
+        </div> : <div className="space-y-3">
+          <div>
             <label htmlFor="current-password" className={labelClass}>{t.currentPassword}</label>
             <input
               type={showPasswords ? 'text' : 'password'}
@@ -239,7 +257,7 @@ export function AccountSettings({ isDark }: AccountSettingsProps) {
               className={inputClass}
               autoComplete="current-password"
             />
-          </div>}
+          </div>
           <div>
             <label htmlFor="new-password" className={labelClass}>{t.newPassword}</label>
             <div className="relative">
@@ -265,15 +283,15 @@ export function AccountSettings({ isDark }: AccountSettingsProps) {
           </div>
           <button
             onClick={savePassword}
-            disabled={savingPassword || (user?.hasPassword !== false && !currentPassword) || newPassword.length < 8}
+            disabled={savingPassword || !currentPassword || newPassword.length < 8 || newPassword === currentPassword}
             className={primaryBtn}
           >
             {savingPassword && <Loader2 size={14} className="animate-spin" />}
             {t.changePassword}
           </button>
-          <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>{ui("Use at least 8 characters. Changing it signs out every other session.")}</p>
+          <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>{ui("Enter your current password first. Use at least 8 characters, different from the current one. Changing it signs out every other session.")}</p>
           {passwordMsg && <p role="status" aria-live="polite" className={msgClass(passwordMsg.ok)}>{ui(passwordMsg.text)}</p>}
-        </div>
+        </div>}
       </div>
 
       <div className={panel}>
@@ -362,7 +380,7 @@ export function AccountSettings({ isDark }: AccountSettingsProps) {
       {/* Danger zone */}
       {activeSection === 'danger' && <div className={`rounded-3xl border p-5 sm:p-6 ${isDark ? 'bg-red-950/20 border-red-900/40' : 'bg-red-50/60 border-red-200'}`}>
         <h2 className={`font-poppins text-sm font-semibold mb-2 flex items-center gap-2 ${isDark ? 'text-red-300' : 'text-red-700'}`}>
-          <Trash2 size={14} />{t.deleteAccount}
+          <TriangleAlert size={14} />{t.deleteAccount}
         </h2>
         <p className={`text-xs mb-3 ${isDark ? 'text-red-300/80' : 'text-red-600/90'}`}>{t.deleteAccountWarning}</p>
         {!confirmingDelete ? (

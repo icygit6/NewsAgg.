@@ -22,12 +22,15 @@
   <meta name="twitter:description" content="English and Traditional Chinese news with sentiment, topic, and keyword insights." />
   <meta name="twitter:image" content="/og-image.png?v=20260910-baseline" />
 
-  <!-- Preconnect to the image CDNs that serve hero/LCP photos (no crossorigin: img loads are non-CORS) -->
-  <link rel="preconnect" href="https://ichef.bbci.co.uk" />
-  <link rel="preconnect" href="https://media.cnn.com" />
+  <!-- The hero photo can come from any of the four publishers, so a full
+       preconnect to each would mostly go unused; resolve their DNS early instead. -->
+  <link rel="dns-prefetch" href="https://s.yimg.com" />
+  <link rel="dns-prefetch" href="https://ichef.bbci.co.uk" />
+  <link rel="dns-prefetch" href="https://media.cnn.com" />
+  <link rel="dns-prefetch" href="https://www.aljazeera.com" />
 
   <!-- Preconnect for Google Fonts to improve LCP / FCP -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'" />
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" /></noscript>

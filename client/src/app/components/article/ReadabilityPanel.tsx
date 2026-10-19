@@ -1,6 +1,8 @@
 import { useUiText } from '../../i18n/uiText';
 import type { NewsArticle } from '../../types/article';
 import { panelBaseClass, mutedTextClass } from './helpers';
+import { PanelHeading } from '../ui/PanelHeading';
+import { BookOpenText } from 'lucide-react';
 
 export function ReadabilityPanel({ article, isDark }: { article: NewsArticle; isDark: boolean }) {
   const ui = useUiText();
@@ -12,7 +14,7 @@ export function ReadabilityPanel({ article, isDark }: { article: NewsArticle; is
     return score.toFixed(1);
   };
   return <section className={`rounded-2xl border p-5 ${panelBaseClass(isDark)}`}>
-    <h3 className="text-sm font-semibold mb-3">{ui("Readability")}</h3>
+    <PanelHeading icon={BookOpenText} isDark={isDark} className="mb-3">{ui("Readability")}</PanelHeading>
     <dl className="space-y-3 text-sm">
       <div className="flex justify-between gap-3"><dt>{ui("Reading grade")}</dt><dd>{value(metrics.fleschKincaid)}</dd></div>
       <div className="flex justify-between gap-3"><dt>{ui("Flesch score")}</dt><dd>{value(metrics.fleschScore)}</dd></div>

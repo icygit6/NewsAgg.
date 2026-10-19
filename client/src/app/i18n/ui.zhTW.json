@@ -129,5 +129,16 @@
   "Delete permanently": "永久刪除",
   "Delete user": "刪除使用者",
   "Deleting a user also removes their posts, comments, likes, bookmarks and sessions. This cannot be undone.": "刪除使用者會一併移除其貼文、留言、按讚、書籤與登入工作階段，且無法復原。",
-  "open reports": "則待處理回報"
+  "open reports": "則待處理回報",
+  "No photo from the publisher": "出版者未提供照片",
+  "Show email and activity": "顯示電子郵件與活動時間",
+  "Hide email and activity": "隱藏電子郵件與活動時間",
+  "You sign in with Google, so this account has no NewsAgg password yet. To add one, we email a single-use link to your address; opening it proves the inbox is yours.": "此帳號以 Google 登入，尚未設定 NewsAgg 密碼。若要新增，我們會寄一次性連結到你的信箱；開啟連結即可證明信箱屬於你。",
+  "Email me a link to set a password": "寄送設定密碼的連結",
+  "We emailed you a link to set your password. It expires in 30 minutes.": "設定密碼的連結已寄出，30 分鐘內有效。",
+  "Could not send the link": "無法寄出連結",
+  "Enter your current password first. Use at least 8 characters, different from the current one. Changing it signs out every other session.": "請先輸入目前的密碼。新密碼至少 8 個字元，且不可與目前密碼相同。變更後會登出其他所有工作階段。",
+  "Choose a new password that differs from the current one": "新密碼不可與目前密碼相同",
+  "This account signs in with Google. Use the emailed link to add a password.": "此帳號以 Google 登入，請使用寄到信箱的連結新增密碼。",
+  "Current password is incorrect": "目前密碼不正確"
 }

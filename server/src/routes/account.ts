@@ -16,6 +16,8 @@ import {
   accountPreferencesSchema,
 } from '../middleware/validate'
 import { verifyGoogleIdToken } from '../services/googleIdentity'
+import { sendSetPasswordEmail } from '../services/mailer'
+import { RESET_TOKEN_TTL_MS, issueToken } from '../lib/tokens'
 import { accountWriteLimiter } from '../middleware/rateLimit'
 import { clearSessionCookie, createSession, setSessionCookie } from '../lib/session'
 
@@ -99,6 +101,25 @@ accountRouter.patch('/profile', validateBody(profileSchema), async (req: any, re
   }
 })
 
+// POST /api/account/password-link — emails a single-use link that sets a
+// password. This is the only way a Google-only account gains one.
+accountRouter.post('/password-link', async (req: any, res: Response) => {
+  try {
+    const result = await query('SELECT email, password FROM users WHERE id = $1', [req.userId])
+    const account = result.rows[0]
+    if (!account) return res.status(401).json({ success: false, error: 'Account no longer exists' })
+    if (account.password) {
+      return res.status(409).json({ success: false, error: 'This account already has a password; change it with your current password' })
+    }
+    const raw = await issueToken(req.userId, 'reset', RESET_TOKEN_TTL_MS)
+    await sendSetPasswordEmail(account.email, raw)
+    res.json({ success: true, message: 'We emailed you a link to set your password. It expires in 30 minutes.' })
+  } catch (err: any) {
+    logger.error({ err: err?.message }, '[POST /api/account/password-link]')
+    res.status(500).json({ success: false, error: 'Could not send the link' })
+  }
+})
+
 // PATCH /api/account/password
 accountRouter.patch(
   '/password',
@@ -111,11 +132,17 @@ accountRouter.patch(
         return res.status(401).json({ success: false, error: 'Account no longer exists' })
       }
       const stored = result.rows[0].password
-      if (stored) {
-        const ok = await bcrypt.compare(currentPassword, stored)
-        if (!ok) {
-          return res.status(400).json({ success: false, error: 'Current password is incorrect' })
-        }
+      // A session alone never sets the first password: Google-only accounts
+      // use the emailed link from POST /password-link instead.
+      if (!stored) {
+        return res.status(403).json({ success: false, code: 'PASSWORD_LINK_REQUIRED', error: 'This account signs in with Google. Use the emailed link to add a password.' })
+      }
+      const ok = await bcrypt.compare(currentPassword, stored)
+      if (!ok) {
+        return res.status(400).json({ success: false, error: 'Current password is incorrect' })
+      }
+      if (currentPassword === newPassword) {
+        return res.status(400).json({ success: false, error: 'Choose a new password that differs from the current one' })
       }
       const hashed = await bcrypt.hash(newPassword, 10)
       await query('UPDATE users SET password = $1 WHERE id = $2', [hashed, req.userId])

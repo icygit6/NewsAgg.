@@ -1,6 +1,8 @@
 import { useUiText } from '../i18n/uiText';
 import { useApp } from '../contexts/AppContext';
 import { GradientBarWithPointer } from './ui/GradientBarWithPointer';
+import { PanelHeading } from './ui/PanelHeading';
+import { Activity } from 'lucide-react';
 import type { NewsArticle } from '../types/article';
 import type { SentimentType } from '../types/sentiment';
 
@@ -68,9 +70,7 @@ export function ArticleSentimentPanel({ article, isDark }: ArticleSentimentPanel
 
     return (
         <div className={`rounded-2xl border p-5 ${panelBase}`}>
-            <h3 className={`font-poppins text-sm font-semibold mb-3 ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>
-                {t.articleSentiment}
-            </h3>
+            <PanelHeading icon={Activity} isDark={isDark} className="mb-3">{t.articleSentiment}</PanelHeading>
 
             <div className="space-y-2">
                 <GradientBarWithPointer

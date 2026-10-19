@@ -1,6 +1,6 @@
 import { useUiText } from '../../i18n/uiText';
 import { useRef, useState } from 'react';
-import { CalendarDays, Clock3, Palette } from 'lucide-react';
+import { CalendarDays, Clock3, Eye, EyeOff, Palette } from 'lucide-react';
 import { authService } from '../../services/authService';
 import { useApp } from '../../contexts/AppContext';
 import { AvatarEditor } from './AvatarEditor';
@@ -10,6 +10,13 @@ import { prepareBackground } from '../../lib/prepareBackground';
 interface ProfileHeaderProps {
   isDark: boolean;
 }
+
+// Hide most of the address so the profile is safe to screen-share.
+export const maskEmail = (email: string) => {
+  const [name, domain] = email.split('@');
+  if (!domain) return '•••';
+  return `${name.slice(0, Math.min(2, name.length))}${'•'.repeat(Math.max(3, name.length - 2))}@${domain}`;
+};
 
 const formatDate = (value?: string) => {
   if (!value) return null;
@@ -23,6 +30,7 @@ export function ProfileHeader({ isDark }: ProfileHeaderProps) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [reveal, setReveal] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   if (!user) return null;
 
@@ -67,7 +75,14 @@ export function ProfileHeader({ isDark }: ProfileHeaderProps) {
               {user.displayName || user.username}
             </h1>
             <p className={`mt-0.5 text-sm font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>@{user.username}</p>
-            <p className={`mt-1 truncate text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>{user.email}</p>
+            <p className={`mt-1 flex items-center gap-1.5 text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
+              <span className="truncate">{reveal ? user.email : maskEmail(user.email)}</span>
+              <button type="button" onClick={() => setReveal(!reveal)} aria-pressed={reveal}
+                aria-label={reveal ? ui('Hide email and activity') : ui('Show email and activity')} title={reveal ? ui('Hide email and activity') : ui('Show email and activity')}
+                className="rounded p-0.5 hover:text-cyan-500">
+                {reveal ? <EyeOff size={13} /> : <Eye size={13} />}
+              </button>
+            </p>
           </div>
         </div>
         {user.bio && <p className={`mt-4 max-w-2xl text-sm leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{user.bio}</p>}
@@ -95,7 +110,7 @@ export function ProfileHeader({ isDark }: ProfileHeaderProps) {
             {lastLogin && (
               <span className="inline-flex items-center gap-1.5">
                 <Clock3 size={13} />
-                {t.lastActive} {lastLogin}
+                {t.lastActive} {reveal ? lastLogin : '••••'}
               </span>
             )}
         </div>

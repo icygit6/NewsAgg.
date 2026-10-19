@@ -15,10 +15,13 @@ vi.mock('../middleware/auth', () => ({
   hasSessionToken: (req: any) => Boolean(req.headers.authorization || req.headers.cookie),
 }))
 vi.mock('../services/googleIdentity', () => ({ verifyGoogleIdToken: vi.fn() }))
+vi.mock('../services/mailer', () => ({ sendSetPasswordEmail: vi.fn(), sendPasswordResetEmail: vi.fn(), sendVerificationEmail: vi.fn(), sendAdminReportEmail: vi.fn() }))
 
 import { query } from '../db/client'
 import { verifyGoogleIdToken } from '../services/googleIdentity'
 import { accountRouter } from './account'
+import { sendSetPasswordEmail } from '../services/mailer'
+import bcrypt from 'bcryptjs'
 
 const mockQuery = query as unknown as ReturnType<typeof vi.fn>
 const mockVerify = verifyGoogleIdToken as unknown as ReturnType<typeof vi.fn>
@@ -115,5 +118,45 @@ describe('boot-time session check', () => {
   it('still rejects a present but invalid session', async () => {
     const res = await request(makeApp()).get('/api/account/me').set('Authorization', 'Bearer expired')
     expect(res.status).toBe(401)
+  })
+})
+
+describe('password changes', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockQuery.mockResolvedValue({ rows: [] })
+  })
+
+  it('never lets a session set the first password of a Google-only account', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ password: null }] })
+    const response = await request(makeApp()).patch('/api/account/password').send({ newPassword: 'a-new-password' })
+    expect(response.status).toBe(403)
+    expect(response.body.code).toBe('PASSWORD_LINK_REQUIRED')
+    expect(mockQuery).toHaveBeenCalledTimes(1)
+  })
+
+  it('requires the current password and a different new one', async () => {
+    const stored = await bcrypt.hash('old-password', 4)
+    mockQuery.mockResolvedValueOnce({ rows: [{ password: stored }] })
+    const wrong = await request(makeApp()).patch('/api/account/password').send({ currentPassword: 'guess', newPassword: 'another-password' })
+    expect(wrong.status).toBe(400)
+    mockQuery.mockResolvedValueOnce({ rows: [{ password: stored }] })
+    const same = await request(makeApp()).patch('/api/account/password').send({ currentPassword: 'old-password', newPassword: 'old-password' })
+    expect(same.status).toBe(400)
+  })
+
+  it('emails a set-password link to a Google-only account', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ email: 'reader@example.com', password: null }] })
+    const response = await request(makeApp()).post('/api/account/password-link')
+    expect(response.status).toBe(200)
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('INSERT INTO auth_tokens'), expect.arrayContaining([7, 'reset']))
+    expect(sendSetPasswordEmail).toHaveBeenCalledWith('reader@example.com', expect.any(String))
+  })
+
+  it('refuses the link when a password already exists', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ email: 'reader@example.com', password: 'hash' }] })
+    const response = await request(makeApp()).post('/api/account/password-link')
+    expect(response.status).toBe(409)
+    expect(sendSetPasswordEmail).not.toHaveBeenCalled()
   })
 })
