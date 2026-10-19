@@ -7,7 +7,7 @@ import {freezeEdition} from './daily-edition.mjs';
 const config=JSON.parse(fs.readFileSync(new URL('../../ops/daily-config.json',import.meta.url),'utf8'));
 const dsn=new URL(process.env.NEONDB_URL||process.env.DATABASE_URL||process.env.NEON_DSN);
 dsn.searchParams.delete('sslmode');dsn.searchParams.delete('sslrootcert');
-const client=new pg.Client({connectionString:dsn.toString(),ssl:{rejectUnauthorized:true},connectionTimeoutMillis:15000,query_timeout:30000});
+const client=new pg.Client({connectionString:dsn.toString(),ssl:['localhost','127.0.0.1','db'].includes(dsn.hostname)?false:{rejectUnauthorized:true},connectionTimeoutMillis:15000,query_timeout:30000});
 await client.connect();
 try {
   await client.query('BEGIN');

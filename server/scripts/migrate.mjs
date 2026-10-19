@@ -19,7 +19,7 @@ if (!connectionString) {
   process.exit(1);
 }
 
-const pool = new pg.Pool({ connectionString, ssl: { rejectUnauthorized: true }, connectionTimeoutMillis: 15000 });
+const pool = new pg.Pool({ connectionString, ssl: ['localhost', '127.0.0.1', 'db'].includes(new URL(connectionString).hostname) ? false : { rejectUnauthorized: true }, connectionTimeoutMillis: 15000 });
 try {
   await pool.query(sql);
   const tables = await pool.query(

@@ -3,7 +3,7 @@ import 'dotenv/config';
 import pg from 'pg';
 const dsn=new URL(process.env.NEONDB_URL||process.env.DATABASE_URL||process.env.NEON_DSN);
 dsn.searchParams.delete('sslmode');dsn.searchParams.delete('sslrootcert');
-const client=new pg.Client({connectionString:dsn.toString(),ssl:{rejectUnauthorized:true},connectionTimeoutMillis:15000,query_timeout:30000});
+const client=new pg.Client({connectionString:dsn.toString(),ssl:['localhost','127.0.0.1','db'].includes(dsn.hostname)?false:{rejectUnauthorized:true},connectionTimeoutMillis:15000,query_timeout:30000});
 try {
   await client.connect();
   const staging=await client.query('SELECT status,count(*)::int FROM staging.articles GROUP BY status ORDER BY status');

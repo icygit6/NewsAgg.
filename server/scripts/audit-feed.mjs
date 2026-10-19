@@ -3,7 +3,7 @@ import 'dotenv/config';
 import pg from 'pg';
 const url = new URL(process.env.NEONDB_URL || process.env.DATABASE_URL || process.env.NEON_DSN);
 url.searchParams.delete('sslmode'); url.searchParams.delete('sslrootcert');
-const db = new pg.Client({connectionString:url.toString(),ssl:{rejectUnauthorized:true},connectionTimeoutMillis:15000,query_timeout:30000});
+const db = new pg.Client({connectionString:url.toString(),ssl:['localhost','127.0.0.1','db'].includes(url.hostname)?false:{rejectUnauthorized:true},connectionTimeoutMillis:15000,query_timeout:30000});
 try {
   await db.connect();
   const storage = await db.query(`SELECT pg_database_size(current_database())::bigint AS database_bytes,

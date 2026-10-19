@@ -28,3 +28,6 @@ logs/
 .vscode/
 .idea/
 Thumbs.db
+
+# Local database dumps (contain account data)
+backups/

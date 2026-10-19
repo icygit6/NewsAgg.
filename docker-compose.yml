@@ -1,12 +1,55 @@
 services:
+  # Local PostgreSQL 18 + pgvector. Replaced Neon on 19 Oct 2026 after the free
+  # compute-hour quota ran out. Data lives in the pgdata volume; containers use
+  # host "db", host-side scripts use 127.0.0.1:5433 from server/.env.
+  db:
+    build:
+      context: ./deploy/postgres
+    environment:
+      POSTGRES_USER: newsagg
+      POSTGRES_DB: newsagg
+      POSTGRES_PASSWORD: "${NEWSAGG_DB_PASSWORD:?set NEWSAGG_DB_PASSWORD in .env}"
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "newsagg", "-d", "newsagg"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    mem_limit: 1g
+    restart: unless-stopped
+
+  # Read-only table browser for the local database: http://127.0.0.1:8081
+  # Bound to this laptop only; never routed through the public tunnel.
+  dbviewer:
+    image: mirror.gcr.io/sosedoff/pgweb:0.16.2
+    command: ["pgweb", "--bind=0.0.0.0", "--listen=8081", "--readonly", "--skip-open"]
+    environment:
+      PGWEB_DATABASE_URL: "postgres://newsagg:${NEWSAGG_DB_PASSWORD}@db:5432/newsagg?sslmode=disable"
+    ports:
+      - "127.0.0.1:8081:8081"
+    depends_on:
+      db:
+        condition: service_healthy
+    mem_limit: 128m
+    restart: unless-stopped
+
   server:
     build:
       context: ./server
       dockerfile: Dockerfile
     ports:
       - "127.0.0.1:3000:3000"
-    env_file: ./server/.env          # loads NeonDB URL + all API keys at runtime
+    env_file: ./server/.env          # API keys; the database URL is overridden below
+    depends_on:
+      db:
+        condition: service_healthy
     environment:
+      NEONDB_URL: "postgres://newsagg:${NEWSAGG_DB_PASSWORD}@db:5432/newsagg"
+      DATABASE_URL: "postgres://newsagg:${NEWSAGG_DB_PASSWORD}@db:5432/newsagg"
       NODE_ENV: production
       PORT: 3000                      # operational override; .env has no PORT
       CLIENT_URL: "${NEWSAGG_STABLE_URL:-${CLIENT_URL:-http://localhost:8080}}"
@@ -98,11 +141,16 @@ services:
       context: ./scraper
       dockerfile: Dockerfile
     env_file:
-      - path: ./server/.env         # NEONDB_URL + application API keys
+      - path: ./server/.env         # application API keys; database URL overridden below
         required: true
       - path: ./server/.hf.env      # local Hugging Face token; ignored by Git
         required: false
+    depends_on:
+      db:
+        condition: service_healthy
     environment:
+      NEONDB_URL: "postgres://newsagg:${NEWSAGG_DB_PASSWORD}@db:5432/newsagg"
+      DATABASE_URL: "postgres://newsagg:${NEWSAGG_DB_PASSWORD}@db:5432/newsagg"
       GEMINI_TRANSLATE_MODEL: "${GEMINI_TRANSLATE_MODEL:-gemini-3.5-flash-lite}"
       LOCAL_AI_URL: http://local-ai:8090
     volumes:
@@ -112,5 +160,6 @@ services:
     restart: "no"
 
 volumes:
+  pgdata:
   hf_cache:
   market_cache:
