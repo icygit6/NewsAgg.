@@ -47,7 +47,7 @@ export function ArticleHeader({ article, isDark }: ArticleHeaderProps) {
   return (
     <>
       <div className="relative rounded-2xl overflow-hidden mb-5 shadow-lg">
-        <ImageWithFallback src={article.urlToImage || article.images[0]?.url || undefined} alt={article.title} className="w-full h-auto object-contain" />
+        <ImageWithFallback src={article.urlToImage || article.images[0]?.url || undefined} fallbackSources={article.images.map((image) => image.url)} alt={article.title} className="w-full h-auto object-contain" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/65 to-transparent" />
         <div className="absolute top-3 left-3 flex flex-wrap items-center gap-2">
           <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${topicBadgeClass}`}>{ui(article.topic)}</span>

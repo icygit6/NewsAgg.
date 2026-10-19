@@ -31,9 +31,9 @@ export function CategoryFeed({ articles, category, total }: { articles: NewsArti
           const date = new Date(article.publishedAt);
           return (
             <article key={id} className={`p-5 sm:p-6 ${index === 0 ? 'pb-6' : ''}`}>
-              {index === 0 && article.urlToImage && (
+              {index === 0 && (article.urlToImage || article.images.length > 0) && (
                 <Link to={`/article/${id}`} className="mb-5 block overflow-hidden rounded-xl">
-                  <ImageWithFallback src={article.urlToImage} alt={article.title} className="aspect-[2/1] max-h-72 w-full object-cover" />
+                  <ImageWithFallback src={article.urlToImage || undefined} fallbackSources={article.images.map((image) => image.url)} alt={article.title} className="aspect-[2/1] max-h-72 w-full object-cover" />
                 </Link>
               )}
               <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">

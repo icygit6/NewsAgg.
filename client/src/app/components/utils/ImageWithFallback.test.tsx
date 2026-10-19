@@ -16,13 +16,28 @@ describe('ImageWithFallback', () => {
     fireEvent.error(screen.getByAltText('broken'))
     // The original alt is gone; the fallback placeholder is shown instead.
     expect(screen.queryByAltText('broken')).not.toBeInTheDocument()
-    expect(screen.getByAltText('Image unavailable')).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'No photo from the publisher' })).toBeInTheDocument()
   })
   it('recovers when a different article image replaces a failed source', () => {
     const { rerender } = render(<ImageWithFallback src="https://example.com/old.jpg" alt="old" />)
     fireEvent.error(screen.getByAltText('old'))
     rerender(<ImageWithFallback src="https://example.com/new.jpg" alt="new" />)
     expect(screen.getByAltText('new')).toHaveAttribute('src', 'https://example.com/new.jpg')
-    expect(screen.queryByAltText('Image unavailable')).not.toBeInTheDocument()
+    expect(screen.queryByRole('img', { name: 'No photo from the publisher' })).not.toBeInTheDocument()
   })
+  it('retries the original Yahoo asset before using an article alternative', () => {
+    const original = 'https://media.zenfs.com/en/news/photo.jpg';
+    const resized = `https://s.yimg.com/lo/mysterio/api/hash/resize/${encodeURIComponent(original)}`;
+    render(<ImageWithFallback src={resized} fallbackSources={['https://example.com/second.jpg']} alt="story" />);
+    fireEvent.error(screen.getByAltText('story'));
+    expect(screen.getByAltText('story')).toHaveAttribute('src', original);
+    fireEvent.error(screen.getByAltText('story'));
+    expect(screen.getByAltText('story')).toHaveAttribute('src', 'https://example.com/second.jpg');
+    fireEvent.error(screen.getByAltText('story'));
+    expect(screen.getByRole('img', { name: 'No photo from the publisher' })).toBeInTheDocument();
+  });
+  it('uses a verified alternative when the primary source is empty', () => {
+    render(<ImageWithFallback fallbackSources={['https://example.com/second.jpg']} alt="story" />);
+    expect(screen.getByAltText('story')).toHaveAttribute('src', 'https://example.com/second.jpg');
+  });
 })

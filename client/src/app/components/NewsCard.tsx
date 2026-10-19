@@ -66,6 +66,7 @@ export function NewsCard({ article }: NewsCardProps) {
           <div className="relative h-52 flex-shrink-0 overflow-hidden sm:h-56 lg:h-60">
             <ImageWithFallback
               src={article.urlToImage || secondaryImage || undefined}
+              fallbackSources={article.images.map((image) => image.url)}
               alt={article.title}
               loading="lazy"
               decoding="async"

@@ -102,6 +102,7 @@ export function HeroCarousel() {
         >
           <ImageWithFallback
             src={article.urlToImage || article.images[0]?.url || undefined}
+            fallbackSources={article.images.map((image) => image.url)}
             alt={article.title}
             className="w-full h-full object-cover"
             fetchPriority="high"
