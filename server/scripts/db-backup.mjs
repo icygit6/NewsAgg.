@@ -9,7 +9,8 @@ import {fileURLToPath} from 'node:url';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..','..');
 const dir=path.join(root,'backups');
 const logFile=path.join(root,'logs','db-backup.log');
-const KEEP=14;
+// db-maintenance.mjs runs this weekly with NEWSAGG_BACKUP_KEEP=8 (two months).
+const KEEP=Math.max(1,Number(process.env.NEWSAGG_BACKUP_KEEP)||14);
 
 const log=message=>{
   fs.mkdirSync(path.dirname(logFile),{recursive:true});

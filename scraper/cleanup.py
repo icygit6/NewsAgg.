@@ -1,28 +1,34 @@
 #!/usr/bin/env python
-"""Delete stale articles: older than N days AND not protected/bookmarked.
+"""Weekly database cleansing: remove stale and out-of-policy rows.
 
-The default run is a DRY RUN that only reports what would be deleted. The
---commit flag applies the deletion (and removes orphan translations), --days
-overrides the 45-day threshold, and --vacuum / --vacuum-full reclaim
-dead-tuple space afterwards.
+The default run is a DRY RUN that only reports what would be deleted;
+--commit applies it in one transaction. What goes:
 
-This script is defensive about the LIVE schema (memory: db-schema-divergence):
-  * If the `protected` column exists, it is honoured (protected rows kept).
-  * If a `bookmarks` table exists, any bookmarked article is kept regardless
-    of age (covers the live schema, whose bookmarks may not flip `protected`).
-  * If a `posts` table exists (F7 feature), articles attached to posts are
-    kept too — deleting them would blank the embedded cards in the feed.
-  * Orphan `translations` rows (their article already gone) are deleted on
-    commit; they are dead weight NeonDB still bills as storage.
-Deletion is destructive and IRREVERSIBLE, so the default is a dry run.
-VACUUM runs on a separate autocommit connection (it cannot run inside a
-transaction block); VACUUM FULL takes an ACCESS EXCLUSIVE lock and needs
-copy space — rows are deleted first, small tables vacuumed first.
+  1. Articles published more than --days ago (default 45). The public feed
+     shows 30 days and ingestion looks back 48 hours, so these are no longer
+     shown anywhere except by direct link.
+  2. Articles that failed the publication gate (feed_eligible = false) and are
+     older than --ineligible-days (default 7): quarantined duplicates and
+     rows that never met the body/date/topic rules.
+  3. Staging candidates: rejected ones older than --staging-days (default 14),
+     and published ones whose article is gone.
+  4. Orphans: translations and authors no article references any more.
+
+Never deleted, whatever their age:
+  * articles flagged `protected`, bookmarked, or attached to a user post;
+  * the frozen 120-article NLP evaluation sample listed in --protect-file
+    (a commit refuses to run if that file is missing or empty);
+  * accounts, posts, comments, reports and newsletter history.
+
+Publication receipts of deleted articles are removed with them (that foreign
+key does not cascade). Take a backup first; the weekly task does
+(server/scripts/db-maintenance.mjs). --vacuum / --vacuum-full reclaim space.
 """
 from __future__ import annotations
 
 import argparse
 import os
+import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -30,78 +36,120 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from core import config, db          # noqa: E402  (config also runs load_env)
 
 DEFAULT_DAYS = 45
+DEFAULT_INELIGIBLE_DAYS = 7
+DEFAULT_STAGING_DAYS = 14
+DEFAULT_PROTECT_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "protected-evaluation-ids.txt")
 
 
-def _table_exists(conn, table: str) -> bool:
+def _table_exists(conn, table: str, schema: str = "public") -> bool:
     with conn.cursor() as cur:
         cur.execute(
-            "SELECT 1 FROM information_schema.tables WHERE table_name = %s", (table,)
+            "SELECT 1 FROM information_schema.tables WHERE table_schema = %s AND table_name = %s",
+            (schema, table),
         )
         return cur.fetchone() is not None
 
 
-def _build_where(conn, days: int) -> tuple[str, list]:
-    conds = ["published_at IS NOT NULL",
-             "published_at < NOW() - (%s || ' days')::interval"]
-    params: list = [str(days)]
+def load_protected_ids(path: str) -> list[str]:
+    """Article ids (16 hex chars) from a file; '#' starts a comment."""
+    if not os.path.exists(path):
+        return []
+    ids = []
+    with open(path, encoding="utf-8") as handle:
+        for line in handle:
+            token = line.split("#", 1)[0].strip()
+            if re.fullmatch(r"[0-9a-f]{16}", token):
+                ids.append(token)
+    return ids
 
+
+def keep_conditions(conn) -> list[str]:
+    """SQL conditions an article must satisfy to be deletable."""
+    conds = ["NOT (a.id = ANY(%(protected)s))"]
     if db.column_exists(conn, "articles", "protected"):
-        conds.append("COALESCE(protected, false) = false")
-
+        conds.append("COALESCE(a.protected, false) = false")
     if _table_exists(conn, "bookmarks"):
-        # Keep anything currently bookmarked. bookmarks.article_id is varchar
-        # in the live schema while articles.id is text -> cast both to text.
-        conds.append(
-            "id::text NOT IN "
-            "(SELECT article_id::text FROM bookmarks WHERE article_id IS NOT NULL)"
-        )
-
+        conds.append("NOT EXISTS (SELECT 1 FROM bookmarks b WHERE b.article_id::text = a.id::text)")
     if _table_exists(conn, "posts"):
-        # Keep articles attached to user posts (F7 feature) — same guard as
-        # bookmarks. No-op until the posts table exists.
-        conds.append(
-            "id::text NOT IN "
-            "(SELECT article_id::text FROM posts WHERE article_id IS NOT NULL)"
-        )
-
-    return " AND ".join(conds), params
+        conds.append("NOT EXISTS (SELECT 1 FROM posts p WHERE p.article_id::text = a.id::text)")
+    return conds
 
 
-_ORPHAN_TRANSLATIONS_WHERE = (
+def article_where(conn) -> str:
+    stale = "(a.published_at IS NOT NULL AND a.published_at < now() - make_interval(days => %(days)s))"
+    ineligible = ("(a.feed_eligible = false AND COALESCE(a.published_at, a.scraped_at, now())"
+                  " < now() - make_interval(days => %(ineligible_days)s))") if db.column_exists(conn, "articles", "scraped_at") else (
+                  "(a.feed_eligible = false AND COALESCE(a.published_at, now()) < now() - make_interval(days => %(ineligible_days)s))")
+    return f"({stale} OR {ineligible}) AND " + " AND ".join(keep_conditions(conn))
+
+
+STAGING_WHERE = (
+    "(status = 'rejected' AND COALESCE(updated_at, created_at) < now() - make_interval(days => %(staging_days)s))"
+    " OR (status = 'published' AND article_id IS NOT NULL"
+    " AND NOT EXISTS (SELECT 1 FROM public.articles a WHERE a.id = staging.articles.article_id))"
+)
+ORPHAN_TRANSLATIONS = (
     "article_id IS NOT NULL AND NOT EXISTS "
     "(SELECT 1 FROM articles a WHERE a.id::text = translations.article_id::text)"
 )
+ORPHAN_AUTHORS = "NOT EXISTS (SELECT 1 FROM articles a WHERE a.author_id = authors.id)"
 
 
-def _orphan_translations(conn, commit: bool) -> None:
-    """Count (and on --commit delete) translations whose article is gone."""
-    if not _table_exists(conn, "translations"):
-        return
+def _count(conn, sql: str, params: dict) -> int:
     with conn.cursor() as cur:
-        cur.execute(f"SELECT COUNT(*) FROM translations WHERE {_ORPHAN_TRANSLATIONS_WHERE}")
-        n = cur.fetchone()[0]
-    print(f"Orphan translations (article already deleted): {n}")
-    if commit and n:
-        with conn.cursor() as cur:
-            cur.execute(f"DELETE FROM translations WHERE {_ORPHAN_TRANSLATIONS_WHERE}")
-            deleted = cur.rowcount
-        conn.commit()
-        print(f"Deleted {deleted} orphan translations.")
+        cur.execute(sql, params)
+        return cur.fetchone()[0]
+
+
+def plan(conn, params: dict) -> dict:
+    """Counts for every step, computed as if earlier steps had run."""
+    where = article_where(conn)
+    counts = {
+        "stale_articles": _count(conn, f"SELECT count(*) FROM articles a WHERE a.published_at < now() - make_interval(days => %(days)s) AND {where}", params),
+        "articles": _count(conn, f"SELECT count(*) FROM articles a WHERE {where}", params),
+        "publication_receipts": _count(conn, f"SELECT count(*) FROM article_publications p WHERE p.article_id IN (SELECT a.id FROM articles a WHERE {where})", params),
+    }
+    counts["ineligible_articles"] = counts["articles"] - counts["stale_articles"]
+    if _table_exists(conn, "articles", "staging"):
+        counts["staging_rows"] = _count(conn, f"SELECT count(*) FROM staging.articles WHERE {STAGING_WHERE}", params)
+    if _table_exists(conn, "translations"):
+        counts["orphan_translations_now"] = _count(conn, f"SELECT count(*) FROM translations WHERE {ORPHAN_TRANSLATIONS}", params)
+    if _table_exists(conn, "authors") and db.column_exists(conn, "articles", "author_id"):
+        counts["orphan_authors_now"] = _count(conn, f"SELECT count(*) FROM authors WHERE {ORPHAN_AUTHORS}", params)
+    return counts
+
+
+def apply(conn, params: dict) -> dict:
+    """Delete everything in one transaction and return the row counts."""
+    where = article_where(conn)
+    done: dict[str, int] = {}
+    with conn.cursor() as cur:
+        cur.execute(f"CREATE TEMP TABLE doomed ON COMMIT DROP AS SELECT a.id FROM articles a WHERE {where}", params)
+        cur.execute("DELETE FROM article_publications WHERE article_id IN (SELECT id FROM doomed)")
+        done["publication_receipts"] = cur.rowcount
+        cur.execute("DELETE FROM articles WHERE id IN (SELECT id FROM doomed)")
+        done["articles"] = cur.rowcount
+        if _table_exists(conn, "articles", "staging"):
+            cur.execute(f"DELETE FROM staging.articles WHERE {STAGING_WHERE}", params)
+            done["staging_rows"] = cur.rowcount
+        if _table_exists(conn, "translations"):
+            cur.execute(f"DELETE FROM translations WHERE {ORPHAN_TRANSLATIONS}")
+            done["orphan_translations"] = cur.rowcount
+        if _table_exists(conn, "authors") and db.column_exists(conn, "articles", "author_id"):
+            cur.execute(f"DELETE FROM authors WHERE {ORPHAN_AUTHORS}")
+            done["orphan_authors"] = cur.rowcount
+    conn.commit()
+    return done
 
 
 def _vacuum(full: bool) -> None:
-    """VACUUM (optionally FULL) the heavy tables. Needs its own autocommit
-    connection — VACUUM cannot run inside a transaction block. Small tables
-    first: VACUUM FULL needs copy space, scarce when the DB is nearly full."""
+    """VACUUM (optionally FULL) on its own autocommit connection."""
     import psycopg2
     conn = psycopg2.connect(config.db_dsn())
     conn.autocommit = True
     try:
         with conn.cursor() as cur:
-            statements = (
-                ["VACUUM (FULL, ANALYZE) translations",
-                 "VACUUM (FULL, ANALYZE) articles"] if full else []
-            ) + ["VACUUM ANALYZE"]
+            statements = (["VACUUM (FULL, ANALYZE) articles"] if full else []) + ["VACUUM ANALYZE"]
             for stmt in statements:
                 print(f"{stmt} ...")
                 try:
@@ -113,58 +161,39 @@ def _vacuum(full: bool) -> None:
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Delete stale, unprotected articles.")
-    ap.add_argument("--days", type=int, default=DEFAULT_DAYS,
-                    help=f"age threshold in days (default {DEFAULT_DAYS})")
-    ap.add_argument("--commit", action="store_true",
-                    help="actually delete (default is a dry run)")
-    ap.add_argument("--vacuum", action="store_true",
-                    help="VACUUM ANALYZE afterwards (reclaims dead tuples)")
-    ap.add_argument("--vacuum-full", action="store_true",
-                    help="VACUUM FULL translations+articles, then VACUUM ANALYZE "
-                         "(ACCESS EXCLUSIVE lock; needs copy space)")
+    ap = argparse.ArgumentParser(description="Delete stale and out-of-policy rows (dry run by default).")
+    ap.add_argument("--days", type=int, default=DEFAULT_DAYS, help=f"article age threshold (default {DEFAULT_DAYS})")
+    ap.add_argument("--ineligible-days", type=int, default=DEFAULT_INELIGIBLE_DAYS,
+                    help=f"age before ineligible articles go (default {DEFAULT_INELIGIBLE_DAYS})")
+    ap.add_argument("--staging-days", type=int, default=DEFAULT_STAGING_DAYS,
+                    help=f"age before rejected staging candidates go (default {DEFAULT_STAGING_DAYS})")
+    ap.add_argument("--protect-file", default=DEFAULT_PROTECT_FILE, help="article ids that are never deleted")
+    ap.add_argument("--commit", action="store_true", help="actually delete (default is a dry run)")
+    ap.add_argument("--vacuum", action="store_true", help="VACUUM ANALYZE afterwards")
+    ap.add_argument("--vacuum-full", action="store_true", help="VACUUM FULL articles, then VACUUM ANALYZE")
     args = ap.parse_args()
 
     if not config.db_dsn():
         raise SystemExit("No DB DSN configured (set NEONDB_URL / DATABASE_URL / NEON_DSN).")
+    if min(args.days, args.ineligible_days, args.staging_days) < 1:
+        raise SystemExit("Age thresholds must be at least 1 day.")
+    protected = load_protected_ids(args.protect_file)
+    if args.commit and not protected:
+        raise SystemExit(f"Refusing to delete: no protected evaluation ids found in {args.protect_file}.")
+    params = {"days": args.days, "ineligible_days": args.ineligible_days,
+              "staging_days": args.staging_days, "protected": protected}
 
     conn = db.connect()
     try:
-        where, params = _build_where(conn, args.days)
-
-        with conn.cursor() as cur:
-            cur.execute(f"SELECT COUNT(*) FROM articles WHERE {where}", params)
-            n = cur.fetchone()[0]
-
-        print(f"Stale articles (> {args.days} days, not protected/bookmarked): {n}")
-        if n:
-            with conn.cursor() as cur:
-                cur.execute(
-                    f"SELECT title, published_at FROM articles WHERE {where} "
-                    f"ORDER BY published_at ASC LIMIT 10",
-                    params,
-                )
-                print("  sample:")
-                for title, pub in cur.fetchall():
-                    snippet = (title or "")[:70]
-                    print(f"    - [{pub:%Y-%m-%d}] {snippet}" if pub else f"    - {snippet}")
-
+        counts = plan(conn, params)
+        print(f"Protected evaluation articles: {len(protected)}")
+        for key, value in counts.items():
+            print(f"  {key}: {value}")
         if not args.commit:
-            _orphan_translations(conn, commit=False)
             print("\nDRY RUN — nothing deleted. Re-run with --commit to apply.")
             return
-
-        if n:
-            with conn.cursor() as cur:
-                cur.execute(f"DELETE FROM articles WHERE {where}", params)
-                deleted = cur.rowcount
-            conn.commit()
-            print(f"\nDeleted {deleted} stale articles.")
-        else:
-            print("No stale articles to delete.")
-
-        # Articles just got deleted -> their translations are now orphans too.
-        _orphan_translations(conn, commit=True)
+        done = apply(conn, params)
+        print("Deleted: " + ", ".join(f"{k}={v}" for k, v in done.items()))
     finally:
         conn.close()
 
