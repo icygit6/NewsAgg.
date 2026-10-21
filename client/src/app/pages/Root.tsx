@@ -6,6 +6,10 @@ import { ScrollToTop } from '../components/ScrollToTop';
 import { VerifyEmailBanner } from '../components/auth/VerifyEmailBanner';
 import { LoadingIndicator } from '../components/ui/ContentSkeleton';
 
+// Dev-only stress-data switch; `false &&` in the production build, so the
+// chunk is never requested.
+const DataModeToggle = lazy(() => import('../dev/DataModeToggle').then((m) => ({ default: m.DataModeToggle })));
+
 const ProfileSidebar = lazy(() =>
   import('../components/ProfileSidebar').then((module) => ({ default: module.ProfileSidebar })),
 );
@@ -41,6 +45,7 @@ export function Root() {
         </Suspense>
       )}
       <ScrollToTop />
+      {import.meta.env.DEV && <Suspense fallback={null}><DataModeToggle /></Suspense>}
     </div>
   );
 }

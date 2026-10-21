@@ -31,3 +31,9 @@ Thumbs.db
 
 # Local database dumps (contain account data)
 backups/
+
+# Playwright
+client/test-results/
+client/playwright-report/
+client/blob-report/
+client/.playwright/

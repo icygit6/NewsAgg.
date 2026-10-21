@@ -312,7 +312,7 @@ export function ArticleSidebar({
                     className={`h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-gray-100'}`}
                   >
                     <div
-                      className="h-full rounded-full transition-all duration-500"
+                      className="h-full rounded-full transition-[width] duration-300 ease-out"
                       style={{
                         width: `${(topic.count / categoryMaxKeywordCount) * 100}%`,
                         background: 'var(--brand)',

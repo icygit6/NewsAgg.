@@ -116,7 +116,7 @@ export function SentimentChart() {
                     </span>
                   </div>
                   <div className={`h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-gray-100'}`}>
-                    <div className="h-full rounded-full transition-all duration-500" style={{ width: `${percentage}%`, background: item.color }} />
+                    <div className="h-full rounded-full transition-[width] duration-300 ease-out" style={{ width: `${percentage}%`, background: item.color }} />
                   </div>
                 </div>
               );
@@ -166,7 +166,7 @@ export function SentimentChart() {
                     </span>
                   </div>
                   <div className={`h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-gray-100'}`}>
-                    <div className="h-full rounded-full transition-all duration-500" style={{ width: `${percentage}%`, background: item.color }} />
+                    <div className="h-full rounded-full transition-[width] duration-300 ease-out" style={{ width: `${percentage}%`, background: item.color }} />
                   </div>
                 </div>
               );

@@ -3,12 +3,22 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- viewport-fit=cover lets the page paint under the notch and home indicator,
+       and is what makes env(safe-area-inset-*) resolve to anything but 0px — the
+       bottom tab bar and the filter sheet both pad themselves with it.
+       interactive-widget=resizes-content makes Android Chrome shrink the layout
+       viewport for the software keyboard, as iOS already does. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
   <meta name="description" content="NewsAgg: Automated News Aggregation, NLP-Based Sentiment and Topic Classification, and Topic Insights Dashboard" />
   <link rel="icon" type="image/png" href="/favicon.png?v=20260910-baseline" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20260910-baseline" />
   <link rel="manifest" href="/manifest.webmanifest" />
-  <meta name="theme-color" content="#173a63" />
+  <!-- The status bar matches the top of the page, not the brand colour: the light
+       canvas and the dark canvas from Root.tsx. The manifest keeps the brand navy
+       for the installed app's launch and task-switcher chrome. -->
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f8fafc" />
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0b1220" />
+  <meta name="color-scheme" content="light dark" />
 
   <!-- Open Graph / Twitter (link previews). Image paths are root-relative; set
        absolute URLs at deploy time if a scraper requires them (e.g. Facebook). -->

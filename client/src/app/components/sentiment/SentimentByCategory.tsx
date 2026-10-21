@@ -86,7 +86,7 @@ export function SentimentByCategory() {
                       <span className="text-xs font-semibold tabular-nums" style={{ color: item.color }}>{item.value} ({percentage}%)</span>
                     </div>
                     <div className={`h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-gray-100'}`}>
-                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${percentage}%`, background: item.color }} />
+                      <div className="h-full rounded-full transition-[width] duration-300 ease-out" style={{ width: `${percentage}%`, background: item.color }} />
                     </div>
                   </div>
                 );

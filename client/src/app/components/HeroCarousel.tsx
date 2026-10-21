@@ -183,7 +183,7 @@ export function HeroCarousel() {
             className="p-2.5 flex items-center"
           >
             <span
-              className={`block transition-all duration-300 rounded-full ${i === idx ? 'w-5 h-1.5 bg-cyan-400' : 'w-1.5 h-1.5 bg-white/40 hover:bg-white/70'}`}
+              className={`block rounded-full transition-[width,background-color] duration-200 ease-out ${i === idx ? 'w-5 h-1.5 bg-cyan-400' : 'w-1.5 h-1.5 bg-white/40 hover:bg-white/70'}`}
             />
           </button>
         ))}

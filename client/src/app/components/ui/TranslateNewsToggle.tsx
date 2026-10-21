@@ -30,7 +30,7 @@ export function TranslateNewsToggle({ isDark, compact = false }: { isDark: boole
         aria-hidden="true"
         className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${on ? 'bg-cyan-500' : isDark ? 'bg-slate-600' : 'bg-gray-300'}`}
       >
-        <span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-all ${on ? 'left-6' : 'left-1'}`} />
+        <span className={`absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ease-out ${on ? 'translate-x-5' : 'translate-x-0'}`} />
       </span>
     </button>
   );

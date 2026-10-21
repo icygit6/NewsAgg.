@@ -184,7 +184,7 @@ export function ProfileSidebar() {
                 </div>
                 <span className="font-medium flex-1">{isDark ? t.darkMode : t.lightMode}</span>
                 <div className={`relative w-11 h-6 rounded-full transition-colors ${isDark ? 'bg-cyan-500' : 'bg-gray-300'}`}>
-                  <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${isDark ? 'left-6' : 'left-1'}`} />
+                  <div className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ease-out ${isDark ? 'translate-x-5' : 'translate-x-0'}`} />
                 </div>
               </button>
 

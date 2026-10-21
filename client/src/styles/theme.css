@@ -167,6 +167,7 @@
   body {
     @apply bg-background text-foreground;
     overflow-anchor: auto;
+    overscroll-behavior: none;
   }
 
   /* Skip layout and paint work for feed cards that are well outside the
@@ -190,6 +191,45 @@
     font-size: var(--font-size);
     overflow-anchor: auto;
     scrollbar-width: none;
+    /* The browser paints a grey flash over anything tapped that has a click
+       handler; it reads as "web page". Removing it also removes the only
+       feedback touch users had, so the :active rule below replaces it. */
+    -webkit-tap-highlight-color: transparent;
+    /* The shell is a fixed h-dvh app, not a scrolling document, so neither
+       Android's pull-to-refresh nor iOS's whole-page rubber band belongs here.
+       #main-scroll keeps its own overscroll-behavior-y: contain. */
+    overscroll-behavior: none;
+  }
+
+  /* Controls, not content: a tap should fire without the double-tap-zoom wait,
+     and a long press should not select the label. Links are left selectable. */
+  button,
+  a,
+  [role='button'],
+  [role='tab'],
+  [role='switch'] {
+    touch-action: manipulation;
+  }
+
+  button,
+  [role='button'],
+  [role='tab'],
+  [role='switch'] {
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  /* Press feedback for touch, standing in for the tap highlight removed above.
+     Opacity rather than a transform, so it cannot disturb a layout. Components
+     with their own :active (the nav bars scale) keep it and gain this too. */
+  @media (hover: none) {
+    button:active,
+    [role='button']:active,
+    [role='tab']:active,
+    [role='switch']:active {
+      opacity: 0.68;
+    }
   }
 
   html::-webkit-scrollbar {
@@ -260,5 +300,16 @@
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* Touch only, and deliberately outside @layer base so it outranks the text-sm
+   utilities the inputs carry: iOS Safari zooms the page when focus lands on an
+   input under 16px and never zooms back out. Desktop keeps the designed 14px. */
+@media (pointer: coarse) {
+  input,
+  textarea,
+  select {
+    font-size: 16px;
   }
 }
