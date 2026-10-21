@@ -1,11 +1,13 @@
 import { useUiText } from '../../i18n/uiText';
-import { useEffect, useRef, useState } from 'react';
-import { ChevronDown, Download, Languages, Loader2, Mail, Sparkles, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { AtSign, Clock3, Download, Languages, Loader2, Mail, Sparkles, Trash2 } from 'lucide-react';
 import { mem0Service } from '../../services/mem0Service';
 import { authService } from '../../services/authService';
 import { useApp } from '../../contexts/AppContext';
+import { useProfilePrivacy } from '../../hooks/useProfilePrivacy';
 import { useInterfaceLanguage } from '../ui/LanguageSwitcher';
 import { TranslateNewsToggle } from '../ui/TranslateNewsToggle';
+import { StyledSelect } from '../ui/StyledSelect';
 
 export function ProfilePreferences({ isDark }: { isDark: boolean }) {
   const ui = useUiText();
@@ -17,8 +19,8 @@ export function ProfilePreferences({ isDark }: { isDark: boolean }) {
   const [message, setMessage] = useState('');
   const [confirmClear, setConfirmClear] = useState(false);
   const [savingEmailUpdates, setSavingEmailUpdates] = useState(false);
-  const [languageOpen, setLanguageOpen] = useState(false);
-  const languageMenuRef = useRef<HTMLDivElement>(null);
+  const [hideEmail, setHideEmail] = useProfilePrivacy('hideEmail');
+  const [hideLastActive, setHideLastActive] = useProfilePrivacy('hideLastActive');
 
   useEffect(() => {
     let active = true;
@@ -31,21 +33,6 @@ export function ProfilePreferences({ isDark }: { isDark: boolean }) {
     return () => { active = false; };
   }, []);
 
-  useEffect(() => {
-    if (!languageOpen) return;
-    const closeOnOutsideClick = (event: PointerEvent) => {
-      if (!languageMenuRef.current?.contains(event.target as Node)) setLanguageOpen(false);
-    };
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setLanguageOpen(false);
-    };
-    document.addEventListener('pointerdown', closeOnOutsideClick);
-    document.addEventListener('keydown', closeOnEscape);
-    return () => {
-      document.removeEventListener('pointerdown', closeOnOutsideClick);
-      document.removeEventListener('keydown', closeOnEscape);
-    };
-  }, [languageOpen]);
 
   const togglePersonalization = async () => {
     const next = !enabled;
@@ -97,7 +84,6 @@ export function ProfilePreferences({ isDark }: { isDark: boolean }) {
 
   const panel = `rounded-3xl border p-5 shadow-sm ${isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white/95 border-slate-200'}`;
   const row = `flex items-center gap-3 rounded-2xl p-3.5 ${isDark ? 'bg-slate-950/50 text-slate-200' : 'bg-slate-50 text-slate-800'}`;
-  const currentLanguage = reading.current.short;
 
   return (
     <section className={panel} aria-labelledby="preferences-heading">
@@ -109,55 +95,8 @@ export function ProfilePreferences({ isDark }: { isDark: boolean }) {
           <div className="min-w-0 flex-1">
             <span className="block text-sm font-medium">{t.language}</span>
           </div>
-          <div ref={languageMenuRef} className="relative shrink-0">
-            <button
-              type="button"
-              onClick={() => setLanguageOpen((open) => !open)}
-              aria-haspopup="listbox"
-              aria-expanded={languageOpen}
-              aria-label={t.language}
-              className={`flex min-w-[82px] items-center justify-between gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition-colors ${
-                isDark
-                  ? 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'
-                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
-              }`}
-            >
-              <span>{currentLanguage}</span>
-              <ChevronDown size={14} className={`transition-transform ${languageOpen ? 'rotate-180' : ''}`} />
-            </button>
-            {languageOpen && (
-              <div
-                role="listbox"
-                aria-label={t.language}
-                className={`absolute right-0 top-full z-50 mt-1 min-w-[112px] rounded-xl border p-1 shadow-lg ${
-                  isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'
-                }`}
-              >
-                {reading.options.map(({ code, short, label }) => (
-                  <button
-                    key={code}
-                    type="button"
-                    role="option"
-                    title={label}
-                    aria-selected={reading.choice === code}
-                    onClick={() => {
-                      reading.choose(code);
-                      setLanguageOpen(false);
-                    }}
-                    className={`w-full rounded-lg px-3 py-1.5 text-left text-sm font-medium transition-colors ${
-                      reading.choice === code
-                        ? 'text-white'
-                        : isDark
-                          ? 'text-slate-200 hover:bg-slate-800'
-                          : 'text-slate-700 hover:bg-slate-100'
-                    }`}
-                    style={reading.choice === code ? { background: 'var(--brand-grad, #2563eb)' } : undefined}
-                  >
-                    {short}
-                  </button>
-                ))}
-              </div>
-            )}
+          <div className="w-32 shrink-0">
+            <StyledSelect label={t.language} value={reading.choice} onChange={reading.choose} isDark={isDark} options={reading.options.map(({ code, short }) => ({ value: code, label: short }))} />
           </div>
         </div>
         <div className={`rounded-2xl p-0.5 ${isDark ? 'bg-slate-950/50' : 'bg-slate-50'}`}>
@@ -172,6 +111,18 @@ export function ProfilePreferences({ isDark }: { isDark: boolean }) {
           {loading ? <Loader2 size={16} className="animate-spin text-cyan-500" /> : <Sparkles size={16} className="text-cyan-500" />}
           <span className="flex-1"><span className="block text-sm font-medium">{ui("Reading personalization")}</span><span className="block text-xs opacity-70">{ui("Learn topic preferences from articles you open.")}</span></span>
           <span className="text-xs font-semibold">{enabled ? ui("On") : ui("Off")}</span>
+        </button>
+        <p className={`pt-1 text-[11px] font-semibold uppercase tracking-wide ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{ui("Privacy")}</p>
+        <p className={`-mt-1 text-xs leading-relaxed ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>{ui("Mask details on your own profile on this device, so the page is safe to screen-share.")}</p>
+        <button type="button" role="switch" aria-checked={hideEmail} onClick={() => setHideEmail(!hideEmail)} className={`${row} w-full text-left`}>
+          <AtSign size={16} className="shrink-0 text-cyan-500" />
+          <span className="flex-1"><span className="block text-sm font-medium">{ui("Hide my email address")}</span><span className="block text-xs opacity-70">{ui("Show it as ab•••@example.com instead.")}</span></span>
+          <span className="text-xs font-semibold">{hideEmail ? ui("On") : ui("Off")}</span>
+        </button>
+        <button type="button" role="switch" aria-checked={hideLastActive} onClick={() => setHideLastActive(!hideLastActive)} className={`${row} w-full text-left`}>
+          <Clock3 size={16} className="shrink-0 text-cyan-500" />
+          <span className="flex-1"><span className="block text-sm font-medium">{ui("Hide my last active date")}</span><span className="block text-xs opacity-70">{ui("Replace the date with dots.")}</span></span>
+          <span className="text-xs font-semibold">{hideLastActive ? ui("On") : ui("Off")}</span>
         </button>
         {topics.length > 0 && <div><p className="mb-2 text-xs opacity-70">{ui("Inferred interests")}</p><div className="flex flex-wrap gap-2">{topics.map((topic) => <span key={topic} className="rounded-full bg-cyan-500/10 px-3 py-1 text-xs font-medium text-cyan-600 dark:text-cyan-300">{topic}</span>)}</div></div>}
         <div className="flex flex-wrap gap-2">

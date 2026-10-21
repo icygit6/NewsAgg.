@@ -1,9 +1,10 @@
 import { useUiText } from '../../i18n/uiText';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import { Link } from 'react-router';
 import { SlidersHorizontal, Search, X, Sun, Moon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useApp } from '../../contexts/AppContext';
+import { useEdgeScroll } from '../../hooks/useEdgeScroll';
 import { CATEGORIES, CATEGORY_BADGE_CLASS, CATEGORY_LABELS, type Category } from '../../constants';
 import { FilterSheet } from '../ui/FilterSheet';
 import { BrandLogo } from '../ui/BrandLogo';
@@ -24,51 +25,16 @@ export function FeedHeader() {
 
   const [filterOpen, setFilterOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const chipsRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
-
-  const updateScrollState = () => {
-    const el = chipsRef.current;
-    if (!el) return;
-    setCanScrollLeft(el.scrollLeft > 2);
-    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 2);
-  };
-
-  useEffect(() => {
-    const el = chipsRef.current;
-    if (!el) return;
-    const onWheel = (e: WheelEvent) => {
-      if (el.scrollWidth <= el.clientWidth) return;
-      // Preserve normal vertical page scrolling. A trackpad horizontal gesture
-      // or Shift+wheel intentionally moves the category strip.
-      if (Math.abs(e.deltaX) <= Math.abs(e.deltaY) && !e.shiftKey) return;
-      const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-      if (delta === 0) return;
-      el.scrollLeft += delta;
-      e.preventDefault();
-      updateScrollState();
-    };
-    el.addEventListener('wheel', onWheel, { passive: false });
-    el.addEventListener('scroll', updateScrollState, { passive: true });
-    const observer = new ResizeObserver(updateScrollState);
-    observer.observe(el);
-    updateScrollState();
-    return () => {
-      el.removeEventListener('wheel', onWheel);
-      el.removeEventListener('scroll', updateScrollState);
-      observer.disconnect();
-    };
-  }, []);
+  // Separate anchors: the mobile row and the desktop row each render their own
+  // filter button, and the mobile sheet drops down from its own one.
+  const mobileFilterRef = useRef<HTMLDivElement>(null);
+  const desktopFilterRef = useRef<HTMLDivElement>(null);
+  const { ref: chipsRef, canScrollLeft, canScrollRight, scrollByPage } = useEdgeScroll<HTMLDivElement>();
 
   useEffect(() => {
     const active = chipsRef.current?.querySelector<HTMLElement>('[aria-current="true"]');
     active?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-  }, [selectedCategory]);
-
-  const scrollCategories = (direction: -1 | 1) => {
-    chipsRef.current?.scrollBy({ left: direction * 240, behavior: 'smooth' });
-  };
+  }, [chipsRef, selectedCategory]);
 
   const filterActiveCount =
     selectedSources.length +
@@ -101,8 +67,8 @@ export function FeedHeader() {
     isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-100'
   }`;
 
-  const filterBtn = (
-    <div className="relative shrink-0">
+  const filterBtn = (anchorRef: RefObject<HTMLDivElement>) => (
+    <div ref={anchorRef} className="relative shrink-0">
       <button
         onClick={() => setFilterOpen((p) => !p)}
         aria-label={t.filter}
@@ -124,7 +90,7 @@ export function FeedHeader() {
           </span>
         )}
       </button>
-      <FilterSheet open={filterOpen} onClose={() => setFilterOpen(false)} />
+      <FilterSheet open={filterOpen} onClose={() => setFilterOpen(false)} anchorRef={anchorRef} />
     </div>
   );
 
@@ -142,7 +108,7 @@ export function FeedHeader() {
         <div className="flex-1 min-w-0">
           <SearchBox />
         </div>
-        {filterBtn}
+        {filterBtn(mobileFilterRef)}
         <button onClick={toggleTheme} aria-label={ui("Toggle theme")} className={iconBtn}>
           {isDark ? <Sun size={18} /> : <Moon size={18} />}
         </button>
@@ -154,14 +120,14 @@ export function FeedHeader() {
           <Link to="/" className="shrink-0 lg:hidden" aria-label={ui("NewsAgg home")}>
             <BrandLogo showWordmark={false} markClassName="w-9 h-9" />
           </Link>
-          {filterBtn}
+          {filterBtn(desktopFilterRef)}
 
           {/* Scrollable chips */}
           <div className="relative flex-1 min-w-0 flex items-center">
             {canScrollLeft && (
               <button
                 type="button"
-                onClick={() => scrollCategories(-1)}
+                onClick={() => scrollByPage(-1)}
                 aria-label={ui("Previous categories")}
                 className={`absolute left-0 z-10 h-8 w-8 rounded-full border shadow-sm flex items-center justify-center ${isDark ? 'bg-slate-950 border-slate-700 text-slate-200' : 'bg-white border-slate-200 text-slate-700'}`}
               >
@@ -183,7 +149,7 @@ export function FeedHeader() {
             {canScrollRight && (
               <button
                 type="button"
-                onClick={() => scrollCategories(1)}
+                onClick={() => scrollByPage(1)}
                 aria-label={ui("Next categories")}
                 className={`absolute right-0 z-10 h-8 w-8 rounded-full border shadow-sm flex items-center justify-center ${isDark ? 'bg-slate-950 border-slate-700 text-slate-200' : 'bg-white border-slate-200 text-slate-700'}`}
               >

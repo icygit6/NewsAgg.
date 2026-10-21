@@ -1,11 +1,14 @@
 import { useUiText } from '../i18n/uiText';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
-import { X, LogOut, Bookmark, Sun, Moon, Check, UserCircle, ChevronRight } from 'lucide-react';
+import { X, LogOut, Bookmark, Sun, Moon, Check, UserCircle, ChevronRight, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useApp } from '../contexts/AppContext';
 import { useBookmarks } from '../hooks/useBookmarks';
+import { useAdminOverview, useIsAdmin } from '../hooks/useAdmin';
+import { useProfilePrivacy } from '../hooks/useProfilePrivacy';
 import { authService } from '../services/authService';
 import { AuthPanel } from './profile/AuthPanel';
+import { maskEmail } from './profile/ProfileHeader';
 import { FooterCompact } from './shell/Footer';
 import { useIsMobile } from './ui/use-mobile';
 import { BrandLogo } from './ui/BrandLogo';
@@ -22,6 +25,10 @@ export function ProfileSidebar() {
     avatarSrc,
   } = useApp();
   const { bookmarks } = useBookmarks();
+  const admin = useIsAdmin();
+  const adminOverview = useAdminOverview();
+  const openReports = (adminOverview.data?.open_article_reports ?? 0) + (adminOverview.data?.open_post_reports ?? 0);
+  const [hideEmail] = useProfilePrivacy('hideEmail');
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const reducedMotion = useReducedMotion();
@@ -34,6 +41,7 @@ export function ProfileSidebar() {
     const drawer = drawerRef.current;
     drawer?.querySelector<HTMLElement>('button, a, input, [tabindex]:not([tabindex="-1"])')?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || (event.target instanceof Element && event.target.closest('[role="listbox"]'))) return;
       if (event.key === 'Escape') {
         setSidebarOpen(false);
         return;
@@ -136,7 +144,7 @@ export function ProfileSidebar() {
                       <p className={`font-poppins font-bold leading-tight truncate ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>
                         {user.username}
                       </p>
-                      <p className={`text-xs truncate ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{user.email}</p>
+                      <p className={`text-xs truncate ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{hideEmail ? maskEmail(user.email) : user.email}</p>
                       <span className="text-xs font-medium text-cyan-500">{t.viewProfile}</span>
                     </div>
                     <ChevronRight size={16} className={isDark ? 'text-slate-500' : 'text-gray-400'} />
@@ -153,6 +161,13 @@ export function ProfileSidebar() {
                       <span className="font-medium flex-1">{t.bookmarks}</span>
                       <span className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{bookmarks.length}</span>
                     </button>
+                    {admin && (
+                      <button onClick={() => goTo('/admin')} className={rowClass}>
+                        <div className={iconBox}><ShieldCheck size={16} className={isDark ? 'text-cyan-400' : 'text-cyan-600'} /></div>
+                        <span className="font-medium flex-1">{ui('Admin')}</span>
+                        {openReports > 0 && <span className="rounded-full bg-rose-500 px-1.5 text-[11px] font-bold leading-5 text-white">{openReports}</span>}
+                      </button>
+                    )}
                   </nav>
                 </>
               ) : (

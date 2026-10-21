@@ -1,24 +1,43 @@
 import { NavLink } from 'react-router';
-import { Home, MessageSquareQuote, Bookmark, BarChart2 } from 'lucide-react';
+import { Home, MessageSquareQuote, Bookmark, BarChart2, ShieldCheck } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
+import { useAdminOverview, useIsAdmin } from '../../hooks/useAdmin';
+import { useUiText } from '../../i18n/uiText';
 import { POSTS_ENABLED } from '../../constants';
+
+interface TabItem {
+  to: string;
+  icon: typeof Home;
+  label: string;
+  badge?: number;
+}
 
 /** Small/medium-screen bottom navigation (hidden ≥lg, where NavRail takes over). */
 export function BottomTabBar() {
+  const ui = useUiText();
   const { t, isDark, avatarSrc, user, authInitialized, setSidebarOpen } = useApp();
+  // Admins get the same entry point the desktop rail gives them.
+  const admin = useIsAdmin();
+  const adminOverview = useAdminOverview();
+  const openReports = (adminOverview.data?.open_article_reports ?? 0) + (adminOverview.data?.open_post_reports ?? 0);
   const scrollTop = () => {
     document.getElementById('main-scroll')?.scrollTo({ top: 0, behavior: 'instant' });
     window.scrollTo({ top: 0, behavior: 'instant' });
   };
 
-  const items = [
+  const items: TabItem[] = [
     { to: '/', icon: Home, label: t.home },
     ...(POSTS_ENABLED ? [{ to: '/posts', icon: MessageSquareQuote, label: t.posts }] : []),
     { to: '/insights', icon: BarChart2, label: t.insights },
     { to: '/bookmarks', icon: Bookmark, label: t.bookmarks },
+    ...(admin ? [{ to: '/admin', icon: ShieldCheck, label: ui('Admin'), badge: openReports }] : []),
   ];
+  // The admin tab makes six; tighten the labels so none of them truncates.
+  const dense = items.length > 4;
   const tabClass = (isActive: boolean) =>
-    `group flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1.5 text-[11px] font-medium leading-none transition-[color,background-color,transform] duration-200 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 motion-reduce:transition-none ${
+    `group flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl py-1.5 font-medium leading-none transition-[color,background-color,transform] duration-200 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 motion-reduce:transition-none ${
+      dense ? 'px-0 text-[10px]' : 'px-1 text-[11px]'
+    } ${
       isActive
         ? 'text-[var(--brand,#2563eb)]'
         : isDark
@@ -53,10 +72,10 @@ export function BottomTabBar() {
       aria-label={t.menu}
     >
       <div
-        className="mx-auto flex w-full max-w-[640px] items-stretch gap-1 px-2 pt-2"
+        className={`mx-auto flex w-full max-w-[640px] items-stretch pt-2 ${dense ? 'gap-0 px-1' : 'gap-1 px-2'}`}
         style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom))' }}
       >
-        {items.map(({ to, icon: Icon, label }) => (
+        {items.map(({ to, icon: Icon, label, badge }) => (
           <NavLink
             key={to}
             to={to}
@@ -67,8 +86,16 @@ export function BottomTabBar() {
           >
             {({ isActive }) => (
               <>
-                <span className={iconClass(isActive)}>
+                <span className={`relative ${iconClass(isActive)}`}>
                   <Icon size={21} strokeWidth={isActive ? 2.4 : 1.9} aria-hidden="true" />
+                  {badge ? (
+                    <span
+                      className="absolute right-1 top-0 min-w-4 rounded-full bg-rose-500 px-1 text-center text-[10px] font-bold leading-4 text-white"
+                      aria-label={`${badge} ${ui('open reports')}`}
+                    >
+                      {badge}
+                    </span>
+                  ) : null}
                 </span>
                 <span className="block max-w-full truncate">{label}</span>
               </>

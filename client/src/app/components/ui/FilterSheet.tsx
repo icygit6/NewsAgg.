@@ -1,5 +1,5 @@
 import { useUiText } from '../../i18n/uiText';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type RefObject } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Check, LayoutGrid, Newspaper, Gauge, ArrowUpDown } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
@@ -11,6 +11,9 @@ import type { ArticleSort } from '../../services/newsAPI';
 interface FilterSheetProps {
   open: boolean;
   onClose: () => void;
+  // Button the panel belongs to. The small-screen panel drops down from just
+  // below it instead of rising from the bottom of the window.
+  anchorRef?: RefObject<HTMLElement | null>;
 }
 
 type FilterTab = 'category' | 'source' | 'sentiment' | 'sort';
@@ -33,7 +36,28 @@ function useIsDesktop(): boolean {
   return isDesktop;
 }
 
-export function FilterSheet({ open, onClose }: FilterSheetProps) {
+/** Top offset for the small-screen panel: just under the filter button, so it
+ * reads as that button's dropdown. Re-measured on scroll and resize. */
+function useAnchorBottom(anchorRef: RefObject<HTMLElement | null> | undefined, active: boolean): number {
+  const [top, setTop] = useState(8);
+  useEffect(() => {
+    if (!active) return;
+    const measure = () => {
+      const rect = anchorRef?.current?.getBoundingClientRect();
+      setTop(rect ? Math.max(8, rect.bottom + 8) : 8);
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    window.addEventListener('scroll', measure, true);
+    return () => {
+      window.removeEventListener('resize', measure);
+      window.removeEventListener('scroll', measure, true);
+    };
+  }, [anchorRef, active]);
+  return top;
+}
+
+export function FilterSheet({ open, onClose, anchorRef }: FilterSheetProps) {
   const ui = useUiText();
   const {
     t,
@@ -49,6 +73,7 @@ export function FilterSheet({ open, onClose }: FilterSheetProps) {
   } = useApp();
   const [tab, setTab] = useState<FilterTab>('category');
   const isDesktop = useIsDesktop();
+  const anchorBottom = useAnchorBottom(anchorRef, open && !isDesktop);
 
   const toggleSource = (id: string) => {
     setSelectedSources(
@@ -148,7 +173,7 @@ export function FilterSheet({ open, onClose }: FilterSheetProps) {
             <button
               key={key}
               onClick={() => setTab(key)}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`flex-1 min-w-0 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 px-1 py-2 rounded-lg text-center text-[11px] leading-tight sm:text-sm font-medium transition-colors ${
                 active
                   ? 'bg-cyan-500 text-white'
                   : isDark
@@ -156,7 +181,7 @@ export function FilterSheet({ open, onClose }: FilterSheetProps) {
                     : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
-              <Icon size={15} />
+              <Icon size={15} className="shrink-0" />
               {label}
             </button>
           );
@@ -264,21 +289,15 @@ export function FilterSheet({ open, onClose }: FilterSheetProps) {
               className="fixed inset-0 z-50 bg-black/40"
             />
             <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
+              initial={{ opacity: 0, y: -12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
               transition={{ type: 'spring', stiffness: 340, damping: 34 }}
-              className={`fixed left-0 right-0 z-50 rounded-t-2xl border-t shadow-2xl ${
+              className={`fixed left-2 right-2 z-50 flex flex-col overflow-hidden rounded-2xl border shadow-2xl ${
                 isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-100'
               }`}
-              style={{ bottom: 'calc(env(safe-area-inset-bottom) + 72px)' }}
+              style={{ top: anchorBottom, maxHeight: `calc(100vh - ${anchorBottom}px - 16px)` }}
             >
-              {/* Grab handle */}
-              <div className="flex justify-center pt-2.5 pb-1">
-                <span
-                  className={`h-1.5 w-10 rounded-full ${isDark ? 'bg-slate-600' : 'bg-gray-300'}`}
-                />
-              </div>
               {body}
             </motion.div>
           </>

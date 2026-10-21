@@ -1,8 +1,9 @@
 import { useUiText } from '../../i18n/uiText';
 import { useRef, useState } from 'react';
-import { CalendarDays, Clock3, Eye, EyeOff, Palette } from 'lucide-react';
+import { CalendarDays, Clock3, Palette } from 'lucide-react';
 import { authService } from '../../services/authService';
 import { useApp } from '../../contexts/AppContext';
+import { useProfilePrivacy } from '../../hooks/useProfilePrivacy';
 import { AvatarEditor } from './AvatarEditor';
 import { PROFILE_BACKGROUNDS as BANNERS } from '../../lib/profileBackgrounds';
 import { prepareBackground } from '../../lib/prepareBackground';
@@ -30,7 +31,9 @@ export function ProfileHeader({ isDark }: ProfileHeaderProps) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
-  const [reveal, setReveal] = useState(false);
+  // Both masks are owned by the privacy section of ProfilePreferences.
+  const [hideEmail] = useProfilePrivacy('hideEmail');
+  const [hideLastActive] = useProfilePrivacy('hideLastActive');
   const fileInput = useRef<HTMLInputElement>(null);
   if (!user) return null;
 
@@ -76,12 +79,7 @@ export function ProfileHeader({ isDark }: ProfileHeaderProps) {
             </h1>
             <p className={`mt-0.5 text-sm font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>@{user.username}</p>
             <p className={`mt-1 flex items-center gap-1.5 text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
-              <span className="truncate">{reveal ? user.email : maskEmail(user.email)}</span>
-              <button type="button" onClick={() => setReveal(!reveal)} aria-pressed={reveal}
-                aria-label={reveal ? ui('Hide email and activity') : ui('Show email and activity')} title={reveal ? ui('Hide email and activity') : ui('Show email and activity')}
-                className="rounded p-0.5 hover:text-cyan-500">
-                {reveal ? <EyeOff size={13} /> : <Eye size={13} />}
-              </button>
+              <span className="truncate">{hideEmail ? maskEmail(user.email) : user.email}</span>
             </p>
           </div>
         </div>
@@ -110,7 +108,7 @@ export function ProfileHeader({ isDark }: ProfileHeaderProps) {
             {lastLogin && (
               <span className="inline-flex items-center gap-1.5">
                 <Clock3 size={13} />
-                {t.lastActive} {reveal ? lastLogin : '••••'}
+                {t.lastActive} {hideLastActive ? '••••' : lastLogin}
               </span>
             )}
         </div>
