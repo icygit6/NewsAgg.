@@ -1,65 +1,64 @@
-NEWSAGG - WINDOWS + DOCKER + FREE QUICK TUNNEL
-==============================================
+NEWSAGG - WINDOWS + DOCKER + CLOUDFLARE (GRATIS)
+================================================
+Panduan harian yang paling lengkap: START-RESTART-GUIDE.txt (bahasa Inggris).
+Alamat publik tetap: https://newsagg.sentsis.workers.dev
 
-ISI PAKET
-- client, server, scraper: source yang dibutuhkan Docker
-- docker-compose.yml: menjalankan client dan server
+ISI PROYEK
+- client, server, scraper: source yang dibangun Docker
+- docker-compose.yml: db (PostgreSQL lokal), server, client, local-ai, tunnel,
+  dbviewer, dan scraper (profile terpisah)
 - START/STOP/CHECK-NEWSAGG.ps1: operasi harian
-- RUN-SCRAPER.ps1: menjalankan scraper secara manual
-- iis-site/web.config: reverse proxy IIS opsional; tidak diperlukan untuk Quick Tunnel
-- *.env.example: template tanpa password atau API key
+- scripts\RUN-SCRAPER.ps1: menjalankan scraper secara manual
+- ops\rebuild-live.mjs: menerbitkan perubahan kode ke situs live
+- compose.env.example, server.env.example: template tanpa password atau API key
 
 PERSYARATAN
 1. Windows 10/11 64-bit dengan WSL2 dan Docker Desktop.
-2. NEONDB_URL dan SECRET_KEY. API key AI boleh dikosongkan dahulu.
-3. IIS tidak diperlukan untuk deployment Quick Tunnel berbasis Docker.
+2. Isi .env root: NEWSAGG_DB_PASSWORD, NEWSAGG_DBVIEWER_PASSWORD, NEWSAGG_STABLE_URL.
+3. Isi server/.env: SECRET_KEY, dan NEONDB_URL ke database lokal
+   (postgres://newsagg:<password>@127.0.0.1:5433/newsagg) untuk skrip di host.
+   API key AI dan SMTP boleh dikosongkan dahulu.
 
 PERSIAPAN WINDOWS PERTAMA KALI
 1. Klik kanan PowerShell > Run as Administrator.
 2. Jalankan: Set-ExecutionPolicy -Scope Process Bypass
-3. Jalankan: .\SETUP-WINDOWS.ps1
+3. Jalankan: .\scripts\SETUP-WINDOWS.ps1
 4. Restart Windows (skrip tidak melakukan restart otomatis).
 5. Buka Docker Desktop dan tunggu sampai engine aktif.
 
-MENJALANKAN DOCKER SAJA
-1. Extract ZIP ke folder biasa, misalnya D:\NewsAgg.
-2. Klik kanan START-NEWSAGG.ps1 > Run with PowerShell.
-3. Pada run pertama, skrip membuat .env dan server/.env lalu berhenti.
-4. Isi NEONDB_URL dan SECRET_KEY di server/.env.
-5. Jalankan START-NEWSAGG.ps1 lagi.
-6. Buka http://localhost:8080.
-7. Tunnel publik ikut berjalan. Jalankan SHOW-PUBLIC-URL.ps1 untuk melihat URL HTTPS.
+MENJALANKAN
+1. Dari D:\Website jalankan .\scripts\START-NEWSAGG.ps1.
+2. Pada run pertama, skrip membuat .env dan server/.env dari template lalu berhenti.
+   Isi nilai di atas, lalu jalankan scripts\START-NEWSAGG.ps1 lagi.
+3. Buka http://localhost:8080 (lokal) atau alamat workers.dev (publik).
+4. .\scripts\CHECK-NEWSAGG.ps1 memeriksa status; .\scripts\SHOW-PUBLIC-URL.ps1 menampilkan alamat.
 
-PUBLIK TANPA IIS (DIREKOMENDASIKAN UNTUK DEMO)
-1. START-NEWSAGG.ps1 menjalankan client, server, dan Cloudflare Quick Tunnel bersama-sama.
-2. Tunnel meneruskan trafik langsung ke Nginx dalam container client; IIS boleh dihentikan.
-3. Jalankan SHOW-PUBLIC-URL.ps1 untuk melihat alamat trycloudflare.com terbaru.
-4. Quick Tunnel adalah layanan demo; alamat dapat berubah setelah tunnel restart.
+ALAMAT PUBLIK
+- Worker Cloudflare (deploy/stable-origin) memberi alamat workers.dev yang tetap dan
+  meneruskan trafik ke Quick Tunnel di laptop. Alamat trycloudflare.com di belakangnya
+  bisa berganti; task "NewsAgg Web Recovery" menyambungkan ulang Worker otomatis.
+- Bila situs lokal jalan tetapi publik tidak: .\scripts\UPDATE-STABLE-ORIGIN.ps1
 
 MEMASUKKAN UPDATE KODE
-1. Jangan pernah replace file .env atau server/.env; file itu berisi konfigurasi/secret laptop server.
-2. Replace hanya file source yang dikirim rekan, tetapi pertahankan struktur foldernya.
-3. Jika ada package.json, package-lock.json, Dockerfile, docker-compose.yml, web.config,
-   atau file migration baru, perlakukan sebagai update deployment dan periksa secara khusus.
-4. Setelah replace, jalankan START-NEWSAGG.ps1. Docker akan rebuild bagian yang berubah.
-5. Jalankan CHECK-NEWSAGG.ps1 dan uji login, bookmark, halaman artikel, serta health API.
-6. Simpan salinan versi yang sedang berjalan sebelum replace agar mudah rollback.
+1. Proyek ini repository Git (GitHub: icygit6/NewsAgg). Ambil perubahan lewat Git,
+   bukan copy/replace manual.
+2. Jangan pernah menimpa .env atau server/.env; file itu berisi secret laptop server.
+3. Jalankan node ops\rebuild-live.mjs (atau --check untuk melihat saja). Volume
+   database tidak disentuh. Jangan menjalankan docker compose down -v.
+4. Jalankan scripts\CHECK-NEWSAGG.ps1 dan uji login, bookmark, halaman artikel, serta /health.
 
 CATATAN KEAMANAN
-- Jangan kirim server/.env yang sudah terisi melalui Git atau grup chat.
-- Kirim NEONDB_URL dan SECRET_KEY kepada admin laptop melalui kanal privat.
-- Port 3000 dan 8080 sebaiknya dibatasi Windows Firewall untuk akses lokal bila IIS
-  menjadi satu-satunya pintu publik.
-- Folder .git, node_modules, venv, cache, log, dan file .env asli tidak ada di ZIP.
-- Folder ini belum menjadi repository Git. Untuk update rutin, Git lebih aman daripada copy/replace
-  manual karena perubahan dapat ditinjau dan dikembalikan jika deployment gagal.
+- Jangan kirim .env atau server/.env yang sudah terisi melalui Git atau grup chat.
+- Port 3000, 5433, 8080, dan 8081 hanya dibuka di 127.0.0.1; akses publik lewat tunnel.
+- Backup database ada di backups\ dan berisi data akun; simpan salinan kedua di
+  folder yang Anda kendalikan (lihat START-RESTART-GUIDE.txt).
 
 PERINTAH PENTING
-- Start/update : .\START-NEWSAGG.ps1
-- Status       : .\CHECK-NEWSAGG.ps1
-- Stop         : .\STOP-NEWSAGG.ps1
-- Scraper      : .\RUN-SCRAPER.ps1
+- Start/update : .\scripts\START-NEWSAGG.ps1
+- Status       : .\scripts\CHECK-NEWSAGG.ps1
+- Stop         : .\scripts\STOP-NEWSAGG.ps1
+- Publish kode : node ops\rebuild-live.mjs
+- Scraper      : .\scripts\RUN-SCRAPER.ps1
 - Log          : docker compose logs -f server client
-- Setup Windows: .\SETUP-WINDOWS.ps1 (wajib PowerShell Administrator, lalu restart)
-- URL demo publik: .\SHOW-PUBLIC-URL.ps1
-- Hentikan IIS   : .\DISABLE-IIS.ps1 (PowerShell Administrator; opsional)
+- Setup Windows: .\scripts\SETUP-WINDOWS.ps1 (wajib PowerShell Administrator, lalu restart)
+- URL publik   : .\scripts\SHOW-PUBLIC-URL.ps1

@@ -10,7 +10,8 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-if (-not $DryRun -and -not $ValidateOnly -and -not $TestEmailTo -and (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'logs\daily\primary-enabled.json'))) {
+$RepoRoot = Split-Path -Parent $PSScriptRoot
+if (-not $DryRun -and -not $ValidateOnly -and -not $TestEmailTo -and (Test-Path -LiteralPath (Join-Path $RepoRoot 'logs\daily\primary-enabled.json'))) {
     throw 'Legacy daily delivery is disabled. NewsAgg Daily Pipeline owns scraper-to-email ordering and deduplication.'
 }
 if ($TestEmailTo) {
@@ -22,9 +23,9 @@ if ($TestEmailTo) {
     # Process-local override only: never modify the scheduled recipient list.
     $env:REPORT_EMAIL_TO = $parsedRecipient.Address
 }
-Set-Location -LiteralPath $PSScriptRoot
+Set-Location -LiteralPath $RepoRoot
 
-$logDirectory = Join-Path $PSScriptRoot 'logs'
+$logDirectory = Join-Path $RepoRoot 'logs'
 New-Item -ItemType Directory -Force -Path $logDirectory | Out-Null
 $runStamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $logFile = Join-Path $logDirectory "daily-publish-$runStamp.log"
@@ -34,7 +35,7 @@ function Import-LocalMailEnvironment {
     # The self-hosted runner and the 05:00 Windows task share this machine.
     # Prefer the local, gitignored SMTP configuration so a stale GitHub secret
     # cannot break delivery. Values are never printed to the workflow log.
-    $envFile = Join-Path $PSScriptRoot 'server\.env'
+    $envFile = Join-Path $RepoRoot 'server\.env'
     if (-not (Test-Path -LiteralPath $envFile)) { return }
     $allowed = @('SMTP_HOST', 'SMTP_PORT', 'SMTP_SECURE', 'SMTP_USER', 'SMTP_PASS', 'MAIL_FROM')
     foreach ($line in Get-Content -LiteralPath $envFile) {

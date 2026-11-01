@@ -2,10 +2,11 @@
 param([Parameter(Mandatory = $true)][string]$Recipients)
 
 $ErrorActionPreference = 'Stop'
-Set-Location -LiteralPath $PSScriptRoot
+$RepoRoot = Split-Path -Parent $PSScriptRoot
+Set-Location -LiteralPath $RepoRoot
 if (-not $Recipients.Trim()) { throw 'Enter recipient emails before selecting Save recipients.' }
 
-$saved = & node.exe (Join-Path $PSScriptRoot 'server\scripts\save-daily-recipients.mjs') $Recipients
+$saved = & node.exe (Join-Path $RepoRoot 'server\scripts\save-daily-recipients.mjs') $Recipients
 if ($LASTEXITCODE -ne 0) { throw 'Recipient validation failed.' }
 
 $gh = (Get-Command gh.exe -ErrorAction SilentlyContinue).Source

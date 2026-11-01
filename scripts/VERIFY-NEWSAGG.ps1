@@ -1,10 +1,11 @@
 [CmdletBinding()]
 param([switch]$LiveAI)
 $ErrorActionPreference = 'Stop'
-Set-Location -LiteralPath $PSScriptRoot
+$RepoRoot = Split-Path -Parent $PSScriptRoot
+Set-Location -LiteralPath $RepoRoot
 
 foreach ($project in @('server','client')) {
-    Push-Location -LiteralPath (Join-Path $PSScriptRoot $project)
+    Push-Location -LiteralPath (Join-Path $RepoRoot $project)
     try {
         foreach ($task in @('test','typecheck','lint','build')) {
             & npm.cmd run $task
@@ -25,7 +26,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Live API verification failed.' }
 & powershell.exe -NoProfile -File (Join-Path $PSScriptRoot 'RUN-NEWSAGG-DAILY.ps1') -DryRun
 if ($LASTEXITCODE -ne 0) { throw 'Daily workflow dry-run failed.' }
 if ($LiveAI) {
-    Push-Location -LiteralPath (Join-Path $PSScriptRoot 'server')
+    Push-Location -LiteralPath (Join-Path $RepoRoot 'server')
     try {
         node scripts/ai-smoke.mjs
         if ($LASTEXITCODE -ne 0) { throw 'Live AI smoke test failed.' }

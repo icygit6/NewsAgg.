@@ -37,7 +37,7 @@ jobs:
           $flags = @('-Ingest')
           if ($env:NEWSAGG_TARGET) { $flags += @('-Target', $env:NEWSAGG_TARGET) }
           & powershell.exe -NoProfile -ExecutionPolicy Bypass `
-            -File 'D:\Website\RUN-NEWSAGG-DAILY.ps1' @flags
+            -File 'D:\Website\scripts\RUN-NEWSAGG-DAILY.ps1' @flags
           if ($LASTEXITCODE -ne 0) { throw "News ingestion failed with exit code $LASTEXITCODE." }
 
       - name: Full recheck without daily email
@@ -47,7 +47,7 @@ jobs:
           $flags = @('-Full')
           if ($env:NEWSAGG_TARGET) { $flags += @('-Target', $env:NEWSAGG_TARGET) }
           & powershell.exe -NoProfile -ExecutionPolicy Bypass `
-            -File 'D:\Website\RUN-NEWSAGG-DAILY.ps1' @flags
+            -File 'D:\Website\scripts\RUN-NEWSAGG-DAILY.ps1' @flags
           if ($LASTEXITCODE -ne 0) { throw "Full recheck failed with exit code $LASTEXITCODE." }
 
   cleanup:

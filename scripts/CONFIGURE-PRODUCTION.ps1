@@ -2,7 +2,8 @@
 param()
 
 $ErrorActionPreference = 'Stop'
-Set-Location -LiteralPath $PSScriptRoot
+$RepoRoot = Split-Path -Parent $PSScriptRoot
+Set-Location -LiteralPath $RepoRoot
 
 function Ensure-EnvFile {
     param([string]$Path, [string]$Template)
@@ -26,7 +27,7 @@ function Set-EnvValue {
         }
     }
     if (-not $found) { [void]$lines.Add($replacement) }
-    [IO.File]::WriteAllLines((Join-Path $PSScriptRoot $Path), $lines, [Text.UTF8Encoding]::new($false))
+    [IO.File]::WriteAllLines((Join-Path $RepoRoot $Path), $lines, [Text.UTF8Encoding]::new($false))
 }
 
 function Read-SecretPlainText {
@@ -68,4 +69,4 @@ if ($smtpUser) {
 Write-Host ''
 Write-Host 'Configuration saved without displaying secret values.' -ForegroundColor Green
 Write-Host 'Settings saved successfully. No secrets were displayed.' -ForegroundColor Green
-Write-Host 'Run: .\START-NEWSAGG.ps1'
+Write-Host 'Run: .\scripts\START-NEWSAGG.ps1'

@@ -43,7 +43,7 @@ jobs:
         shell: powershell
         run: |
           & powershell.exe -NoProfile -ExecutionPolicy Bypass `
-            -File 'D:\Website\SAVE-GITHUB-RECIPIENTS.ps1' `
+            -File 'D:\Website\scripts\SAVE-GITHUB-RECIPIENTS.ps1' `
             -Recipients $env:NEWSAGG_MANUAL_RECIPIENTS
           if ($LASTEXITCODE -ne 0) { throw 'Could not persist recipient emails.' }
       - name: Validate daily pipeline without sending mail
@@ -53,7 +53,7 @@ jobs:
           $flags = @('-DryRun')
           if ($env:NEWSAGG_MANUAL_RECIPIENTS) { $flags += @('-Recipients', $env:NEWSAGG_MANUAL_RECIPIENTS) }
           & powershell.exe -NoProfile -ExecutionPolicy Bypass `
-            -File 'D:\Website\RUN-NEWSAGG-DAILY.ps1' @flags
+            -File 'D:\Website\scripts\RUN-NEWSAGG-DAILY.ps1' @flags
           if ($LASTEXITCODE -ne 0) { throw "Daily preflight failed with exit code $LASTEXITCODE." }
 
       - name: Prepare edition and send daily brief
@@ -63,5 +63,5 @@ jobs:
           $flags = @()
           if ($env:NEWSAGG_MANUAL_RECIPIENTS) { $flags += @('-Recipients', $env:NEWSAGG_MANUAL_RECIPIENTS) }
           & powershell.exe -NoProfile -ExecutionPolicy Bypass `
-            -File 'D:\Website\RUN-NEWSAGG-DAILY.ps1' @flags
+            -File 'D:\Website\scripts\RUN-NEWSAGG-DAILY.ps1' @flags
           if ($LASTEXITCODE -ne 0) { throw "Daily delivery failed with exit code $LASTEXITCODE." }

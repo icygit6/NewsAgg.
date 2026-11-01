@@ -1,5 +1,6 @@
 $ErrorActionPreference = 'Stop'
-Set-Location -LiteralPath $PSScriptRoot
+$RepoRoot = Split-Path -Parent $PSScriptRoot
+Set-Location -LiteralPath $RepoRoot
 
 if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
     throw 'Docker CLI tidak ditemukan. Install dan jalankan Docker Desktop terlebih dahulu.'
@@ -26,7 +27,7 @@ if (-not $hasDatabase -or -not $hasSecret) {
 # hang while Docker Desktop has no working WSL engine.
 docker info *> $null
 if ($LASTEXITCODE -ne 0) {
-    throw 'Docker engine belum aktif. Jika Docker Desktop menampilkan Virtual Machine Platform not enabled, jalankan SETUP-WINDOWS.ps1 sebagai Administrator lalu restart Windows.'
+    throw 'Docker engine belum aktif. Jika Docker Desktop menampilkan Virtual Machine Platform not enabled, jalankan scripts\SETUP-WINDOWS.ps1 sebagai Administrator lalu restart Windows.'
 }
 
 docker compose config --quiet
@@ -38,10 +39,10 @@ try {
     & (Join-Path $PSScriptRoot 'UPDATE-STABLE-ORIGIN.ps1')
 } catch {
     Write-Warning "Stable public address could not be refreshed: $($_.Exception.Message)"
-    Write-Warning 'The local site and Docker containers are still running. Authenticate Wrangler separately, then run .\UPDATE-STABLE-ORIGIN.ps1.'
+    Write-Warning 'The local site and Docker containers are still running. Authenticate Wrangler separately, then run .\scripts\UPDATE-STABLE-ORIGIN.ps1.'
 }
 
 docker compose ps
 Write-Host ''
 Write-Host 'NewsAgg aktif. Docker langsung: http://localhost:8080'
-Write-Host 'Public address: run .\SHOW-PUBLIC-URL.ps1'
+Write-Host 'Public address: run .\scripts\SHOW-PUBLIC-URL.ps1'

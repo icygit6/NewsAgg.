@@ -1,10 +1,11 @@
 [CmdletBinding()]
 param([string]$TunnelUrl = '')
 $ErrorActionPreference = 'Stop'
+$RepoRoot = Split-Path -Parent $PSScriptRoot
 
 $stableUrl = $env:NEWSAGG_STABLE_URL
-if (-not $stableUrl -and (Test-Path -LiteralPath (Join-Path $PSScriptRoot '.env'))) {
-    $line = Get-Content -LiteralPath (Join-Path $PSScriptRoot '.env') | Where-Object { $_ -match '^NEWSAGG_STABLE_URL=' } | Select-Object -Last 1
+if (-not $stableUrl -and (Test-Path -LiteralPath (Join-Path $RepoRoot '.env'))) {
+    $line = Get-Content -LiteralPath (Join-Path $RepoRoot '.env') | Where-Object { $_ -match '^NEWSAGG_STABLE_URL=' } | Select-Object -Last 1
     if ($line) { $stableUrl = ($line -split '=',2)[1].Trim().Trim('"').Trim("'") }
 }
 if (-not $stableUrl) { return }
@@ -33,7 +34,7 @@ if ($stableAlreadyHealthy) {
     return
 }
 
-Push-Location -LiteralPath $PSScriptRoot
+Push-Location -LiteralPath $RepoRoot
 try {
     if (-not $TunnelUrl) {
         foreach ($attempt in 1..20) {
@@ -47,7 +48,7 @@ try {
         }
     }
     if ($TunnelUrl -notmatch '^https://[a-z0-9]+(?:-[a-z0-9]+)*\.trycloudflare\.com$') { throw 'No valid Quick Tunnel URL is available.' }
-    Push-Location -LiteralPath (Join-Path $PSScriptRoot 'deploy\stable-origin')
+    Push-Location -LiteralPath (Join-Path $RepoRoot 'deploy\stable-origin')
     try {
         # Startup must never open a browser and wait for interactive OAuth. A
         # valid cached login still works; unattended use should provide the
@@ -57,7 +58,7 @@ try {
         try {
             $deployed = $false
             foreach ($deployAttempt in 1..3) {
-                $localWrangler = Join-Path $PSScriptRoot 'deploy\stable-origin\node_modules\wrangler\bin\wrangler.js'
+                $localWrangler = Join-Path $RepoRoot 'deploy\stable-origin\node_modules\wrangler\bin\wrangler.js'
                 if (Test-Path -LiteralPath $localWrangler) {
                     & node.exe $localWrangler deploy --var "NEWSAGG_ORIGIN:$TunnelUrl"
                 } else {

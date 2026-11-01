@@ -1,14 +1,15 @@
 [CmdletBinding()]
 param([string]$Day = 'Sunday', [string]$At = '21:30', [int]$WeeksInterval = 1)
 $ErrorActionPreference = 'Stop'
+$RepoRoot = Split-Path -Parent $PSScriptRoot
 $node = (Get-Command node.exe -ErrorAction Stop).Source
-$script = Join-Path $PSScriptRoot 'server\scripts\db-maintenance.mjs'
+$script = Join-Path $RepoRoot 'server\scripts\db-maintenance.mjs'
 if (-not (Test-Path -LiteralPath $script)) { throw 'Database maintenance script is missing.' }
 $identity = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 $launcher = Join-Path $env:SystemRoot 'System32\wscript.exe'
-$hiddenScript = Join-Path $PSScriptRoot 'ops\run-hidden.vbs'
+$hiddenScript = Join-Path $RepoRoot 'ops\run-hidden.vbs'
 if (-not (Test-Path -LiteralPath $hiddenScript)) { throw 'Hidden task launcher is missing.' }
-$action = New-ScheduledTaskAction -Execute $launcher -Argument ('//B //NoLogo "' + $hiddenScript + '" "' + $node + '" "' + $script + '"') -WorkingDirectory $PSScriptRoot
+$action = New-ScheduledTaskAction -Execute $launcher -Argument ('//B //NoLogo "' + $hiddenScript + '" "' + $node + '" "' + $script + '"') -WorkingDirectory $RepoRoot
 # Anchor the first run on the next $Day at $At, so the interval is counted
 # from that day rather than from whichever weekday this script happens to be run.
 $time = [datetime]::ParseExact($At, 'HH:mm', $null).TimeOfDay

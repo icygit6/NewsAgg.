@@ -1,9 +1,10 @@
 param([switch]$RefreshTunnel)
 $ErrorActionPreference = 'Stop'
+$RepoRoot = Split-Path -Parent $PSScriptRoot
 
 $containerId = docker compose ps -q tunnel
 if (-not $containerId) {
-    throw 'No public tunnel is running. Run START-NEWSAGG.ps1 first.'
+    throw 'No public tunnel is running. Run scripts\START-NEWSAGG.ps1 first.'
 }
 
 # Cloudflared writes normal informational messages (including the public URL)
@@ -58,8 +59,8 @@ if (-not $isReachable -and -not $RefreshTunnel) {
 }
 
 $stableUrl = $env:NEWSAGG_STABLE_URL
-if (-not $stableUrl -and (Test-Path -LiteralPath (Join-Path $PSScriptRoot '.env'))) {
-    $stableLine = Get-Content -LiteralPath (Join-Path $PSScriptRoot '.env') | Where-Object { $_ -match '^NEWSAGG_STABLE_URL=' } | Select-Object -Last 1
+if (-not $stableUrl -and (Test-Path -LiteralPath (Join-Path $RepoRoot '.env'))) {
+    $stableLine = Get-Content -LiteralPath (Join-Path $RepoRoot '.env') | Where-Object { $_ -match '^NEWSAGG_STABLE_URL=' } | Select-Object -Last 1
     if ($stableLine) { $stableUrl = ($stableLine -split '=', 2)[1].Trim().Trim('"').Trim("'") }
 }
 if ($stableUrl) { Write-Host "Configured stable public URL: $stableUrl" }

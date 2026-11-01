@@ -165,7 +165,7 @@ export async function recover() {
     // START-NEWSAGG, a build, an ingest command, or any email entrypoint here.
     try {
       await command('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',
-        '-File', path.join(root, 'UPDATE-STABLE-ORIGIN.ps1'), '-TunnelUrl', origin], 240_000);
+        '-File', path.join(root, 'scripts', 'UPDATE-STABLE-ORIGIN.ps1'), '-TunnelUrl', origin], 240_000);
     } catch { record(state, 'origin-update-failed-check-cloudflare-auth'); process.exitCode = 1; return; }
     if (await healthy(`${stable}/health`)) { state.failures = 0; record(state, 'recovered'); }
     else { record(state, 'public-health-failed'); process.exitCode = 1; }

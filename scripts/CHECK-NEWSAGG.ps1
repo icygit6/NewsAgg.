@@ -1,10 +1,11 @@
 $ErrorActionPreference = 'Continue'
-Set-Location -LiteralPath $PSScriptRoot
+$RepoRoot = Split-Path -Parent $PSScriptRoot
+Set-Location -LiteralPath $RepoRoot
 
 docker info *> $null
 if ($LASTEXITCODE -ne 0) {
     Write-Host 'Docker engine: TIDAK AKTIF'
-    Write-Host 'Jalankan SETUP-WINDOWS.ps1 sebagai Administrator, restart Windows, lalu buka Docker Desktop.'
+    Write-Host 'Jalankan scripts\SETUP-WINDOWS.ps1 sebagai Administrator, restart Windows, lalu buka Docker Desktop.'
     exit 1
 }
 

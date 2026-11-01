@@ -155,7 +155,7 @@ async function recoverPublic() {
   if(await healthy()) { log('public_health_ok');return; }
   log('public_recovery_started');
   await docker(['compose','up','-d','--force-recreate','--no-deps','--wait','--wait-timeout','60','tunnel'],90000);
-  await runCommand('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',path.join(root,'UPDATE-STABLE-ORIGIN.ps1')],210000);
+  await runCommand('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',path.join(root,'scripts','UPDATE-STABLE-ORIGIN.ps1')],210000);
   if(!await healthy()) throw new Error('Public website is unhealthy after tunnel recovery');
   log('public_recovery_ok');
 }

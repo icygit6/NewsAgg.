@@ -4,7 +4,7 @@
 
 NewsAgg is a news aggregation platform with transformer-based sentiment analytics, an X-style three-column UI, a social posts feed, and a per-article AI chat.
 
-The English-language demo video and bilingual project report are distributed separately; generated media and reports are not part of this source checkout.
+The demo video and the project report (separate Traditional Chinese and English editions) are kept outside this repository.
 
 ## Architecture
 
@@ -12,7 +12,7 @@ The English-language demo video and bilingual project report are distributed sep
 scraper/   Python — scrapes CNN / BBC / Al Jazeera / Yahoo Taiwan, enriches with
            multilingual NLP (XLM-R sentiment, FinBERT for English business news,
            XLM-R NER, zero-shot topic, readability, toxicity) and upserts into
-           PostgreSQL (the compose `db` service; Neon was retired on 2026-10-19).
+           PostgreSQL (the compose `db` service).
 server/    Express + TypeScript API (port 3001) — articles, stats, markets,
            quotes, auth (email + Google, password reset, email verification,
            opt-in Cloudflare Turnstile CAPTCHA), account, bookmarks, posts,
@@ -59,7 +59,23 @@ pip install -r requirements.txt
 python run_all.py --target 15
 ```
 
-Docker: `docker compose up -d --build` runs server + client; the scraper is an opt-in profile (`docker compose --profile scraper up scraper`).
+Docker: `docker compose up -d --build` runs the local PostgreSQL `db`, server, client, `local-ai` (BGE-M3 embeddings), the Cloudflare tunnel and the read-only `dbviewer`; the scraper is an opt-in profile (`docker compose --profile scraper run --rm scraper`). Publish code changes to the live site with `node ops/rebuild-live.mjs`, and never run `docker compose down -v` (it deletes the database volume).
+
+## Documentation
+
+| File | What it covers |
+| --- | --- |
+| [START-RESTART-GUIDE.txt](START-RESTART-GUIDE.txt) | Start, restart, publish, stop, backups (the day-to-day guide) |
+| [PRODUCTION-SETUP.md](PRODUCTION-SETUP.md) | Free-only deployment: public address, schedules, database, configuration |
+| [README.Docker.md](README.Docker.md) | Compose services, environment files, common Docker problems (Indonesian) |
+| [README-DEPLOY.txt](README-DEPLOY.txt) | First-time Windows setup and updates (Indonesian) |
+| [ops/LIVE-PUBLICATION.md](ops/LIVE-PUBLICATION.md) | Live publication, morning edition, schedule and safety rules |
+| [ops/WEB-RECOVERY.md](ops/WEB-RECOVERY.md) | Automatic tunnel and Worker recovery |
+| [GITHUB-ACTIONS-SETUP.md](GITHUB-ACTIONS-SETUP.md) | Manual GitHub workflows on the self-hosted runner |
+| [deploy/stable-origin/README.md](deploy/stable-origin/README.md) | The Cloudflare Worker behind the fixed workers.dev address |
+| [scraper/README.md](scraper/README.md) | Scraper layout, setup and commands |
+| [.env.example](.env.example) | Every environment variable |
+| [QUALITY-AND-AI-RUNBOOK.md](QUALITY-AND-AI-RUNBOOK.md) | AI models in use, news quality rules, check commands (Indonesian) |
 
 ## API surface (selected)
 
@@ -82,6 +98,9 @@ GET  /health[?db=1]               liveness probe; ?db=1 also checks Postgres →
 
 - One accent identity: `--brand*` tokens in `client/src/styles/tokens.css` follow the active colour theme (blue-600 by default; `styles/themes.css` re-points the scale). Never name a custom token `--accent` — shadcn's `theme.css` owns that name and is imported later.
 - Brand assets in `client/public/` (favicon, PWA icons, maskable icon, apple-touch icon, OG image) are generated from `client/public/logo-mark.png` by `client/scripts/generate-brand-assets.py`. The PWA manifest is `client/public/manifest.webmanifest`.
+- `components/ui/BrandLogo.tsx` is the one logo component (top bar, nav rail, feed header, footer, profile sidebar, auth pages). Fonts: Nunito for text, Newsreader for headlines.
+- Show only measured data: no simulated views, likes or filler numbers. Statistics come from the stats API, and a figure computed from a sample states its sample size.
+- Topic and sentiment scores are model output, not a judgement of whether the news is true.
 - Public language controls expose English and Traditional Chinese (`en` / `zh-TW`).
 - Server state lives in React Query hooks (`client/src/app/hooks/`); AppContext holds UI + identity only.
 - The posts feature is gated by `POSTS_ENABLED` in `client/src/app/constants/index.ts`.

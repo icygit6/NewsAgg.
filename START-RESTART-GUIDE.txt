@@ -11,8 +11,8 @@ AFTER WINDOWS RESTARTS OR THE PC WAS SHUT DOWN
 
    cd D:\Website
    Set-ExecutionPolicy -Scope Process Bypass
-   .\START-NEWSAGG.ps1
-   .\CHECK-NEWSAGG.ps1
+   .\scripts\START-NEWSAGG.ps1
+   .\scripts\CHECK-NEWSAGG.ps1
 
 START-NEWSAGG starts/builds the server, client, local AI, and Cloudflare tunnel,
 then reconnects the fixed public address when necessary. Wait for it to finish.
@@ -25,10 +25,10 @@ RESTART THE APP WITHOUT REBUILDING OR ROTATING THE TUNNEL
 From PowerShell in D:\Website:
 
    docker compose restart server client local-ai
-   .\CHECK-NEWSAGG.ps1
+   .\scripts\CHECK-NEWSAGG.ps1
 
 Give the containers a few seconds to become healthy. This keeps the tunnel up.
-After source/configuration updates, use START-NEWSAGG.ps1 instead so Docker builds
+After source/configuration updates, use scripts\START-NEWSAGG.ps1 instead so Docker builds
 and applies the current files.
 
 PUBLISH CODE CHANGES TO THE LIVE SITE
@@ -45,16 +45,16 @@ always a deliberate step.
 IF THE LOCAL SITE WORKS BUT THE PUBLIC SITE DOES NOT
 First try reconnecting the fixed address to the current tunnel:
 
-   .\UPDATE-STABLE-ORIGIN.ps1
-   .\SHOW-PUBLIC-URL.ps1
+   .\scripts\UPDATE-STABLE-ORIGIN.ps1
+   .\scripts\SHOW-PUBLIC-URL.ps1
 
 If SHOW-PUBLIC-URL reports a failed tunnel check, request a fresh tunnel:
 
-   .\SHOW-PUBLIC-URL.ps1 -RefreshTunnel
-   .\CHECK-NEWSAGG.ps1
+   .\scripts\SHOW-PUBLIC-URL.ps1 -RefreshTunnel
+   .\scripts\CHECK-NEWSAGG.ps1
 
 If you explicitly restarted the tunnel using "docker compose restart tunnel",
-run UPDATE-STABLE-ORIGIN.ps1 afterwards to point the fixed address at its new URL.
+run scripts\UPDATE-STABLE-ORIGIN.ps1 afterwards to point the fixed address at its new URL.
 The temporary trycloudflare.com address can change after any tunnel restart.
 Share the fixed workers.dev address above with visitors.
 
@@ -64,20 +64,20 @@ Only if the startup/update script reports a Cloudflare authentication failure:
    Push-Location D:\Website\deploy\stable-origin
    node .\node_modules\wrangler\bin\wrangler.js login
    Pop-Location
-   .\UPDATE-STABLE-ORIGIN.ps1
-   .\CHECK-NEWSAGG.ps1
+   .\scripts\UPDATE-STABLE-ORIGIN.ps1
+   .\scripts\CHECK-NEWSAGG.ps1
 
 Complete the browser sign-in using the Cloudflare account that owns this Worker.
 
 STOP THE APP
    cd D:\Website
-   .\STOP-NEWSAGG.ps1
+   .\scripts\STOP-NEWSAGG.ps1
 
 This removes the service containers, but preserves the configured data volumes.
-Use START-NEWSAGG.ps1 to create/start them again.
+Use scripts\START-NEWSAGG.ps1 to create/start them again.
 
 STATUS AND LOGS
-   .\CHECK-NEWSAGG.ps1
+   .\scripts\CHECK-NEWSAGG.ps1
    docker compose ps
    docker compose logs --tail 100 server client tunnel local-ai
 

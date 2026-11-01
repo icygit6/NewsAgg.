@@ -1,5 +1,6 @@
 $ErrorActionPreference = 'Stop'
-Set-Location -LiteralPath $PSScriptRoot
+$RepoRoot = Split-Path -Parent $PSScriptRoot
+Set-Location -LiteralPath $RepoRoot
 
 $repo = 'icygit6/NewsAgg.'
 $ghCandidates = @(
@@ -26,7 +27,7 @@ try {
     $sender = (Read-Host 'Alamat Gmail pengirim').Trim()
     try { [void][System.Net.Mail.MailAddress]::new($sender) } catch { throw 'Alamat Gmail pengirim tidak valid.' }
 
-    $recipients = @((Get-Content -LiteralPath (Join-Path $PSScriptRoot 'ops\daily-config.json') -Raw | ConvertFrom-Json).recipients)
+    $recipients = @((Get-Content -LiteralPath (Join-Path $RepoRoot 'ops\daily-config.json') -Raw | ConvertFrom-Json).recipients)
     if (-not $recipients.Count) { throw 'Daftar penerima di ops/daily-config.json kosong.' }
 
     $securePassword = Read-Host 'Google App Password 16 karakter (input disembunyikan)' -AsSecureString

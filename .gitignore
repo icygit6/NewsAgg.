@@ -42,3 +42,6 @@ client/.playwright/
 # Claude Code agent settings, skills and their lock file stay on this machine
 .claude/
 skills-lock.json
+
+# Personal prompt notes, kept out of the repository
+footer-prompt.md
