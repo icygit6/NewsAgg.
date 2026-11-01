@@ -5,6 +5,7 @@ import { authMiddleware, optionalAuth } from '../middleware/auth'
 import { validateBody, postSchema, postEditSchema, postCommentSchema, postReportSchema, blockUserSchema } from '../middleware/validate'
 import { commentLimiter, likeLimiter, postLimiter } from '../middleware/rateLimit'
 import { POST_CATEGORIES, inferPostCategory } from '../lib/postCategory'
+import { REVIEW_SAFE, REVIEW_SAFE_ALIASED } from '../lib/articleQuality'
 import { isAdmin } from './admin'
 import { notifyAdminsOfReport } from '../services/adminNotify'
 
@@ -17,7 +18,7 @@ const base = `SELECT p.id,p.content,p.category,p.created_at,p.updated_at,p.artic
  (SELECT count(*)::int FROM post_likes x WHERE x.post_id=p.id) like_count,
  (SELECT count(*)::int FROM post_comments c WHERE c.post_id=p.id AND c.deleted_at IS NULL) comment_count,
  EXISTS(SELECT 1 FROM post_likes x WHERE x.post_id=p.id AND x.user_id=$1) liked_by_me
- FROM posts p JOIN users u ON u.id=p.user_id LEFT JOIN articles a ON a.id=p.article_id LEFT JOIN sources s ON s.id=a.source_id`
+ FROM posts p JOIN users u ON u.id=p.user_id LEFT JOIN articles a ON a.id=p.article_id AND ${REVIEW_SAFE_ALIASED} LEFT JOIN sources s ON s.id=a.source_id`
 
 postsRouter.get('/', optionalAuth, async (req: any, res: Response) => {
   try {
@@ -27,6 +28,14 @@ postsRouter.get('/', optionalAuth, async (req: any, res: Response) => {
     const sort = req.query.sort === 'popular' ? 'popular' : req.query.sort === 'oldest' ? 'oldest' : 'latest'
     const params: any[] = [req.userId ?? null]
     const where = ['p.deleted_at IS NULL']
+    if (req.query.articleId !== undefined) {
+      if (typeof req.query.articleId !== 'string' || !/^[0-9a-f]{16}$/.test(req.query.articleId)) {
+        return res.status(400).json({ success: false, error: 'Invalid article reference' })
+      }
+      params.push(req.query.articleId); where.push(`p.article_id=$${params.length}`)
+      // Only expose quotes attached to an article that is still published.
+      where.push('a.id IS NOT NULL')
+    }
     if (req.query.category && req.query.category !== 'all') {
       if (!POST_CATEGORIES.includes(req.query.category)) return res.status(400).json({ success: false, error: 'Invalid category' })
       params.push(req.query.category); where.push(`p.category=$${params.length}`)
@@ -64,7 +73,7 @@ postsRouter.post('/', authMiddleware, postLimiter, validateBody(postSchema), asy
   try {
     const verified = await query('SELECT email_verified FROM users WHERE id=$1', [req.userId])
     if (!verified.rows[0]?.email_verified) return res.status(403).json({ success: false, error: 'Verify your email before posting' })
-    const attached = req.body.articleId ? (await query('SELECT topic FROM articles WHERE id=$1', [req.body.articleId])).rows[0] : null
+    const attached = req.body.articleId ? (await query(`SELECT topic FROM articles WHERE id=$1 AND ${REVIEW_SAFE}`, [req.body.articleId])).rows[0] : null
     if (req.body.articleId && !attached) return res.status(400).json({ success: false, error: 'Attached article not found' })
     const duplicate = await query("SELECT 1 FROM posts WHERE user_id=$1 AND lower(content)=lower($2) AND created_at>now()-interval '10 minutes' AND deleted_at IS NULL", [req.userId, req.body.content])
     if (duplicate.rows[0]) return res.status(409).json({ success: false, error: 'You recently posted the same message' })
@@ -78,7 +87,7 @@ postsRouter.post('/', authMiddleware, postLimiter, validateBody(postSchema), asy
   }
 })
 
-const commentFields = `SELECT c.id,c.post_id,c.user_id,c.parent_id,c.content,c.created_at,
+const commentFields = `SELECT c.id::int,c.post_id::int,c.user_id,c.parent_id::int,c.content,c.created_at,
  u.username,u.display_name,u.avatar,parent_user.username parent_username
  FROM post_comments c JOIN users u ON u.id=c.user_id
  LEFT JOIN post_comments parent ON parent.id=c.parent_id
@@ -92,14 +101,43 @@ postsRouter.get('/:id/comments', optionalAuth, async (req: any, res: Response) =
     const post = await query('SELECT 1 FROM posts WHERE id=$1 AND deleted_at IS NULL', [id])
     if (!post.rows[0]) return res.status(404).json({ success: false, error: 'Post not found' })
     const params: any[] = [id, req.userId ?? null, offset]
-    const result = await query(`${commentFields}
-      WHERE c.post_id=$1 AND c.deleted_at IS NULL
-      AND ($2::integer IS NULL OR NOT EXISTS (
-        SELECT 1 FROM user_blocks b WHERE
-        (b.blocker_id=$2 AND b.blocked_id=c.user_id) OR
-        (b.blocker_id=c.user_id AND b.blocked_id=$2)))
-      ORDER BY c.created_at DESC,c.id DESC LIMIT 31 OFFSET $3`, params)
-    res.json({ success: true, data: { comments: result.rows.slice(0, 30), nextOffset: result.rows.length > 30 ? offset + 30 : null } })
+    // Page over threads (top-level comments, newest first) and return every
+    // visible reply with its thread, so a reply never lands on a different
+    // page from the comment it answers. A removed or blocked top-level comment
+    // still anchors its thread as a placeholder while it has visible replies.
+    const result = await query(`WITH RECURSIVE tree AS (
+        SELECT id,id root_id FROM post_comments WHERE post_id=$1 AND parent_id IS NULL
+        UNION ALL
+        SELECT c.id,t.root_id FROM post_comments c JOIN tree t ON c.parent_id=t.id WHERE c.post_id=$1
+      ), visible AS (
+        SELECT c.id FROM post_comments c WHERE c.post_id=$1 AND c.deleted_at IS NULL
+        AND ($2::integer IS NULL OR NOT EXISTS (
+          SELECT 1 FROM user_blocks b WHERE
+          (b.blocker_id=$2 AND b.blocked_id=c.user_id) OR
+          (b.blocker_id=c.user_id AND b.blocked_id=$2)))
+      ), roots AS (
+        SELECT t.root_id,row_number() OVER (ORDER BY r.created_at DESC,t.root_id DESC) rn
+        FROM tree t JOIN post_comments r ON r.id=t.root_id
+        WHERE t.id IN (SELECT id FROM visible)
+        GROUP BY t.root_id,r.created_at
+        ORDER BY r.created_at DESC,t.root_id DESC LIMIT 31 OFFSET $3
+      )
+      SELECT c.id::int,c.post_id::int,c.parent_id::int,t.root_id::int,ro.rn,c.created_at,
+       (c.id NOT IN (SELECT id FROM visible)) removed,
+       CASE WHEN c.id IN (SELECT id FROM visible) THEN c.user_id END user_id,
+       CASE WHEN c.id IN (SELECT id FROM visible) THEN c.content ELSE '' END content,
+       CASE WHEN c.id IN (SELECT id FROM visible) THEN u.username ELSE '' END username,
+       CASE WHEN c.id IN (SELECT id FROM visible) THEN u.display_name END display_name,
+       CASE WHEN c.id IN (SELECT id FROM visible) THEN u.avatar END avatar,
+       parent_user.username parent_username
+      FROM tree t JOIN roots ro ON ro.root_id=t.root_id
+      JOIN post_comments c ON c.id=t.id JOIN users u ON u.id=c.user_id
+      LEFT JOIN post_comments parent ON parent.id=c.parent_id
+      LEFT JOIN users parent_user ON parent_user.id=parent.user_id
+      WHERE t.id IN (SELECT id FROM visible) OR t.id=t.root_id
+      ORDER BY ro.rn,(c.id=t.root_id) DESC,c.created_at,c.id`, params)
+    const comments = result.rows.filter(row => Number(row.rn) <= 30).map(({ rn, ...row }) => row)
+    res.json({ success: true, data: { comments, nextOffset: result.rows.some(row => Number(row.rn) > 30) ? offset + 30 : null } })
   } catch (err) {
     logger.error({ err }, 'Comments fetch error')
     res.status(500).json({ success: false, error: 'Failed to load comments' })
@@ -134,7 +172,7 @@ postsRouter.delete('/:id/comments/:commentId', authMiddleware, async (req: any, 
   const commentId = postId(req.params.commentId)
   if (!id || !commentId) return res.status(404).json({ success: false, error: 'Comment not found' })
   try {
-    const result = await query('UPDATE post_comments SET deleted_at=now() WHERE id=$1 AND post_id=$2 AND user_id=$3 AND deleted_at IS NULL RETURNING id', [commentId, id, req.userId])
+    const result = await query('UPDATE post_comments SET deleted_at=now(),deleted_by=$3 WHERE id=$1 AND post_id=$2 AND (user_id=$3 OR $4) AND deleted_at IS NULL RETURNING id', [commentId, id, req.userId, await isAdmin(req.userId)])
     if (!result.rows[0]) return res.status(404).json({ success: false, error: 'Comment not found' })
     res.json({ success: true })
   } catch (err) {
@@ -161,7 +199,7 @@ postsRouter.patch('/moderation/reports/:reportId', authMiddleware, async (req: a
   if (!moderator.rows[0]) return res.status(403).json({ success: false, error: 'Moderator access required' })
   const report = await query('UPDATE post_reports SET status=$2 WHERE id=$1 RETURNING post_id', [reportId, req.body.status])
   if (!report.rows[0]) return res.status(404).json({ success: false, error: 'Report not found' })
-  if (req.body.hidePost === true) await query('UPDATE posts SET deleted_at=COALESCE(deleted_at,now()) WHERE id=$1', [report.rows[0].post_id])
+  if (req.body.hidePost === true) await query('UPDATE posts SET deleted_at=now(),deleted_by=$2 WHERE id=$1 AND deleted_at IS NULL', [report.rows[0].post_id, req.userId])
   res.json({ success: true })
 })
 
@@ -179,7 +217,7 @@ postsRouter.delete('/:id', authMiddleware, async (req: any, res: Response) => {
   const id = postId(req.params.id); if (!id) return res.status(404).json({ success: false, error: 'Post not found' })
   try {
     // Authors remove their own posts; admins may remove anyone's.
-    const result = await query('UPDATE posts SET deleted_at=now() WHERE id=$1 AND (user_id=$2 OR $3) AND deleted_at IS NULL RETURNING id', [id, req.userId, await isAdmin(req.userId)])
+    const result = await query('UPDATE posts SET deleted_at=now(),deleted_by=$2 WHERE id=$1 AND (user_id=$2 OR $3) AND deleted_at IS NULL RETURNING id', [id, req.userId, await isAdmin(req.userId)])
     if (!result.rows[0]) return res.status(404).json({ success: false, error: 'Post not found' })
     res.json({ success: true })
   } catch { res.status(500).json({ success: false, error: 'Failed to delete post' }) }
@@ -187,7 +225,7 @@ postsRouter.delete('/:id', authMiddleware, async (req: any, res: Response) => {
 
 postsRouter.post('/:id/restore', authMiddleware, async (req: any, res: Response) => {
   const id = postId(req.params.id); if (!id) return res.status(404).json({ success: false, error: 'Post not found' })
-  const result = await query('UPDATE posts SET deleted_at=NULL WHERE id=$1 AND (user_id=$2 OR $3) RETURNING id', [id, req.userId, await isAdmin(req.userId)])
+  const result = await query('UPDATE posts SET deleted_at=NULL,deleted_by=NULL WHERE id=$1 AND ((user_id=$2 AND (deleted_by IS NULL OR deleted_by=$2)) OR $3) RETURNING id', [id, req.userId, await isAdmin(req.userId)])
   if (!result.rows[0]) return res.status(404).json({ success: false, error: 'Post not found' })
   res.json({ success: true })
 })
@@ -203,8 +241,10 @@ postsRouter.post('/:id/report', authMiddleware, validateBody(postReportSchema), 
 
 postsRouter.post('/blocks', authMiddleware, validateBody(blockUserSchema), async (req: any, res: Response) => {
   if (req.body.blockedUserId === req.userId) return res.status(400).json({ success: false, error: 'You cannot block yourself' })
-  await query('INSERT INTO user_blocks(blocker_id,blocked_id) VALUES($1,$2) ON CONFLICT DO NOTHING', [req.userId, req.body.blockedUserId])
-  res.status(201).json({ success: true })
+  try {
+    await query('INSERT INTO user_blocks(blocker_id,blocked_id) VALUES($1,$2) ON CONFLICT DO NOTHING', [req.userId, req.body.blockedUserId])
+    res.status(201).json({ success: true })
+  } catch (err: any) { res.status(err?.code === '23503' ? 404 : 500).json({ success: false, error: err?.code === '23503' ? 'User not found' : 'Failed to block user' }) }
 })
 
 postsRouter.post('/:id/like', authMiddleware, likeLimiter, async (req: any, res: Response) => {

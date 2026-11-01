@@ -31,6 +31,28 @@ const numericId = (raw: string) => (/^\d+$/.test(raw) ? Number(raw) : null)
 // Nginx auth_request target guarding /dbviewer/; the body is never shown.
 adminRouter.get('/check', (_req, res) => { res.status(204).end() })
 
+adminRouter.get('/permissions', async (req: any, res) => {
+  const result = await query('SELECT can_manage_roles FROM users WHERE id=$1', [req.userId])
+  res.json({ success: true, data: { canManageRoles: result.rows[0]?.can_manage_roles === true } })
+})
+
+adminRouter.patch('/users/:id/role', async (req: any, res) => {
+  const id = numericId(req.params.id)
+  if (!id || !['user', 'admin'].includes(req.body?.role)) return res.status(400).json({ success: false, error: 'Invalid role' })
+  const result = await query(`UPDATE users SET role=$2 WHERE id=$1 AND can_manage_roles=false
+    AND EXISTS(SELECT 1 FROM users owner WHERE owner.id=$3 AND owner.role='admin' AND owner.can_manage_roles=true) RETURNING id`, [id, req.body.role, req.userId])
+  if (!result.rows.length) return res.status(403).json({ success: false, error: 'Only the primary admin can assign roles; primary admins are protected' })
+  res.json({ success: true })
+})
+
+adminRouter.get('/deleted-content', async (req, res) => {
+  const offset = Math.max(0, Math.min(100000, Number(req.query.offset) || 0))
+  const result = await query(`SELECT h.*, actor.username AS deleted_by_username, author.username AS author_username
+    FROM moderation_history h LEFT JOIN users actor ON actor.id=h.actor_id LEFT JOIN users author ON author.id=h.author_id
+    WHERE ($2::integer IS NULL OR h.post_id=$2) ORDER BY h.id DESC LIMIT 50 OFFSET $1`, [Math.floor(offset), typeof req.query.postId === 'string' ? numericId(req.query.postId) : null])
+  res.json({ success: true, data: result.rows })
+})
+
 adminRouter.get('/overview', async (_req, res: Response) => {
   try {
     const counts = await query(`SELECT
@@ -39,6 +61,7 @@ adminRouter.get('/overview', async (_req, res: Response) => {
       (SELECT count(*)::int FROM articles) AS articles,
       (SELECT count(*)::int FROM article_reports WHERE status = 'open') AS open_article_reports,
       (SELECT count(*)::int FROM post_reports WHERE status = 'open') AS open_post_reports,
+      (SELECT count(*)::int FROM feedback WHERE status = 'open') AS open_feedback,
       pg_database_size(current_database())::bigint AS database_bytes`)
     const tables = await query(`SELECT c.relname AS name, c.reltuples::bigint AS estimated_rows,
       pg_total_relation_size(c.oid)::bigint AS bytes
@@ -83,13 +106,35 @@ adminRouter.patch('/post-reports/:id', async (req: any, res: Response) => {
   if (!id || !['open', 'resolved', 'dismissed'].includes(req.body?.status)) return res.status(400).json({ success: false, error: 'Invalid report action' })
   const result = await query('UPDATE post_reports SET status = $2 WHERE id = $1 RETURNING post_id', [id, req.body.status])
   if (!result.rows[0]) return res.status(404).json({ success: false, error: 'Report not found' })
-  if (req.body.hidePost === true) await query('UPDATE posts SET deleted_at = COALESCE(deleted_at, now()) WHERE id = $1', [result.rows[0].post_id])
+  if (req.body.hidePost === true) await query('UPDATE posts SET deleted_at = now(), deleted_by=$2 WHERE id = $1 AND deleted_at IS NULL', [result.rows[0].post_id, req.userId])
+  res.json({ success: true })
+})
+
+// Feedback from readers: newest first, open items before handled ones.
+adminRouter.get('/feedback', async (_req, res: Response) => {
+  try {
+    const rows = await query(`SELECT f.id, f.kind, f.message, f.page, f.contact_email, f.user_agent, f.status, f.created_at,
+      u.username, u.email AS account_email
+      FROM feedback f LEFT JOIN users u ON u.id = f.user_id
+      ORDER BY (f.status = 'open') DESC, f.created_at DESC LIMIT 300`)
+    res.json({ success: true, data: rows.rows })
+  } catch (err: any) {
+    logger.error({ err: err?.message }, '[admin] feedback failed')
+    res.status(500).json({ success: false, error: 'Could not load feedback' })
+  }
+})
+
+adminRouter.patch('/feedback/:id', async (req: any, res: Response) => {
+  const id = numericId(req.params.id)
+  if (!id || !['open', 'reviewed', 'resolved'].includes(req.body?.status)) return res.status(400).json({ success: false, error: 'Invalid feedback action' })
+  const result = await query('UPDATE feedback SET status = $2 WHERE id = $1 RETURNING id', [id, req.body.status])
+  if (!result.rows[0]) return res.status(404).json({ success: false, error: 'Feedback not found' })
   res.json({ success: true })
 })
 
 adminRouter.get('/users', async (_req, res: Response) => {
   try {
-    const users = await query(`SELECT u.id, u.username, u.display_name, u.email, u.role, u.email_verified,
+    const users = await query(`SELECT u.id, u.username, u.display_name, u.email, u.role, u.can_manage_roles, u.email_verified,
       u.google_id IS NOT NULL AS google_account, u.created_at, u.last_login,
       (SELECT count(*)::int FROM posts p WHERE p.user_id = u.id AND p.deleted_at IS NULL) AS posts,
       (SELECT count(*)::int FROM post_reports r JOIN posts p ON p.id = r.post_id WHERE p.user_id = u.id) AS reports_against

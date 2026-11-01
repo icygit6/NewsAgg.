@@ -19,6 +19,19 @@ const notAdmin = () => db.mockResolvedValueOnce({ rows: [] } as any)
 describe('admin routes', () => {
   beforeEach(() => { db.mockReset() })
 
+  it('denies delegated admins role assignment and protects the primary admin', async () => {
+    admin()
+    db.mockResolvedValueOnce({ rows: [] } as any)
+    expect((await request(app).patch('/api/admin/users/13/role').send({ role: 'admin' })).status).toBe(403)
+    expect(db.mock.calls[1][0]).toContain('owner.can_manage_roles=true')
+    expect(db.mock.calls[1][0]).toContain('can_manage_roles=false')
+  })
+  it('keeps deleted content private to admins', async () => {
+    notAdmin()
+    expect((await request(app).get('/api/admin/deleted-content')).status).toBe(403)
+    expect(db).toHaveBeenCalledTimes(1)
+  })
+
   it('refuses signed-in accounts without the admin role', async () => {
     notAdmin()
     const response = await request(app).get('/api/admin/overview')
@@ -52,7 +65,7 @@ describe('admin routes', () => {
     db.mockResolvedValueOnce({ rows: [{ post_id: 9 }] } as any).mockResolvedValueOnce({ rows: [] } as any)
     const response = await request(app).patch('/api/admin/post-reports/4').send({ status: 'resolved', hidePost: true })
     expect(response.status).toBe(200)
-    expect(db).toHaveBeenLastCalledWith(expect.stringContaining('UPDATE posts SET deleted_at'), [9])
+    expect(db).toHaveBeenLastCalledWith(expect.stringContaining('UPDATE posts SET deleted_at'), [9, 26])
   })
 
   it('rejects unknown article report states', async () => {

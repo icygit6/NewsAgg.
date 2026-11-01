@@ -110,14 +110,6 @@ export const googleDisconnectSchema = z.object({
   currentPassword: z.string().max(128).optional().default(''),
 })
 
-export const personalizationSchema = z.object({ enabled: z.boolean() })
-
-export const readingHistorySchema = z.object({
-  topic: z.string().trim().max(64).optional(),
-  sentiment: z.string().trim().max(32).optional(),
-  keywords: z.array(z.string().trim().max(64)).max(20).optional().default([]),
-})
-
 export const postSchema = z.object({
   category: z.enum(['General','Sport','Health','Business','World','Politics','Lifestyle','Science','Climate']).optional(),
   content: z
@@ -138,7 +130,7 @@ export const postEditSchema = z.object({
 
 export const postCommentSchema = z.object({
   content: z.string().trim().min(1, 'comment required').max(500, 'comment must be at most 500 characters'),
-  parentId: z.number().int().positive().optional(),
+  parentId: z.coerce.number().int().positive().optional(),
 })
 
 export const postReportSchema = z.object({
@@ -153,6 +145,16 @@ export const articleReportSchema = z.object({
 
 export const blockUserSchema = z.object({ blockedUserId: z.number().int().positive() })
 
+// General feedback (routes/feedback.ts). `website` is a honeypot: people never see
+// it, form-filling bots do. contactEmail is optional and only offered to guests.
+export const feedbackSchema = z.object({
+  kind: z.enum(['bug', 'suggestion', 'other']),
+  message: z.string().trim().min(5, 'Please write at least a few words').max(2000, 'Feedback must be at most 2000 characters'),
+  page: z.string().trim().max(300).optional(),
+  contactEmail: z.union([z.literal(''), z.string().trim().email('Enter a valid email address').max(254)]).optional(),
+  website: z.string().max(200).optional(),
+})
+
 // Bookmark payloads come from the client's article cards. articleId is usually
 // the 16-hex DB id but legacy fallbacks can be an encoded URL, so cap rather
 // than pattern-match. Optional fields stay undefined → SQL NULL.
@@ -165,12 +167,20 @@ export const bookmarkSchema = z.object({
   topic: z.string().max(64).optional(),
 })
 
+// Collection names collapse inner whitespace so "Read  later" and "Read later" are one collection.
+const collectionName = z.string().transform((value) => value.replace(/\s+/g, ' ').trim()).pipe(z.string().min(1).max(60))
+
 export const bookmarkUpdateSchema = z.object({
-  collectionName: z.string().trim().min(1).max(60).optional(),
+  collectionName: collectionName.optional(),
   notes: z.string().trim().max(1000).nullable().optional(),
   isRead: z.boolean().optional(),
   archived: z.boolean().optional(),
 }).refine((value) => Object.keys(value).length > 0, 'at least one update required')
+
+export const collectionRenameSchema = z.object({ from: z.string().min(1).max(60), to: collectionName })
+export const collectionCreateSchema = z.object({ name: collectionName })
+// moveTo null (or absent) deletes the collection's bookmarks along with it.
+export const collectionDeleteSchema = z.object({ name: z.string().min(1).max(60), moveTo: collectionName.nullable().optional() })
 
 export const publicProfileSchema = z.object({
   displayName: z.string().trim().min(1).max(60).nullable().optional(),

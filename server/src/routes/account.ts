@@ -318,7 +318,7 @@ accountRouter.get('/sessions', async (req: any, res: Response) => {
 accountRouter.get('/export', async (req: any, res: Response) => {
   try {
     const account = await query(
-      `SELECT id, email, username, role, email_verified, personalization_enabled,
+      `SELECT id, email, username, role, email_verified,
               preferred_language, email_updates, terms_accepted_at, created_at, last_login
        FROM users WHERE id = $1`,
       [req.userId]

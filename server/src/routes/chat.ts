@@ -4,6 +4,7 @@ import { answerArticleQuestion, type ChatTurn } from '../services/groq'
 import { validateBody, chatSchema } from '../middleware/validate'
 import { authMiddleware } from '../middleware/auth'
 import { query } from '../db/client'
+import { REVIEW_SAFE } from '../lib/articleQuality'
 import { chatLimiter } from '../middleware/rateLimit'
 
 // POST /api/chat  { message, articleId, lang, messages? }
@@ -21,7 +22,7 @@ chatRouter.post('/', authMiddleware, chatLimiter, validateBody(chatSchema), asyn
 
   try {
     const articleResult = await query(
-      'SELECT title, description, content FROM articles WHERE id = $1',
+      `SELECT title, description, content FROM articles WHERE id = $1 AND ${REVIEW_SAFE}`,
       [articleId]
     )
     if (articleResult.rows.length === 0) {

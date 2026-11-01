@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express'
 import { createHash } from 'node:crypto'
 import { logger } from '../lib/logger'
 import { query } from '../db/client'
+import { REVIEW_SAFE } from '../lib/articleQuality'
 import {
   translateArticleFields,
   translateArticlePreviews,
@@ -30,7 +31,7 @@ translateRouter.post('/translate-previews', translateLimiter, async (req: Reques
   try {
     await ensurePreviewTable()
     const result = await query(
-      `SELECT id, title, language FROM articles WHERE id = ANY($1::text[])`,
+      `SELECT id, title, language FROM articles WHERE id = ANY($1::text[]) AND ${REVIEW_SAFE}`,
       [ids]
     )
     const articlesById = new Map(result.rows.map((row) => [String(row.id), row]))
@@ -211,7 +212,7 @@ translateRouter.get('/:id/translate', translateLimiter, async (req: Request, res
   try {
     const articleRes = await query(
       `SELECT id, title, description, content, ai_summary, language
-       FROM articles WHERE id = $1`,
+       FROM articles WHERE id = $1 AND ${REVIEW_SAFE}`,
       [articleId]
     )
     if (articleRes.rows.length === 0) {

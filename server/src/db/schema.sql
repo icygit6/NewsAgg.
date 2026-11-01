@@ -83,6 +83,7 @@ CREATE TABLE IF NOT EXISTS users (
   preferred_language TEXT NOT NULL DEFAULT 'en' CHECK (preferred_language IN ('en', 'zhTW')),
   email_updates BOOLEAN NOT NULL DEFAULT false,
   terms_accepted_at TIMESTAMPTZ,
+  bookmark_collections TEXT[],
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   last_login TIMESTAMPTZ
 );

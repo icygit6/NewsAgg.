@@ -1,3 +1,4 @@
+import { newsSearch } from '../lib/newsSearch'
 import { Router, Request, Response } from 'express'
 import { logger } from '../lib/logger'
 import { query } from '../db/client'
@@ -175,7 +176,7 @@ async function paginatedResponse(req: Request, category: string | undefined) {
   const sentimentRaw = String(req.query.sentiment ?? '')
     .trim()
     .toLowerCase()
-  const sentiment = SENTIMENTS.has(sentimentRaw) ? sentimentRaw : ''
+  const sentiment = sentimentRaw.split(',').filter(value => SENTIMENTS.has(value))
   const sources = String(req.query.source ?? '')
     .split(',')
     .map((s) => s.trim().toLowerCase())
@@ -203,21 +204,19 @@ async function paginatedResponse(req: Request, category: string | undefined) {
     const params: any[] = []
 
     if (category && category !== 'all') {
-      params.push(category)
-      where.push(`LOWER(a.topic) = LOWER($${params.length})`)
+      params.push(category.toLowerCase().split(',').map(value => value.trim()))
+      where.push(`LOWER(a.topic) = ANY($${params.length}::text[])`)
     }
     if (sources.length > 0) {
       params.push(sources)
       where.push(`a.source_id = ANY($${params.length}::text[])`)
     }
-    if (sentiment) {
+    if (sentiment.length) {
       params.push(sentiment)
-      where.push(`a.sentiment_type = $${params.length}`)
+      where.push(`a.sentiment_type = ANY($${params.length}::text[])`)
     }
     if (q) {
-      // Escape ILIKE wildcards so user input is matched literally.
-      params.push('%' + q.replace(/([%_\\])/g, '\\$1') + '%')
-      where.push(`(a.title ILIKE $${params.length} OR a.description ILIKE $${params.length})`)
+      where.push(newsSearch(q, params))
     }
     if (sinceHours > 0) {
       params.push(sinceHours)

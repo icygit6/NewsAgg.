@@ -1,5 +1,11 @@
 import rateLimit from 'express-rate-limit'
 
+export const explanationLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: { success: false, message: 'Too many explanation requests — try again later' },
+})
+
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 min
   max: 600, // SPA traffic: paginated feed + per-article fetches add up fast
@@ -50,6 +56,13 @@ export const articleReportLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
   message: { success: false, message: 'Too many reports — try again later' },
+})
+
+// Feedback is open to signed-out readers too, so it is keyed by IP.
+export const feedbackLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { success: false, error: 'Too much feedback at once — try again in a few minutes' },
 })
 
 export const translateLimiter = rateLimit({

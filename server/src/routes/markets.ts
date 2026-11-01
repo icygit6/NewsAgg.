@@ -37,25 +37,29 @@ async function persistCache() {
 async function section<T>(key: string, ttlMs: number, loader: () => Promise<T>): Promise<Section<T>> {
   await cacheReady
   const cached = lastGood.get(key)
-  const now = Date.now()
-  if (cached && now - cached.fetchedAt < ttlMs) {
+  if (cached && Date.now() - cached.fetchedAt < ttlMs) {
     return { value: cached.value as T, fetchedAt: cached.fetchedAt, stale: false }
   }
+  let pending = inflight.get(key) as Promise<T> | undefined
+  if (!pending) {
+    pending = loader().then(value => {
+      lastGood.set(key, { value, fetchedAt: Date.now() })
+      void persistCache()
+      return value
+    }).finally(() => inflight.delete(key))
+    inflight.set(key, pending)
+  }
+  // Never hold a usable snapshot behind a slow upstream fallback chain.
+  if (cached) {
+    void pending.catch(err => logger.warn({ err: String(err) }, `[markets:${key}] refresh failed`))
+    return { value: cached.value as T, fetchedAt: cached.fetchedAt, stale: true }
+  }
   try {
-    let pending = inflight.get(key) as Promise<T> | undefined
-    if (!pending) {
-      pending = loader()
-      inflight.set(key, pending)
-      pending.finally(() => inflight.delete(key)).catch(() => undefined)
-    }
     const value = await pending
-    lastGood.set(key, { value, fetchedAt: now })
-    void persistCache()
-    return { value, fetchedAt: now, stale: false }
+    return { value, fetchedAt: lastGood.get(key)?.fetchedAt ?? Date.now(), stale: false }
   } catch (err) {
-    logger.error({ err: (err as Error).message }, `[markets:${key}]`)
-    if (cached) return { value: cached.value as T, fetchedAt: cached.fetchedAt, stale: true }
-    return { value: null, fetchedAt: now, stale: true }
+    logger.error({ err: String(err) }, `[markets:${key}]`)
+    return { value: null, fetchedAt: Date.now(), stale: true }
   }
 }
 
@@ -73,7 +77,7 @@ const finitePositive = (value: unknown, label: string): number => {
 }
 
 interface FxRates {
-  base: 'USD'; idr: number; twd: number; eur: number
+  rates?: Record<string, number>; base: 'USD'; idr: number; twd: number; eur: number
   updatedAt: string | null; provider: string
 }
 async function loadFx(): Promise<FxRates> {
@@ -83,6 +87,7 @@ async function loadFx(): Promise<FxRates> {
   if (json?.result !== 'success' || !json.rates) throw new Error('er-api bad payload')
   return {
     base: 'USD',
+    rates: Object.fromEntries(Object.entries(json.rates).filter(([code, value]) => /^[A-Z]{3}$/.test(code) && typeof value === 'number' && Number.isFinite(value) && value > 0)) as Record<string, number>,
     idr: finitePositive(json.rates.IDR, 'USD/IDR'),
     twd: finitePositive(json.rates.TWD, 'USD/TWD'),
     eur: finitePositive(json.rates.EUR, 'USD/EUR'),
@@ -272,7 +277,7 @@ async function loadCrypto(): Promise<CryptoQuote[]> {
 
 marketsRouter.get('/summary', async (_req: Request, res: Response) => {
   const [fx, indices, crypto] = await Promise.all([
-    section('fx', FX_CACHE_TTL_MS, loadFx),
+    section('fx-v2', FX_CACHE_TTL_MS, loadFx),
     section('indices', 30 * 60 * 1000, loadIndices),
     section('crypto', 10 * 60 * 1000, loadCrypto),
   ])

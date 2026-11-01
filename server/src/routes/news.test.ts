@@ -12,7 +12,7 @@ describe('feed quality contract', () => {
     const result = await request(app).get('/news?sort=oldest&page=1&category=health')
     expect(result.status).toBe(200)
     const sql = db.mock.calls.find(([sql])=>!sql.includes('publication_state'))![0]
-    expect(sql).toContain("interval '45 days'")
+    expect(sql).toContain("interval '30 days'")
     expect(sql).toContain("NULLIF(btrim(a.url_to_image), '') IS NOT NULL")
     expect(sql).toContain("interval '2 hours'")
     expect(sql).toContain('a.feed_eligible = true')

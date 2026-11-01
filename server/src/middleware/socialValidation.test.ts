@@ -1,9 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { bookmarkSchema, bookmarkUpdateSchema, postEditSchema, postReportSchema, publicProfileSchema } from './validate'
+import { bookmarkSchema, bookmarkUpdateSchema, collectionRenameSchema, postEditSchema, postReportSchema, publicProfileSchema } from './validate'
 
 describe('bookmark and post validation', () => {
   it('rejects non-http bookmark URLs', () => {
     expect(bookmarkSchema.safeParse({ articleId: 'x', articleUrl: 'javascript:alert(1)' }).success).toBe(false)
+  })
+
+  it('normalises collection names', () => {
+    expect(bookmarkUpdateSchema.parse({ collectionName: '  Read   later ' }).collectionName).toBe('Read later')
+    expect(bookmarkUpdateSchema.safeParse({ collectionName: '   ' }).success).toBe(false)
+    expect(collectionRenameSchema.parse({ from: 'Research', to: ' Thesis  sources ' }).to).toBe('Thesis sources')
   })
 
   it('requires at least one bookmark update', () => {

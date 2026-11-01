@@ -5,6 +5,8 @@ import { initSentry, sentryEnabled, Sentry } from './lib/sentry'
 // is set, so nothing is sent off-box by default.
 initSentry()
 
+// Must run before any router is created, so every async handler is covered.
+import './lib/asyncRoutes'
 import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
@@ -21,9 +23,10 @@ import { authRouter } from './routes/auth'
 import { accountRouter } from './routes/account'
 import { postsRouter } from './routes/posts'
 import { adminRouter } from './routes/admin'
+import { emailPreferencesRouter } from './routes/emailPreferences'
+import { feedbackRouter } from './routes/feedback'
 import { bookmarksRouter } from './routes/bookmarks'
 import { profilesRouter } from './routes/profiles'
-import { userRouter } from './routes/user'
 import { quotesRouter } from './routes/quotes'
 import { translateRouter } from './routes/translate'
 import { chatRouter } from './routes/chat'
@@ -81,12 +84,13 @@ app.use('/api/markets', marketsRouter)
 app.use('/api/stats', statsRouter)
 app.use('/api/quotes', quotesRouter)
 app.use('/api/chat', chatRouter)
-app.use('/api/user', userRouter)
 app.use('/api/account', accountRouter)
 app.use('/api/posts', postsRouter)
 app.use('/api/bookmarks', bookmarksRouter)
 app.use('/api/profiles', profilesRouter)
 app.use('/api/admin', adminRouter)
+app.use('/api/email', emailPreferencesRouter)
+app.use('/api/feedback', feedbackRouter)
 app.use('/auth', authLimiter, authRouter)
 // Backward-compatible direct-Docker API path. New clients use
 // /api/bookmarks so IIS can reserve /bookmarks for the React page.

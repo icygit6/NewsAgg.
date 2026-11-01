@@ -2,8 +2,10 @@ import { Router, Request, Response } from 'express'
 import { logger } from '../lib/logger'
 import { query } from '../db/client'
 import { PublicationCache } from '../lib/publicationCache'
-import { optionalAuth } from '../middleware/auth'
-import { articleReportLimiter } from '../middleware/rateLimit'
+import { REVIEW_SAFE_ALIASED } from '../lib/articleQuality'
+import { authMiddleware } from '../middleware/auth'
+import { articleReportLimiter, explanationLimiter } from '../middleware/rateLimit'
+import { explainSentiment } from '../services/sentimentExplanation'
 import { validateBody, articleReportSchema } from '../middleware/validate'
 import { notifyAdminsOfReport } from '../services/adminNotify'
 
@@ -18,10 +20,26 @@ const ID_RE = /^[0-9a-f]{16}$/
 
 const articleCache = new PublicationCache<any | null>(5 * 60 * 1000, 500)
 
+articlesRouter.get('/:id/sentiment-explanation', explanationLimiter, async (req: Request, res: Response) => {
+  res.set('Cache-Control', 'no-store')
+  const id = String(req.params.id || '').toLowerCase()
+  const lang = String(req.query.lang || 'en')
+  if (!ID_RE.test(id) || !['en', 'zh-TW'].includes(lang)) return res.status(400).json({ success: false, message: 'Invalid explanation request' })
+  try {
+    const result = await query(`SELECT a.title, a.description, a.content, a.sentiment_type, a.sentiment_model FROM articles a WHERE a.id=$1 AND ${REVIEW_SAFE_ALIASED}`, [id])
+    if (!result.rows[0]) return res.status(404).json({ success: false, message: 'Article not found' })
+    const data = await explainSentiment(result.rows[0], lang)
+    return res.json({ success: true, data })
+  } catch (error: any) {
+    logger.warn({ err: error.message }, '[sentiment explanation]')
+    return res.status(503).json({ success: false, message: 'Article explanation temporarily unavailable' })
+  }
+})
+
 // POST /api/articles/:id/report  { reason, message? }
 // Reader correction route. Stores the report for team review; it never edits
-// the article. Signed-in reports keep the account id, guests stay anonymous.
-articlesRouter.post('/:id/report', articleReportLimiter, optionalAuth, validateBody(articleReportSchema), async (req: any, res: Response) => {
+// the article. Guests can read but not report: a report needs an account.
+articlesRouter.post('/:id/report', articleReportLimiter, authMiddleware, validateBody(articleReportSchema), async (req: any, res: Response) => {
   const id = String(req.params.id || '').toLowerCase()
   if (!ID_RE.test(id)) {
     return res.status(400).json({ success: false, message: 'Invalid article id' })
@@ -67,7 +85,7 @@ articlesRouter.get('/:id', async (req: Request, res: Response) => {
          FROM articles a
          LEFT JOIN sources s  ON a.source_id = s.id
          LEFT JOIN authors au ON a.author_id = au.id
-         WHERE a.id = $1`,
+         WHERE a.id = $1 AND ${REVIEW_SAFE_ALIASED}`,
         [id]
       )
       return result.rows[0] ?? null

@@ -2,8 +2,8 @@ import Groq from 'groq-sdk'
 import { hybridPassages } from './semantic'
 
 let groqClient: Groq | null = null
-const PRIMARY_CHAT_MODEL = process.env.GROQ_CHAT_MODEL || 'openai/gpt-oss-120b'
-const FALLBACK_CHAT_MODEL = process.env.GROQ_CHAT_FALLBACK_MODEL || 'openai/gpt-oss-20b'
+export const PRIMARY_CHAT_MODEL = process.env.GROQ_CHAT_MODEL || 'openai/gpt-oss-120b'
+export const FALLBACK_CHAT_MODEL = process.env.GROQ_CHAT_FALLBACK_MODEL || 'openai/gpt-oss-20b'
 
 /** Human-readable name of the model that answers article questions, shown on
  * the chat button instead of a generic "AI". Derived from GROQ_CHAT_MODEL so
@@ -156,7 +156,7 @@ SOURCE PASSAGES
 ${sources}`
 }
 
-async function createChatCompletion(messages: Groq.Chat.ChatCompletionMessageParam[]) {
+export async function createChatCompletion(messages: Groq.Chat.ChatCompletionMessageParam[]) {
   try {
     return await groq().chat.completions.create({
       model: PRIMARY_CHAT_MODEL,

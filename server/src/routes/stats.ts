@@ -1,9 +1,15 @@
+import { reportingAuthors } from '../lib/reportingAuthors'
+import { newsSearch } from '../lib/newsSearch'
 import { Router, Request, Response } from 'express'
 import { logger } from '../lib/logger'
-import { query } from '../db/client'
+import { pool, query } from '../db/client'
 import { PublicationCache } from '../lib/publicationCache'
 import { ACTIVE_ARTICLES } from '../lib/articleQuality'
-import { NLP_MODELS } from '../lib/nlpModels'
+import { NLP_MODELS, serviceModels } from '../lib/nlpModels'
+import { FALLBACK_CHAT_MODEL, PRIMARY_CHAT_MODEL } from '../services/groq'
+import { GEMINI_MODEL } from '../services/translate'
+import { sourceSentiments } from '../lib/sourceSentiments'
+import { buildSentimentEvidence } from '../lib/sentimentEvidence'
 
 // Aggregate analytics endpoints so the client widgets no longer pull the full
 // article dataset just to count things. All SQL-side, 5-minute TTL cache.
@@ -15,6 +21,38 @@ statsRouter.use((_req, res, next) => {
 })
 
 const statsCache = new PublicationCache<any>(5 * 60 * 1000, 40)
+
+// One cheap revision check refreshes all active news widgets together.
+statsRouter.get('/revision', async (_req: Request, res: Response) => {
+  try {
+    const result = await query('SELECT revision::text FROM public.publication_state WHERE singleton=true')
+    const revision = result.rows[0]?.revision
+    if (typeof revision !== 'string') throw new Error('Publication state unavailable')
+    res.json({ success: true, data: { revision } })
+  } catch {
+    res.status(503).json({ success: false, message: 'Publication status unavailable' })
+  }
+})
+
+function sourceScope(raw: unknown) {
+  return [...new Set(String(raw ?? '').split(',').map(s => s.trim()).filter(Boolean))].sort()
+}
+function addSources(where: string, params: any[], sources: string[], req: Request) {
+  if (sources.length) {
+    params.push(sources)
+    where += ` AND a.source_id = ANY($${params.length}::text[])`
+  }
+  const sentiments = String(req.query.sentiment ?? '').split(',').filter(s => ['positive', 'neutral', 'negative'].includes(s))
+  if (sentiments.length) {
+    params.push(sentiments)
+    where += ` AND a.sentiment_type=ANY($${params.length}::text[])`
+  }
+  const search = typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 200) : ''
+  if (search) {
+    where += ` AND (${newsSearch(search, params)})`
+  }
+  return where
+}
 
 // Public operational counts only: never return URLs, credentials or raw errors.
 statsRouter.get('/scraper-status', async (_req: Request, res: Response) => {
@@ -62,14 +100,20 @@ const KEYWORD_STOPLIST = new Set([
 // scrape time, distinct categories and the sentiment models in use.
 statsRouter.get('/overview', async (req: Request, res: Response) => {
   try {
-    const topic = topicParam(req.query.category)
-    const body = await statsCache.wrap(`overview:${topic ?? 'all'}`, async () => {
+    const topic = String(req.query.category ?? '').split(',').map(topicParam).filter(Boolean)
+    const sources = sourceScope(req.query.sources)
+    const body = await statsCache.wrap(`overview:${topic ?? 'all'}:${JSON.stringify([sources, req.query.sentiment, req.query.q])}`, async () => {
+      const snapshot = await pool.connect()
+      try {
+      await snapshot.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY')
+      const query = (sql: string, values?: any[]) => snapshot.query(sql, values)
       const params: any[] = []
       let where = `WHERE ${ACTIVE_ARTICLES}`
-      if (topic) {
+      if (topic.length) {
         params.push(topic)
-        where += ` AND a.topic = $1`
+        where += ` AND a.topic = ANY($1::text[])`
       }
+      where = addSources(where, params, sources, req)
       const agg = await query(
         `
         SELECT
@@ -101,21 +145,29 @@ statsRouter.get('/overview', async (req: Request, res: Response) => {
                 count(*) FILTER (WHERE a.sentiment_type = 'neutral')::int  AS neutral,
                 count(*) FILTER (WHERE a.sentiment_type = 'negative')::int AS negative
          FROM articles a
-         WHERE ${ACTIVE_ARTICLES} AND a.topic IS NOT NULL AND btrim(a.topic) <> ''
+         ${where} AND a.topic IS NOT NULL AND btrim(a.topic) <> ''
          GROUP BY a.topic
-         ORDER BY total DESC, a.topic`
+         ORDER BY total DESC, a.topic`, params
       )
       const models = await query(
         `SELECT DISTINCT sentiment_model FROM articles a
-         WHERE ${ACTIVE_ARTICLES} AND sentiment_model IS NOT NULL AND btrim(sentiment_model) <> '' ORDER BY sentiment_model`
+         ${where} AND sentiment_model IS NOT NULL AND btrim(sentiment_model) <> '' ORDER BY sentiment_model`, params
       )
       const row = agg.rows[0]
-      return {
+      const evidenceRows = await query(
+        `SELECT a.id, a.title, left(a.description, 1200) AS description, a.topic, a.sentiment_type, a.language, a.source_id, s.name AS source_name, s.domain AS source_domain, au.name AS author_name
+         FROM articles a LEFT JOIN sources s ON s.id = a.source_id LEFT JOIN authors au ON au.id = a.author_id ${where} ORDER BY a.published_at DESC NULLS LAST, a.id`, params
+      )
+      const result = {
         success: true,
         data: {
           total: row.total,
           nlpModels: NLP_MODELS,
+          serviceModels: serviceModels({ primary: PRIMARY_CHAT_MODEL, fallback: FALLBACK_CHAT_MODEL }, GEMINI_MODEL),
           sentiments: { positive: row.positive, neutral: row.neutral, negative: row.negative },
+          reportingAuthors: reportingAuthors(evidenceRows.rows),
+          evidence: buildSentimentEvidence(evidenceRows.rows),
+          bySource: sourceSentiments(evidenceRows.rows),
           sourceCount: row.source_count,
           keywordCount: kw.rows[0]?.keyword_count ?? 0,
           scrapedAt: row.latest_scraped_at ? new Date(row.latest_scraped_at).toISOString() : null,
@@ -124,11 +176,21 @@ statsRouter.get('/overview', async (req: Request, res: Response) => {
             topic: r.topic,
             total: r.total,
             sentiments: { positive: r.positive, neutral: r.neutral, negative: r.negative },
+            evidence: buildSentimentEvidence(evidenceRows.rows.filter(article => article.topic === r.topic)),
+            bySource: sourceSentiments(evidenceRows.rows.filter(article => article.topic === r.topic)),
           })),
           aiModels: Object.fromEntries(
             models.rows.map((r, i) => [`sentiment_${i + 1}`, r.sentiment_model])
           ),
         },
+      }
+      await snapshot.query('COMMIT')
+      return result
+      } catch (error) {
+        await snapshot.query('ROLLBACK')
+        throw error
+      } finally {
+        snapshot.release()
       }
     })
     res.json(body)
@@ -142,15 +204,17 @@ statsRouter.get('/overview', async (req: Request, res: Response) => {
 // Keyword frequencies from the JSONB keywords arrays, stoplist-filtered.
 statsRouter.get('/trending', async (req: Request, res: Response) => {
   try {
-    const topic = topicParam(req.query.category)
+    const topic = String(req.query.category ?? '').split(',').map(topicParam).filter(Boolean)
+    const sources = sourceScope(req.query.sources)
     const limit = Math.min(50, Math.max(1, parseInt(String(req.query.limit), 10) || 10))
-    const body = await statsCache.wrap(`trending:${topic ?? 'all'}:${limit}`, async () => {
+    const body = await statsCache.wrap(`trending:${topic ?? 'all'}:${limit}:${JSON.stringify([sources, req.query.sentiment, req.query.q])}`, async () => {
       const params: any[] = []
       let where = `WHERE ${ACTIVE_ARTICLES} AND jsonb_typeof(a.keywords) = 'array'`
-      if (topic) {
+      if (topic.length) {
         params.push(topic)
-        where += ` AND a.topic = $${params.length}`
+        where += ` AND a.topic = ANY($${params.length}::text[])`
       }
+      where = addSources(where, params, sources, req)
       const result = await query(
         `
         SELECT lower(kw) AS keyword, mode() WITHIN GROUP (ORDER BY kw) AS label, count(*)::int AS count

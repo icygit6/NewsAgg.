@@ -1,6 +1,11 @@
-// The public feed shows the same 45 days that scraper/cleanup.py keeps, so
-// nothing still stored is hidden only by age.
-export const PUBLIC_WINDOW_DAYS = 45
+// Archives remain accessible, but known-contaminated articles must not be
+// exposed through direct links, translations, embedded cards or AI context.
+export const REVIEW_SAFE = "COALESCE(quality_metadata->>'content_review_status', '') <> 'quarantined'"
+export const REVIEW_SAFE_ALIASED = "COALESCE(a.quality_metadata->>'content_review_status', '') <> 'quarantined'"
+
+// The public feed shows the same 30 days that scraper/cleanup.py keeps, so
+// protected archives remain accessible through bookmarks and direct links.
+export const PUBLIC_WINDOW_DAYS = 30
 
 // Shared by feed and analytics: scraping time is NOT publication time.
 // A newer copy hides an older one when it has the same content hash, or the
@@ -18,6 +23,7 @@ const DUPLICATE_BASE = `duplicate.feed_eligible = true
         > (COALESCE(a.scraped_at, '-infinity'::timestamptz), a.id)`
 
 export const ACTIVE_ARTICLES = `a.feed_eligible = true
+  AND ${REVIEW_SAFE_ALIASED}
   AND a.extraction_version = 'structured-v3'
   AND jsonb_array_length(a.content_blocks) > 0
   AND NULLIF(btrim(a.url_to_image), '') IS NOT NULL
