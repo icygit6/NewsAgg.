@@ -1,11 +1,11 @@
 {
   "timeZone": "Asia/Taipei",
   "startTime": "17:00",
-  "freezeTime": "04:30",
+  "freezeTime": "05:40",
   "maxScrapeMinutes": 210,
-  "scrapeDeadline": "04:25",
-  "sendTime": "04:40",
-  "sendDeadline": "04:55",
+  "scrapeDeadline": "05:35",
+  "sendTime": "05:50",
+  "sendDeadline": "06:05",
   "targetPerSourceCategory": 20,
   "maxAgeHours": 48,
   "minimumArticles": 8,
@@ -13,7 +13,7 @@
   "sourceCategories": {
     "bbc": ["Sport","Health","Business","World","Politics","Lifestyle","Science","Climate"],
     "cnn": ["Sport","Health","Business","World","Politics","Lifestyle","Science","Climate"],
-    "aljazeera": ["Sport","Health","Business","World","Science","Climate"],
+    "aljazeera": ["Sport","Health","Business","World","Politics","Lifestyle","Science","Climate"],
     "yahoo_tw": ["Sport","Business","World","Politics","Lifestyle","Science"]
   },
   "recipients": [

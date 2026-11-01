@@ -1,7 +1,7 @@
 name: NewsAgg Daily Publish and Report
 
 on:
-  # Windows Task Scheduler owns the 04:30 freeze and 04:40 delivery.
+  # Windows Task Scheduler owns the 05:40 preparation and 05:50 delivery.
   # Actions stays available for explicit preflight/recovery operations.
   workflow_dispatch:
     inputs:
@@ -56,7 +56,7 @@ jobs:
             -File 'D:\Website\RUN-NEWSAGG-DAILY.ps1' @flags
           if ($LASTEXITCODE -ne 0) { throw "Daily preflight failed with exit code $LASTEXITCODE." }
 
-      - name: Freeze edition and send daily brief
+      - name: Prepare edition and send daily brief
         if: inputs.mode == 'send'
         shell: powershell
         run: |

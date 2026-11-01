@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Weekly database maintenance: back up first, then cleanse.
-//   1. pg_dump via db-backup.mjs (newest 8 weekly dumps kept in backups/).
+//   1. pg_dump via db-backup.mjs (only the newest dump is kept in backups/).
 //   2. scraper/cleanup.py --commit --vacuum inside the scraper image, using the
 //      repository's current cleanup.py and protected-evaluation-ids.txt.
 // Cleansing never runs unless the backup succeeded, and it waits while a
@@ -36,7 +36,7 @@ try {
   if(ingesting) throw new Error(`ingestion still running (${ingesting}); retry later`);
 
   if(!dryRun) {
-    const backup=await run(process.execPath,[path.join(root,'server','scripts','db-backup.mjs')],{env:{NEWSAGG_BACKUP_KEEP:'8'}});
+    const backup=await run(process.execPath,[path.join(root,'server','scripts','db-backup.mjs')]);
     log(`backup ${backup.trim()}`);
   }
 

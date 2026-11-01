@@ -1,6 +1,10 @@
 #!/usr/bin/env node
-// Daily dump of the local Docker PostgreSQL (compose service "db") into backups/.
-// Keeps the newest KEEP dumps named newsagg-*.dump; other files are never touched.
+// Dump of the local Docker PostgreSQL (compose service "db") into backups/. Run by
+// db-maintenance.mjs on every other Sunday, right before the cleanup.
+// Keeps only the newest KEEP (default 1) dumps named newsagg-*.dump: once the new dump is
+// written and checked, older ones are deleted. Other files (e.g. neon-*.dump) are never touched.
+// NEWSAGG_BACKUP_COPY_DIR (optional) names a second folder, ideally on another disk or a
+// synced drive, that receives a copy of each validated dump and is pruned the same way.
 import {spawn} from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -9,8 +13,15 @@ import {fileURLToPath} from 'node:url';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..','..');
 const dir=path.join(root,'backups');
 const logFile=path.join(root,'logs','db-backup.log');
-// db-maintenance.mjs runs this weekly with NEWSAGG_BACKUP_KEEP=8 (two months).
-const KEEP=Math.max(1,Number(process.env.NEWSAGG_BACKUP_KEEP)||14);
+// One backup is kept: each new, validated dump replaces the previous ones. Both callers use this default.
+const KEEP=Math.max(1,Number(process.env.NEWSAGG_BACKUP_KEEP)||1);
+const copyDir=process.env.NEWSAGG_BACKUP_COPY_DIR?.trim();
+const DUMP=/^newsagg-\d{8}-\d{4}\.dump$/;
+const prune=folder=>{
+  const old=fs.readdirSync(folder).filter(f=>DUMP.test(f)).sort().slice(0,-KEEP);
+  for(const f of old) fs.unlinkSync(path.join(folder,f));
+  return old.length;
+};
 
 const log=message=>{
   fs.mkdirSync(path.dirname(logFile),{recursive:true});
@@ -49,10 +60,25 @@ try {
   const tables=(toc.match(/ TABLE DATA /g)||[]).length;
   if(tables<10) throw new Error(`Dump lists only ${tables} tables`);
   fs.renameSync(partial,target);
-  const old=fs.readdirSync(dir).filter(f=>/^newsagg-\d{8}-\d{4}\.dump$/.test(f)).sort().slice(0,-KEEP);
-  for(const f of old) fs.unlinkSync(path.join(dir,f));
-  log(`ok ${path.basename(target)} ${fs.statSync(target).size} bytes, ${tables} tables, pruned ${old.length}`);
-  console.log(JSON.stringify({ok:true,file:target,tables,pruned:old.length}));
+  const pruned=prune(dir);
+  let copy=null;
+  if(copyDir) {
+    // A failed copy is logged but does not fail the backup: the primary dump is already valid.
+    try {
+      fs.mkdirSync(copyDir,{recursive:true});
+      copy=path.join(copyDir,path.basename(target));
+      fs.copyFileSync(target,`${copy}.partial`);
+      if(fs.statSync(`${copy}.partial`).size!==fs.statSync(target).size) throw new Error('copy size differs');
+      fs.renameSync(`${copy}.partial`,copy);
+      prune(copyDir);
+    } catch(error) {
+      fs.rmSync(`${copy}.partial`,{force:true});
+      log(`copy failed ${copyDir}: ${error.message}`);
+      copy=null;
+    }
+  }
+  log(`ok ${path.basename(target)} ${fs.statSync(target).size} bytes, ${tables} tables, pruned ${pruned}${copy?`, copied to ${copyDir}`:''}`);
+  console.log(JSON.stringify({ok:true,file:target,copy,tables,pruned}));
 } catch(error) {
   fs.rmSync(partial,{force:true});
   log(`failed ${error.message}`);

@@ -1,4 +1,4 @@
-import {emailHtml} from './daily-email.mjs';
+import {emailHtml,emailText} from './daily-email.mjs';
 export function taipeiDay(now = new Date()) {
   return new Intl.DateTimeFormat('en-CA', {timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(now);
 }
@@ -53,20 +53,11 @@ export function digestSelection(rows,limit=12,now=new Date()) {
   }
   return selected.sort((a,b)=>new Date(b.published_at)-new Date(a.published_at));
 }
-export function renderDigest({day,runKey,report,rows=[],validation,publicUrl,error,now=new Date()}) {
-  const failed = Boolean(error) || !validation?.ok;
-  const status = failed ? 'FAILED' : validation.status.toUpperCase();
-  const subject = `NewsAgg ${day} [${status}] — ${failed?'Daily pipeline alert／每日流程警示':`${rows.length} verified stories／篇已驗證文章`}`;
-  const counts = {};
-  for(const row of rows) counts[row.topic]=(counts[row.topic]||0)+1;
-  const missing = ['Business','Climate','Health','Lifestyle','Politics','Science','Sport','World'].filter(c=>!counts[c]);
-  const snapshot=report?.scope==='published-snapshot';
-  const topicZh={Business:'商業',Climate:'氣候',Health:'健康',Lifestyle:'生活',Politics:'政治',Science:'科學',Sport:'體育',World:'國際'};
-  const text = [subject,`Timezone／時區: Asia/Taipei | Reference／識別碼: ${runKey}`,`${snapshot?'Publication window／發布時段':'Scraper／擷取'}: ${report?.startedAt || 'not started／尚未開始'} → ${report?.finishedAt || 'not completed／尚未完成'}`,
-    failed ? `This is a failure notice, not a successful news digest.／此為失敗通知，並非成功發送的新聞摘要。 ${error || validation?.reason}` : `${snapshot?'This frozen edition includes only validated articles already published on the website.／此固定版本僅收錄網站上已發布且驗證的文章。':'Only articles from this completed run are included.／僅收錄本次已完成擷取的文章。'}\n${Object.entries(counts).map(([topic,count])=>`${topic}／${topicZh[topic]||topic}: ${count} stories／篇文章`).join('\n')}\nMissing categories／缺少的分類: ${missing.map(topic=>`${topic}／${topicZh[topic]}`).join(', ') || 'none／無'}.`,
-    !failed && Object.keys(validation.deficits || {}).length ? `${snapshot?'The morning edition is frozen／晨間版本已固定':'Scraping finished／擷取已完成'}, but ${Object.keys(validation.deficits).length} source/category targets were not reached. Older articles are not used to fill the gaps.／仍有 ${Object.keys(validation.deficits).length} 個來源或分類未達目標；不以舊文章補足。` : '',
-    !failed && validation.expiredCount ? `${validation.expiredCount} run articles expired before sending and were excluded.／${validation.expiredCount} 篇文章在發送前過期並已排除。` : '',
-    !failed ? `${rows.filter(r=>new Date(r.published_at)<now.getTime()-86400000).length} articles use the explicitly allowed 24–48 hour fallback window.／${rows.filter(r=>new Date(r.published_at)<now.getTime()-86400000).length} 篇文章使用允許的 24 至 48 小時備選時間範圍。` : '',
-    `Website／網站: ${publicUrl}`, ...(!failed ? digestSelection(rows,12,now).map(r=>`${r.topic}／${topicZh[r.topic]||r.topic} | ${r.source_name} | ${r.title}\n${r.ai_summary || ''}\n${publicUrl}/article/${r.id}`):[])].filter(Boolean).join('\n\n');
-  return {subject,text,html:emailHtml({day,runKey,report,rows,selected:failed?[]:digestSelection(rows,12,now),validation,publicUrl,error,subject})};
+export function renderDigest({day,runKey,report,rows=[],validation,publicUrl,error,now=new Date(),quote=null}) {
+  const failed=Boolean(error)||!validation?.ok;
+  const status=failed?'FAILED':validation.status.toUpperCase();
+  const subject=`NewsAgg ${day} [${status}] — ${failed?'Daily pipeline alert／每日流程警示':`${rows.length} verified stories／篇已驗證文章`}`;
+  const selected=failed?[]:digestSelection(rows,12,now);
+  const args={day,runKey,report,rows,selected,validation,publicUrl,error,subject,quote};
+  return {subject,text:emailText(args),html:emailHtml(args)};
 }

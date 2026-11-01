@@ -59,7 +59,7 @@ jobs:
         shell: powershell
         run: |
           Set-Location -LiteralPath 'D:\Website'
-          docker compose --profile scraper run --rm scraper python cleanup.py --days 45
+          docker compose --profile scraper run --rm scraper python cleanup.py --days 30
           if ($LASTEXITCODE -ne 0) { throw "Cleanup failed with exit code $LASTEXITCODE." }
 
   backfill-lang:

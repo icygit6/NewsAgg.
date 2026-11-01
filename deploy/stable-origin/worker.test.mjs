@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import worker,{tunnelOrigin} from './worker.mjs';
+import worker,{tunnelOrigin,edgeCacheUrl} from './worker.mjs';
 test('accepts only a bare HTTPS Quick Tunnel origin',()=>{
   assert.equal(tunnelOrigin('https://one-two.trycloudflare.com'),'https://one-two.trycloudflare.com');
   for(const url of ['http://localhost','https://evil.test','https://one.trycloudflare.com.evil.test','https://user:secret@one.trycloudflare.com','https://one.trycloudflare.com/api','https://one.trycloudflare.com?url=bad','https://one.trycloudflare.com:8443']) assert.equal(tunnelOrigin(url),null);
@@ -49,4 +49,49 @@ test('lets search engines index reader pages but not private paths',async(t)=>{
     const r=await worker.fetch(new Request(`https://newsagg.example.workers.dev${path}`),env);
     assert.equal(r.headers.get('X-Robots-Tag'),'noindex, nofollow');
   }
+});
+
+import { edgeTtl, ROBOTS } from './worker.mjs';
+test('edge cache keeps private paths out and hashed assets for a year', () => {
+  assert.equal(edgeTtl('/api/news-from-db'), 0);
+  assert.equal(edgeTtl('/auth/google'), 0);
+  assert.equal(edgeTtl('/dbviewer/'), 0);
+  assert.equal(edgeTtl('/assets/index-abc.js'), 31536000);
+  assert.equal(edgeTtl('/logo-mark-128.png'), 86400);
+  assert.equal(edgeTtl('/', 'text/html'), 60);
+  assert.equal(edgeTtl('/article/123', 'text/html'), 60);
+  assert.equal(edgeTtl('/article/123', 'application/json'), 0);
+});
+test('robots.txt holds only standard directives', () => {
+  assert.ok(!/Content-Signal/i.test(ROBOTS));
+  assert.match(ROBOTS, /Disallow: \/api\//);
+});
+
+test('static asset versions bypass legacy keys without splitting HTML route caches', () => {
+  const origin='https://newsagg.example.workers.dev';
+  const old=edgeCacheUrl(`${origin}/logo-mark-128.png`);
+  const fresh=edgeCacheUrl(`${origin}/logo-mark-128.png?v=sentiment-20261022`);
+  assert.notEqual(old,`${origin}/logo-mark-128.png`);
+  assert.notEqual(old,fresh);
+  assert.equal(new URL(fresh).searchParams.get('v'),'sentiment-20261022');
+  assert.equal(edgeCacheUrl(`${origin}/?view=research`),`${origin}/`);
+  assert.equal(edgeCacheUrl(`${origin}/logo-mark-128.png?utm_source=x`),old);
+  assert.equal(edgeCacheUrl(`${origin}/logo-mark-128.png?v=invalid%20version`),old);
+});
+
+test('cache lookup and insertion use the same version-aware asset key', async(t) => {
+  const seen=[];
+  const previous=Object.getOwnPropertyDescriptor(globalThis,'caches');
+  Object.defineProperty(globalThis,'caches',{configurable:true,value:{default:{
+    match:async(key)=>{seen.push(['match',key.url]);return undefined;},
+    put:async(key)=>{seen.push(['put',key.url]);},
+  }}});
+  t.after(()=>previous?Object.defineProperty(globalThis,'caches',previous):delete globalThis.caches);
+  t.mock.method(globalThis,'fetch',async()=>new Response('new-logo',{headers:{'Content-Type':'image/png'}}));
+  const tasks=[];
+  const response=await worker.fetch(new Request('https://newsagg.example.workers.dev/favicon.png?v=sentiment-20261022'),{NEWSAGG_ORIGIN:'https://old-tunnel.trycloudflare.com'},{waitUntil:p=>tasks.push(p)});
+  await Promise.all(tasks);
+  assert.equal(await response.text(),'new-logo');
+  assert.equal(seen[0][1],seen[1][1]);
+  assert.match(seen[0][1],/v=sentiment-20261022/);
 });

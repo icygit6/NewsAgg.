@@ -9,8 +9,9 @@ import nodemailer from 'nodemailer';
 import {taipeiDay,taipeiTime,validateRun,renderDigest} from './daily-policy.mjs';
 import {readJson,atomicJson,acquireLock,command,deliver} from './daily-runtime.mjs';
 import {freezeEdition,ingestionEdition} from './daily-edition.mjs';
-import {nextIngestionAttempt} from './ingestion-state.mjs';
+import {nextIngestionAttempt,assertCompletedIngestion,planScraperBudget} from './ingestion-state.mjs';
 import {resolveRecipients} from './daily-recipients.mjs';
+import {loadSubscribers,planRecipients,personalizeMessage,subscriberLimit,unsubscribeKey,unsubscribeUrl} from './daily-subscribers.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const {values:args}=parseArgs({options:{'dry-run':{type:'boolean'},ingest:{type:'boolean'},benchmark:{type:'boolean'},'refresh-existing':{type:'boolean'},target:{type:'string'},recipients:{type:'string'},'max-minutes':{type:'string'}}});
@@ -61,7 +62,7 @@ async function getRows(ids) {
   const client=databaseClient();
   try {
     await client.connect();
-    return (await client.query(`SELECT a.id,a.title,a.topic,a.source_id,s.name AS source_name,a.published_at,a.ai_summary,
+    return (await client.query(`SELECT a.id,a.title,a.topic,a.source_id,s.name AS source_name,a.published_at,a.sentiment_type,
       a.feed_eligible,a.extraction_version,a.content_blocks FROM articles a LEFT JOIN sources s ON s.id=a.source_id
       WHERE a.id = ANY($1::text[]) ORDER BY a.published_at DESC,a.id`,[ids])).rows;
   } finally { await client.end(); }
@@ -72,16 +73,27 @@ async function morningEdition() {
   try {
     const ledgerFile=path.join(dir,'delivery.json'),stateFile=path.join(dir,'state.json');
     const ledger=readJson(ledgerFile,{});
-    if(config.recipients.every(to=>ledger[to]?.status==='accepted')) {log('already_delivered');return;}
+    // 'delivered' is only recorded once the subscriber pass has also finished,
+    // so a crash between the team and the subscribers resumes instead of skipping them.
+    if(readJson(stateFile,{}).phase==='delivered'&&config.recipients.every(to=>ledger[to]?.status==='accepted')) {log('already_delivered');return;}
     const freezeAt=taipeiTime(day,config.freezeTime),sendAt=taipeiTime(day,config.sendTime),deadline=taipeiTime(day,config.sendDeadline);
-    log('waiting_for_snapshot',{freezeAt});await waitUntil(freezeAt);
-    const client=databaseClient();let edition;
-    try {await client.connect();edition=await freezeEdition(client,{day,config,publicUrl});}
-    finally {await client.end();}
+    log('waiting_for_edition',{prepareAt:freezeAt});await waitUntil(freezeAt);
+    let edition;
+    // Prevent ingestion/benchmark writes racing the completion check and edition.
+    const releaseIngestion=acquireLock(path.join(base,'pipeline.lock'));
+    try {
+      const ingestionDir=path.join(base,`ingestion-${day}`);
+      const completed=assertCompletedIngestion(readJson(path.join(ingestionDir,'state.json')),
+        readJson(path.join(ingestionDir,'scraper.json')),{day,cutoff:freezeAt});
+      log('ingestion_complete_before_email',completed);
+      const client=databaseClient();
+      try {await client.connect();edition=await freezeEdition(client,{day,config,publicUrl});}
+      finally {await client.end();}
+    } finally {releaseIngestion();}
     const message=edition.message;
     const state={day,phase:'frozen',editionDay:day,frozenAt:edition.frozen_at,articleCount:edition.details.articleCount,status:edition.status,details:edition.details};
     atomicJson(stateFile,state);atomicJson(path.join(dir,'preview.json'),message);
-    log('edition_frozen',{articleCount:state.articleCount,status:edition.status,lateFreeze:edition.details.lateFreeze});
+    log('edition_prepared',{articleCount:state.articleCount,status:edition.status,latePreparation:edition.details.lateFreeze});
     await recoverPublic();
     await waitUntil(sendAt);
     if(!await healthy()) await recoverPublic();
@@ -89,11 +101,29 @@ async function morningEdition() {
     const transport=smtp();
     try {
       await transport.verify();
-      const send=recipients=>deliver({recipients,ledger,save:v=>atomicJson(ledgerFile,v),transport,message,day,from:process.env.MAIL_FROM||process.env.SMTP_USER});
-      await send(config.recipients.filter(to=>!ledger[to]||(ledger[to].status==='rejected'&&ledger[to].attempts<3)));
-      while(Date.now()<deadline.getTime()&&config.recipients.some(to=>ledger[to]?.status==='rejected'&&ledger[to].attempts<3)) {
+      const from=process.env.MAIL_FROM||process.env.SMTP_USER;
+      const plan=await subscriberPlan();
+      const personalize=(to,base)=>{
+        const subscriber=plan.byEmail.get(to.toLowerCase());
+        return personalizeMessage(base,subscriber&&plan.key
+          ?{unsubscribeUrl:unsubscribeUrl(publicUrl,subscriber.id,plan.key),oneClick:true}
+          :{unsubscribeUrl:`${publicUrl}/profile`});
+      };
+      const send=recipients=>deliver({recipients,ledger,save:v=>atomicJson(ledgerFile,v),transport,message,day,from,personalize});
+      const retryable=list=>list.filter(to=>ledger[to]?.status==='rejected'&&ledger[to].attempts<3);
+      const pending=list=>list.filter(to=>!ledger[to]||(ledger[to].status==='rejected'&&ledger[to].attempts<3));
+      await send(pending(config.recipients));
+      while(Date.now()<deadline.getTime()&&retryable(config.recipients).length) {
         await sleep(30000);
-        await send(config.recipients.filter(to=>ledger[to]?.status==='rejected'&&ledger[to].attempts<3));
+        await send(retryable(config.recipients));
+      }
+      // Subscribers cannot fail the run: the team list decides that. A bad
+      // mailbox here is recorded in the ledger and reported, not retried forever.
+      if(plan.subscribers.length) {
+        const emails=plan.subscribers.map(subscriber=>subscriber.email);
+        await send(pending(emails));
+        log('subscriber_delivery',{subscribers:emails.length,accepted:emails.filter(to=>ledger[to]?.status==='accepted').length,
+          needsReview:emails.filter(to=>ledger[to]?.status!=='accepted').length});
       }
       const accepted=config.recipients.every(to=>ledger[to]?.status==='accepted');
       state.phase=accepted?'delivered':'delivery_needs_review';state.finishedAt=new Date().toISOString();atomicJson(stateFile,state);
@@ -101,6 +131,21 @@ async function morningEdition() {
       if(!accepted) process.exitCode=1;
     } finally {transport.close();}
   } finally {unlock();}
+}
+async function subscriberPlan() {
+  let subscribers=[],key=null;
+  try {
+    key=unsubscribeKey(process.env);
+    const client=databaseClient();
+    try {await client.connect();subscribers=await loadSubscribers(client,{limit:subscriberLimit(process.env)});}
+    finally {await client.end();}
+  } catch(error) {
+    // The team still gets its edition; the failure is visible in the log.
+    log('subscriber_lookup_failed',{error:error.message});subscribers=[];
+  }
+  const plan=planRecipients(config.recipients,subscribers);
+  log('subscribers_loaded',{optedInVerified:subscribers.length,additionalToTeam:plan.subscribers.length});
+  return {...plan,key};
 }
 async function healthy() {
   try { const r=await fetch(`${publicUrl}/health?db=1`,{signal:AbortSignal.timeout(15000),cache:'no-store'});const body=await r.json();return r.ok&&body.ok===true&&body.db==='up'; }
@@ -134,9 +179,10 @@ async function main() {
     // No SMTP DATA, scraping, tunnel rotation, or scheduler mutation.
     await docker(['info','--format','{{.ServerVersion}}']);
     await getRows(['__preflight__']);
+    const optedIn=await subscriberPlan();
     const transport=smtp();try {await transport.verify();}finally {transport.close();}
     const publicHealthy=await healthy();
-    log('preflight_complete',{smtpVerified:true,publicHealthy,recipients:config.recipients,target,schedule:config.startTime,sendTime:config.sendTime,noEmailSent:true});
+    log('preflight_complete',{smtpVerified:true,publicHealthy,recipients:config.recipients,subscribers:optedIn.subscribers.length,target,schedule:config.startTime,sendTime:config.sendTime,noEmailSent:true});
     if(!publicHealthy) process.exitCode=1;
     return;
   }
@@ -174,8 +220,11 @@ async function main() {
           catch {log('public_health_warning',{message:'Ingestion continues; morning delivery still requires healthy public URL'});}
         }
         // Prebuilt image: never spend the nightly time budget downloading/building models.
+        const budget=planScraperBudget(scrapeDeadline);
+        log('scraper_budget',{stopAt:budget.stopAt.toISOString(),deadline:budget.deadline.toISOString(),reserveSeconds:budget.reserveMs/1000});
         await docker(['compose','--profile','scraper','run','--rm','--name',container,'--volume',`${dir}:/reports`,'scraper',
           'python','-u','run_all.py','--target',String(target),'--max-age-hours',String(config.maxAgeHours),
+          '--stop-at',budget.stopAt.toISOString(),
           '--run-key',state.runKey,'--report-path','/reports/scraper.json',...(args['refresh-existing']||args.ingest?['--refresh-existing']:[])],scrapeDeadline.getTime()-Date.now());
         report=readJson(reportFile);
         if(!report?.finishedAt) throw new Error('Scraper exited without a finished report');

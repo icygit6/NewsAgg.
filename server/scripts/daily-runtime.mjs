@@ -44,14 +44,14 @@ export async function command(executable,args,{cwd,logFile,timeout=60000}={}) {
     });
   } finally { if(output!==null) fs.closeSync(output); }
 }
-export async function deliver({recipients,ledger,save,transport,message,day,from,now=()=>new Date()}) {
+export async function deliver({recipients,ledger,save,transport,message,day,from,personalize,now=()=>new Date()}) {
   // Persist the intent BEFORE entering SMTP DATA, and each response afterwards.
   for(const to of recipients) {
     if(!shouldSend(ledger[to])) continue;
     ledger[to]={status:'sending',at:now().toISOString(),attempts:(ledger[to]?.attempts||0)+1};
     save(ledger);
     try {
-      const info=await transport.sendMail({...message,from,to,messageId:`<newsagg-${day}-${to.replace(/[^a-z0-9]/gi,'-')}@newsagg.local>`});
+      const info=await transport.sendMail({...(personalize?personalize(to,message):message),from,to,messageId:`<newsagg-${day}-${to.replace(/[^a-z0-9]/gi,'-')}@newsagg.local>`});
       ledger[to]={...ledger[to],status:deliveryOutcome(info),at:now().toISOString()};
     } catch(error) {
       ledger[to]={...ledger[to],status:deliveryError(error),at:now().toISOString(),code:error.code||'SMTP_ERROR'};

@@ -14,12 +14,16 @@ REVOKE ALL ON ALL TABLES IN SCHEMA public FROM newsagg_viewer;
 GRANT SELECT ON
   article_chunks, article_preview_translations, article_publications, article_reports,
   articles, authors, bookmarks, newsletter_editions, post_comments, post_likes,
-  post_reports, posts, publication_state, scraper_runs, sources, translations, user_blocks
+  post_reports, posts, publication_state, scraper_runs, sources, translations, user_blocks,
+  feedback, moderation_history
   TO newsagg_viewer;
 
 -- Browsable stand-in for users (pgweb's row view selects every column).
+-- New columns go at the end: CREATE OR REPLACE VIEW cannot reorder existing ones.
 CREATE OR REPLACE VIEW users_overview AS
   SELECT id, email, username, display_name, role, email_verified, created_at, last_login,
-         preferred_language, email_updates, personalization_enabled, terms_accepted_at
+         preferred_language, email_updates, personalization_enabled, terms_accepted_at,
+         avatar, bio, profile_background, profile_background_image, can_manage_roles,
+         bookmark_collections
   FROM users;
 GRANT SELECT ON users_overview TO newsagg_viewer;
