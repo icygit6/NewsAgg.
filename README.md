@@ -77,8 +77,8 @@ GET  /health                      DB-backed liveness probe → 200 {ok:true} | 5
 
 ## Conventions
 
-- One accent identity: cyan→pink brand gradient (`--brand*` tokens in `client/src/styles/tokens.css`); never name a custom token `--accent` — shadcn's `theme.css` owns that name and is imported later.
-- Brand assets in `client/public/` (PWA icons, maskable icon, apple-touch icon, OG image) are generated from the cyan→pink "N" mark by `client/scripts/generate-brand-assets.py`; `favicon.svg` is hand-authored. The PWA manifest is `client/public/manifest.webmanifest`.
+- One accent identity: `--brand*` tokens in `client/src/styles/tokens.css` follow the active colour theme (blue-600 by default; `styles/themes.css` re-points the scale). Never name a custom token `--accent` — shadcn's `theme.css` owns that name and is imported later.
+- Brand assets in `client/public/` (favicon, PWA icons, maskable icon, apple-touch icon, OG image) are generated from `client/public/logo-mark.png` by `client/scripts/generate-brand-assets.py`. The PWA manifest is `client/public/manifest.webmanifest`.
 - Public language controls expose English and Traditional Chinese (`en` / `zh-TW`).
 - Server state lives in React Query hooks (`client/src/app/hooks/`); AppContext holds UI + identity only.
 - The posts feature is gated by `POSTS_ENABLED` in `client/src/app/constants/index.ts`.

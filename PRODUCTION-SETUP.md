@@ -63,7 +63,7 @@ These integrations are optional and the application starts without them:
   be added as an authorized JavaScript origin after each rotation; ordinary
   email/password login does not have this restriction.
 - `TURNSTILE_SECRET` and `VITE_TURNSTILE_SITE_KEY`: optional free CAPTCHA.
-- `SENTRY_DSN`, `MEM0_API_KEY`, `FAVQS_API_KEY`, and `TWELVE_DATA_API_KEY`:
+- `SENTRY_DSN`, `FAVQS_API_KEY`, and `TWELVE_DATA_API_KEY`:
   optional. Leave them empty to avoid external plans or quotas. Finance falls
   back to no-key public data sources when Twelve Data is empty.
 - `HF_TOKEN`: optional for downloading Hugging Face models; local cached models

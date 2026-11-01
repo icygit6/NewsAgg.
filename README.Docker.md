@@ -23,7 +23,7 @@ yang harus terisi:
 ```env
 NEONDB_URL=postgresql://...   # WAJIB — server & scraper
 JWT_SECRET=...                # WAJIB — server gagal boot di production tanpa ini
-# Sisanya (GROQ_API_KEY, GEMINI_API_KEY, GOOGLE_CLIENT_ID, FAVQS_API_KEY, MEM0_API_KEY)
+# Sisanya (GROQ_API_KEY, GEMINI_API_KEY, GOOGLE_CLIENT_ID, FAVQS_API_KEY)
 # opsional agar app menyala; fitur terkait nonaktif bila kosong.
 ```
 

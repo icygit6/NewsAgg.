@@ -1,0 +1,88 @@
+NEWSAGG: START, RESTART, AND PUBLIC TUNNEL
+Project folder: D:\Website
+Public website: https://newsagg.sentsis.workers.dev
+Local website: http://localhost:8080
+
+AFTER WINDOWS RESTARTS OR THE PC WAS SHUT DOWN
+1. Sign in to Windows and open Docker Desktop. Wait until its engine is running.
+   Docker Desktop currently does not start automatically at sign-in. You can
+   enable that in Docker Desktop > Settings > General if you want to.
+2. Open PowerShell and run:
+
+   cd D:\Website
+   Set-ExecutionPolicy -Scope Process Bypass
+   .\START-NEWSAGG.ps1
+   .\CHECK-NEWSAGG.ps1
+
+START-NEWSAGG starts/builds the server, client, local AI, and Cloudflare tunnel,
+then reconnects the fixed public address when necessary. Wait for it to finish.
+You do not need to create a separate tunnel manually each time.
+Existing containers use restart: unless-stopped, so Docker can resume them when
+its engine starts. Still run START-NEWSAGG to ensure the public address is updated.
+Containers stopped deliberately stay stopped until you start them again.
+
+RESTART THE APP WITHOUT REBUILDING OR ROTATING THE TUNNEL
+From PowerShell in D:\Website:
+
+   docker compose restart server client local-ai
+   .\CHECK-NEWSAGG.ps1
+
+Give the containers a few seconds to become healthy. This keeps the tunnel up.
+After source/configuration updates, use START-NEWSAGG.ps1 instead so Docker builds
+and applies the current files.
+
+IF THE LOCAL SITE WORKS BUT THE PUBLIC SITE DOES NOT
+First try reconnecting the fixed address to the current tunnel:
+
+   .\UPDATE-STABLE-ORIGIN.ps1
+   .\SHOW-PUBLIC-URL.ps1
+
+If SHOW-PUBLIC-URL reports a failed tunnel check, request a fresh tunnel:
+
+   .\SHOW-PUBLIC-URL.ps1 -RefreshTunnel
+   .\CHECK-NEWSAGG.ps1
+
+If you explicitly restarted the tunnel using "docker compose restart tunnel",
+run UPDATE-STABLE-ORIGIN.ps1 afterwards to point the fixed address at its new URL.
+The temporary trycloudflare.com address can change after any tunnel restart.
+Share the fixed workers.dev address above with visitors.
+
+IF CLOUDFLARE AUTHENTICATION HAS EXPIRED
+Only if the startup/update script reports a Cloudflare authentication failure:
+
+   Push-Location D:\Website\deploy\stable-origin
+   node .\node_modules\wrangler\bin\wrangler.js login
+   Pop-Location
+   .\UPDATE-STABLE-ORIGIN.ps1
+   .\CHECK-NEWSAGG.ps1
+
+Complete the browser sign-in using the Cloudflare account that owns this Worker.
+
+STOP THE APP
+   cd D:\Website
+   .\STOP-NEWSAGG.ps1
+
+This removes the service containers, but preserves the configured data volumes.
+Use START-NEWSAGG.ps1 to create/start them again.
+
+STATUS AND LOGS
+   .\CHECK-NEWSAGG.ps1
+   docker compose ps
+   docker compose logs --tail 100 server client tunnel local-ai
+
+The existing "NewsAgg Web Recovery" Windows task runs every two minutes while
+you are signed in and helps reconnect the public tunnel after network outages.
+It leaves intentionally stopped services stopped and does not start Docker.
+The PC must be awake, connected to the internet, and running Docker for the
+website to remain available. Shutdown or sleep makes the hosted app unavailable.
+
+DATABASE BACKUPS
+The "NewsAgg Weekly Maintenance" task writes one checked pg_dump to backups\
+before each cleanup. That folder is on the same disk as the database, so also
+keep a second copy elsewhere (an external drive or a synced cloud folder). Set
+the folder once, for your Windows user, and later backups are copied there too:
+
+   [Environment]::SetEnvironmentVariable('NEWSAGG_BACKUP_COPY_DIR', 'E:\NewsAgg-backups', 'User')
+
+The dumps contain account data; only choose a folder you control.
+Run a backup by hand with: node server\scripts\db-backup.mjs
