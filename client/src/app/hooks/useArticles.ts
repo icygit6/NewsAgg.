@@ -5,10 +5,13 @@ import {
   type ArticlesPageParams,
 } from '../services/newsAPI';
 import type { SentimentType } from '../types/sentiment';
+import { useApp } from '../contexts/AppContext';
 
 /** Infinite paginated feed with server-side category/source/sentiment/search
  * filtering. The flat list lives in data.pages[].articles. */
 export function useArticles(params: ArticlesPageParams) {
+  const { selectedCategories = [], selectedSentiments = [] } = useApp();
+  params = { ...params, ...(selectedCategories.length > 1 ? { category: selectedCategories.join(',') } : {}), ...(selectedSentiments.length > 1 ? { sentiment: selectedSentiments.join(',') } : {}) };
   const key = {
     category: params.category ?? 'all',
     sources: [...(params.sources ?? [])].sort(),
@@ -34,9 +37,11 @@ export function useArticles(params: ArticlesPageParams) {
 /** Single page of newest articles for rail widgets (Live View / Engagement).
  * Cheap summary rows via the paginated endpoint — never the legacy store. */
 export function useLatestArticles({ limit = 8, category }: { limit?: number; category?: string } = {}) {
+  const { selectedSources = [], selectedSentiment = 'all', selectedSort = 'latest', searchQuery = '', selectedCategories = [], selectedSentiments = [] } = useApp();
+  const params = { category: selectedCategories.length > 1 ? selectedCategories.join(',') : category, sources: [...selectedSources].sort(), sentiment: selectedSentiments.length > 1 ? selectedSentiments.join(',') : selectedSentiment, sort: selectedSort, q: searchQuery, pageSize: limit };
   return useQuery({
-    queryKey: ['latest', { limit, category: category ?? 'all' }],
-    queryFn: () => fetchArticlesPage({ category, pageSize: limit }, 1),
+    queryKey: ['latest', params],
+    queryFn: () => fetchArticlesPage(params, 1),
   });
 }
 
@@ -55,15 +60,18 @@ export function useRankedHeadlines({
   sources,
   sentiment,
 }: RankedHeadlinesParams = {}) {
+  const { selectedCategories = [], selectedSentiments = [] } = useApp();
+  const scopeCategory = selectedCategories.length > 1 ? selectedCategories.join(',') : category;
+  const scopeSentiment = selectedSentiments.length > 1 ? selectedSentiments.join(',') : sentiment;
   const key = {
     limit,
-    category: category ?? 'all',
+    category: scopeCategory ?? 'all',
     sources: [...(sources ?? [])].sort(),
-    sentiment: sentiment ?? 'all',
+    sentiment: scopeSentiment ?? 'all',
   };
   return useQuery({
     queryKey: ['headlines', key],
     queryFn: () =>
-      fetchArticlesPage({ sort: category === 'all' || !category ? 'top' : 'rank', pageSize: limit, category, sources, sentiment }, 1),
+      fetchArticlesPage({ sort: category === 'all' || !category ? 'top' : 'rank', pageSize: limit, category: scopeCategory, sources, sentiment: scopeSentiment }, 1),
   });
 }

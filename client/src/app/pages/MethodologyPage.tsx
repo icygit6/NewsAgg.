@@ -1,5 +1,7 @@
 import { Link } from 'react-router';
 import { useApp } from '../contexts/AppContext';
+import { FlaskConical } from 'lucide-react';
+import { DocLayout, DocSection } from '../components/ui/DocLayout';
 
 interface Section {
   title: string;
@@ -20,8 +22,8 @@ const CONTENT: Record<'en' | 'zhTW', { intro: string; sections: Section[]; back:
         title: 'Sources and coverage',
         points: [
           'Four publishers: BBC, CNN and Al Jazeera in English, and Yahoo News Taiwan in Traditional Chinese.',
-          'Eight topics: Sport, Health, Business, World, Politics, Lifestyle, Science (including technology) and Climate. Not every publisher is collected for every topic: Al Jazeera has no Politics or Lifestyle feed here, and Yahoo Taiwan has no Health or Climate feed.',
-          'Collection runs daily at 17:00 Taipei time, up to 20 articles per publisher and topic, from stories published in the previous 48 hours. Stories without a publisher photo are not published. The public feed keeps 45 days; older stories are removed by the weekly cleanup.',
+          'Eight topics: Sport, Health, Business, World, Politics, Lifestyle, Science (including technology) and Climate. Not every publisher is collected for every topic: Yahoo Taiwan has no Health or Climate feed. The Collection sources page lists the configured discovery links.',
+          'Collection runs daily at 17:00 Taipei time, up to 20 articles per publisher and topic, from stories published in the previous 48 hours. Stories without a publisher photo are not published. The public feed keeps 30 days; older stories are removed by the weekly cleanup.',
           'Publisher shares change with eligible article supply. The dataset is not balanced by publisher; overall charts can be dominated by the largest source.',
           'An article is published only after checks: a readable date, at least 300 characters of body text (80 words for English), a confirmed topic, a summary drawn from the text, and no duplicate.',
         ],
@@ -102,8 +104,8 @@ const CONTENT: Record<'en' | 'zhTW', { intro: string; sections: Section[]; back:
         title: '來源與涵蓋範圍',
         points: [
           '四家媒體：英文的 BBC、CNN、Al Jazeera，以及繁體中文的 Yahoo 奇摩新聞臺灣。',
-          '八個主題：運動、健康、商業、國際、政治、生活、科學（含科技）與氣候。並非每家媒體都擷取所有主題：本站未擷取 Al Jazeera 的政治與生活，也未擷取 Yahoo 臺灣的健康與氣候。',
-          '每日臺北時間 17:00 擷取，每家媒體每個主題最多 20 篇，只收過去 48 小時內發布的新聞；沒有出版者照片的新聞不發布。公開列表保留 45 天，較舊的新聞由每週清理移除。',
+          '八個主題：體育、健康、商業、國際、政治、生活、科學（含科技）與氣候。並非每家媒體都擷取所有主題：本站未擷取 Yahoo 臺灣的健康與氣候。「採集來源」頁面列出設定中的採集連結。',
+          '每日臺北時間 17:00 擷取，每家媒體每個主題最多 20 篇，只收過去 48 小時內發布的新聞；沒有出版者照片的新聞不發布。公開列表保留 30 天，較舊的新聞由每週清理移除。',
           '各媒體占比會隨合格文章供應而改變，資料集並非依媒體平衡抽樣；整體圖表可能由篇數最多的來源主導。',
           '文章須通過檢查才會公開：日期可解析、正文至少 300 字元（英文至少 80 字）、主題經確認、摘要取自原文，且不重複。',
         ],
@@ -123,19 +125,19 @@ const CONTENT: Record<'en' | 'zhTW', { intro: string; sections: Section[]; back:
         ],
       },
       {
-        title: '情感',
+        title: '情緒',
         points: [
           'XLM-RoBERTa（英文商業新聞使用 FinBERT）為每篇文章最多三段內容評分：開頭、中段與結尾。',
           'polarity = 正面 − 負面。P(中性) ≥ 0.52 且 |polarity| ≤ 0.18 時判中性；否則 polarity ≥ 0.10 判正面、≤ −0.10 判負面；其餘取機率最高的類別。因此標籤可能與最大機率不同。',
           '信心值是所選標籤的機率，不是實測準確率。',
-          '情感描述報導的用詞，不代表真偽、媒體政治立場或民意。',
+          '情緒描述報導的用詞，不代表真偽、媒體政治立場或民意。',
         ],
       },
       {
         title: '準確度如何？',
         points: [
-          '四位組員與兩個 AI 參考標註了同一批 120 篇已發布文章（每家媒體 30 篇）。系統與個別人工標籤的情感一致率為 51–57%，主題為 66–84%。',
-          '目前已知的主要弱點：情感模型判為正面的文章遠少於人工（120 篇中 6 篇對 25–33 篇），判為負面的則多得多。',
+          '四位組員與兩個 AI 參考標註了同一批 120 篇已發布文章（每家媒體 30 篇）。系統與個別人工標籤的情緒一致率為 51–57%，主題為 66–84%。',
+          '目前已知的主要弱點：情緒模型判為正面的文章遠少於人工（120 篇中 6 篇對 25–33 篇），判為負面的則多得多。',
           '兩項任務共有 93 篇不同文章存在人工分歧。此快照尚未開始最終裁決；以上為暫定數字，只描述這批樣本，不代表全站。',
         ],
       },
@@ -179,24 +181,23 @@ const CONTENT: Record<'en' | 'zhTW', { intro: string; sections: Section[]; back:
 };
 
 export function MethodologyPage() {
-  const { t, language, isDark } = useApp();
-  const content = CONTENT[language === 'zhTW' || language === 'zhCN' ? 'zhTW' : 'en'];
+  const { t, language } = useApp();
+  const zh = language === 'zhTW' || language === 'zhCN';
+  const content = CONTENT[zh ? 'zhTW' : 'en'];
   return (
-    <article className={`mx-auto max-w-3xl px-5 py-10 leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-      <h1 className={`mb-3 text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-950'}`}>{t.methodologyTitle}</h1>
-      <p className="mb-8">{content.intro}</p>
-      <p className="mb-8"><Link className="text-blue-600 underline" to="/insights?view=research">{language === 'zhTW' || language === 'zhCN' ? '查看完整評估、Macro F1、混淆矩陣與測試紀錄 →' : 'Explore full evaluation, macro F1, confusion matrices and test evidence →'}</Link></p>
-      <div className="space-y-7">
-        {content.sections.map((section) => (
-          <section key={section.title}>
-            <h2 className={`mb-2 text-xl font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{section.title}</h2>
-            <ul className="list-disc space-y-1.5 pl-5">
-              {section.points.map((point) => <li key={point}>{point}</li>)}
-            </ul>
-          </section>
-        ))}
-      </div>
-      <p className="mt-10 text-sm"><Link className="text-blue-600 hover:underline" to="/">{content.back}</Link></p>
-    </article>
+    <DocLayout
+      icon={FlaskConical}
+      title={t.methodologyTitle}
+      intro={<><p>{content.intro}</p><p className="mt-3"><Link className="font-semibold text-blue-600 hover:underline dark:text-blue-400" to="/insights?view=research">{zh ? '查看完整評估、Macro F1、混淆矩陣與測試紀錄 →' : 'Explore full evaluation, macro F1, confusion matrices and test evidence →'}</Link></p></>}
+      back={content.back}
+    >
+      {content.sections.map((section) => (
+        <DocSection key={section.title} title={section.title}>
+          <ul className="list-disc space-y-1.5 pl-5">
+            {section.points.map((point) => <li key={point}>{point}</li>)}
+          </ul>
+        </DocSection>
+      ))}
+    </DocLayout>
   );
 }

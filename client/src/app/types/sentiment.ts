@@ -7,6 +7,7 @@ export interface NewsSentimentProbabilities {
 }
 
 export interface NewsSentiment {
+  hasStoredProbabilities?: boolean;
   type: SentimentType;
   score: number;
   comparative: number;

@@ -2,7 +2,7 @@ import { useCallback, useSyncExternalStore } from 'react';
 
 /** Per-device masking of the identity details on your own profile, so the
  * page stays safe to screen-share. Email and last-active are independent:
- * the toggles live in the privacy section of /profile. */
+ * the toggles live in the privacy section of /settings. */
 export type PrivacyKey = 'hideEmail' | 'hideLastActive';
 
 const STORAGE_KEY: Record<PrivacyKey, string> = {

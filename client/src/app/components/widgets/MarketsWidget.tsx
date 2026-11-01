@@ -1,7 +1,11 @@
 import { useUiText } from '../../i18n/uiText';
-import { LineChart as LineChartIcon } from 'lucide-react';
+import { useState } from 'react';
+import { SkeletonBlock } from '../ui/ContentSkeleton';
+import { StyledSelect } from '../ui/StyledSelect';
+import { InsightMark } from '../ui/InsightMark';
 import { useApp } from '../../contexts/AppContext';
 import { useMarkets } from '../../hooks/useStats';
+import { SENTIMENT_COLOR } from '../ui/chartTheme';
 
 /** Tiny dependency-free sparkline (recharts would drag ~300kB into the shell
  * bundle for a 60×20 line). */
@@ -23,7 +27,7 @@ function Sparkline({ points, up }: { points: number[]; up: boolean }) {
       <polyline
         points={path}
         fill="none"
-        stroke={up ? '#10b981' : '#f43f5e'}
+        stroke={up ? SENTIMENT_COLOR.positive : SENTIMENT_COLOR.negative}
         strokeWidth="1.5"
         strokeLinejoin="round"
         strokeLinecap="round"
@@ -68,7 +72,25 @@ export function MarketsWidget() {
   const { isDark, t, language } = useApp();
   const { data, isLoading } = useMarkets();
 
-  if (isLoading || !data) return null;
+  const [pair, setPair] = useState(() => {
+    try {
+      const value = JSON.parse(localStorage.getItem('newsagg-currency-pair') || 'null');
+      if (Array.isArray(value) && value.length === 2 && value.every(code => typeof code === 'string' && /^[A-Z]{3}$/.test(code))) return value as string[];
+    } catch { /* use the default pair */ }
+    return ['USD', 'TWD'];
+  });
+  const changePair = (index: number, code: string) => {
+    const next = pair.map((value, i) => i === index ? code : value);
+    setPair(next);
+    try { localStorage.setItem('newsagg-currency-pair', JSON.stringify(next)); } catch { /* session-only */ }
+  };
+  if (isLoading) return <div role="status" aria-label={t.loading} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"><SkeletonBlock className="h-6 w-32" /><SkeletonBlock className="h-16 w-full" /><SkeletonBlock className="h-24 w-full" /></div>;
+  if (!data) return <p role="alert" className="rounded-2xl border p-4 text-sm">{ui('Market data is temporarily unavailable.')}</p>;
+  const rates: Record<string, number> = { USD: 1, IDR: data.fx.idr, TWD: data.fx.twd, EUR: data.fx.eur, ...data.fx.rates };
+  const currencies = Object.keys(rates).filter(code => Number.isFinite(rates[code]) && rates[code] > 0).sort();
+  const base = currencies.includes(pair[0]) ? pair[0] : 'USD';
+  const quote = currencies.includes(pair[1]) ? pair[1] : 'TWD';
+
   const anyStale = Boolean(data.fx.stale || data.indices.stale || data.crypto.stale);
   const unavailableLabel =
     language === 'zhTW' ? '資料暫時無法取得' : 'Data temporarily unavailable';
@@ -84,16 +106,11 @@ export function MarketsWidget() {
   return (
     <div
       className={`rounded-2xl border p-4 ${
-        isDark ? 'bg-slate-900/70 border-slate-800' : 'bg-white border-slate-200'
+        isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'
       }`}
     >
       <div className="flex items-center gap-2 mb-2">
-        <div
-          className="w-6 h-6 rounded-lg flex items-center justify-center"
-          style={{ background: 'var(--brand-grad, #2563eb)' }}
-        >
-          <LineChartIcon size={13} className="text-white" />
-        </div>
+        <InsightMark kind="trending" />
         <h3
           className={`font-poppins text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}
         >
@@ -101,7 +118,7 @@ export function MarketsWidget() {
         </h3>
         {anyStale && (
           <span
-            className={`ml-auto text-[10px] uppercase tracking-wide ${isDark ? 'text-slate-500' : 'text-slate-400'}`}
+            className={`ml-auto text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}
           >
             {t.delayedData}
           </span>
@@ -110,20 +127,21 @@ export function MarketsWidget() {
 
       {!data.fx.unavailable && (
         <div className={`border-b pb-1 mb-1 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
-          <div className={row}>
-            <span className={label}>USD / IDR</span>
-            <span className={value}>{nf.format(data.fx.idr)}</span>
+          <div className="grid grid-cols-2 gap-2 py-2">
+            {[base, quote].map((code, index) => <label key={index} className="min-w-0 text-xs text-slate-500">
+              {ui(index === 0 ? 'From currency' : 'To currency')}
+              <StyledSelect value={code} onChange={value => changePair(index, value)}
+                options={currencies.map(currency => ({ value: currency, label: currency }))}
+                label={ui(index === 0 ? 'From currency' : 'To currency')} isDark={isDark} className="mt-1" />
+            </label>)}
           </div>
-          <div className={row}>
-            <span className={label}>USD / TWD</span>
-            <span className={value}>{nf2.format(data.fx.twd)}</span>
-          </div>
-          <p className={`pb-1 text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+          <p className="py-2 text-sm font-semibold tabular-nums">1 {base} = {new Intl.NumberFormat(locale, { maximumSignificantDigits: 6 }).format(rates[quote] / rates[base])} {quote}</p>
+          <p className={`pb-1 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
             <a
               href="https://www.exchangerate-api.com"
               target="_blank"
               rel="noreferrer"
-              className="underline decoration-dotted underline-offset-2 hover:text-[var(--brand)]"
+              className="underline-offset-2 hover:text-[var(--brand)] hover:underline"
             >{ui("Rates by ExchangeRate-API")} </a>{' '}
             · {asOfLabel} {formatAsOf(data.fx.updatedAt, locale)}
           </p>
@@ -134,7 +152,7 @@ export function MarketsWidget() {
         <div key={ix.symbol} className={row}>
           <span className={label}>
             <span className="block">{ix.name}</span>
-            <span className={`block text-[9px] font-normal ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+            <span className={`block text-xs font-normal ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
               {ix.provider} · {asOfLabel} {formatAsOf(ix.asOf, locale)}
             </span>
           </span>
@@ -155,7 +173,7 @@ export function MarketsWidget() {
         <div key={c.id} className={row}>
           <span className={label}>
             <span className="block">{c.symbol}</span>
-            <span className={`block text-[9px] font-normal ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+            <span className={`block text-xs font-normal ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
               {c.provider} · {asOfLabel} {formatAsOf(c.asOf, locale)}
             </span>
           </span>
@@ -171,7 +189,7 @@ export function MarketsWidget() {
         <p className={`py-2 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
           {unavailableLabel} {ui("— cryptocurrency")} </p>
       )}
-      <p className={`mt-2 text-[10px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
+      <p className={`mt-2 text-xs ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
         {disclaimer}
       </p>
     </div>

@@ -1,23 +1,31 @@
 .newsagg-auth { position: relative; isolation: isolate; }
 /* Compact header: brand mark beside the title, sized for the drawer. */
-.auth-welcome { display: flex; align-items: center; gap: 12px; padding: 14px 16px; margin-bottom: 16px; border-radius: 16px; color: #173a63; background: linear-gradient(135deg, #eff6ff, #f0fdfa); border: 1px solid #dbeafe; }
+.auth-welcome { display: flex; align-items: center; gap: 12px; padding: 8px 0 16px; margin-bottom: 12px; color: var(--color-blue-900); }
 .auth-welcome p { color: #475569; }
 .auth-divider { display: flex; align-items: center; gap: 12px; margin: 4px 0 14px; font-size: 12px; color: #94a3b8; }
 .auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
-.auth-mode { display: flex; gap: 4px; padding: 4px; background: #eaf0f7; border-radius: 14px; margin-bottom: 22px; }
-.auth-mode button { flex: 1; min-height: 44px; border-radius: 10px; font-size: 13px; font-weight: 700; color: #475569; transition: background .18s, color .18s; }
-.auth-mode button[aria-pressed=true] { background: white; color: #1d4ed8; box-shadow: 0 2px 6px #173a6312; }
-.auth-input:focus { border-color: #2563eb; box-shadow: 0 0 0 3px #3b82f620; }
-.newsagg-auth :is(button, a):focus-visible, .auth-page :is(button, a, input):focus-visible { outline: 2px solid #3b82f6; outline-offset: 3px; }
-.auth-submit { background: linear-gradient(110deg, #2563eb, #173a63); box-shadow: 0 6px 18px #2563eb25; transition: box-shadow .2s, transform .2s; }
-.auth-submit:hover:not(:disabled) { box-shadow: 0 8px 22px #2563eb40; transform: translateY(-1px); }
+.auth-mode { display: flex; gap: 4px; padding: 4px; background: #eaf0f7; border-radius: 999px; margin-bottom: 22px; }
+.auth-mode button { flex: 1; min-height: 44px; border-radius: 999px; font-size: 13px; font-weight: 700; color: #475569; transition: background .18s, color .18s; }
+.auth-mode button[aria-pressed=true] { background: white; color: var(--brand); box-shadow: 0 2px 6px #173a6312; }
+.auth-input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft-strong); }
+.newsagg-auth :is(button, a):focus-visible, .auth-page :is(button, a, input):focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
+.auth-submit { background: var(--brand); box-shadow: 0 6px 18px var(--brand-soft-strong); transition: box-shadow .2s, transform .2s; }
+.auth-submit:hover:not(:disabled) { background: var(--brand-hover); box-shadow: 0 8px 22px var(--brand-ring); transform: translateY(-1px); }
 .auth-submit:active:not(:disabled) { transform: translateY(0); }
-.newsagg-auth[data-theme=dark] .auth-welcome { color: #dbeafe; border-color: #334c70; background: linear-gradient(135deg, #172a46, #102a33); }
+.newsagg-auth[data-theme=dark] .auth-welcome { color: var(--color-blue-100); }
 .newsagg-auth[data-theme=dark] .auth-welcome p { color: #94a3b8; }
 .newsagg-auth[data-theme=dark] .auth-divider { color: #64748b; }
 .newsagg-auth[data-theme=dark] .auth-divider::before, .newsagg-auth[data-theme=dark] .auth-divider::after { background: #334155; }
 .newsagg-auth[data-theme=dark] .auth-mode { background: #0f172a; }
 .newsagg-auth[data-theme=dark] .auth-mode button { color: #94a3b8; }
 .newsagg-auth[data-theme=dark] .auth-mode button[aria-pressed=true] { background: #253a55; color: #dbeafe; }
+.auth-google-surface { border-radius: 999px; background: #fff; color-scheme: light; }
+.newsagg-auth[data-theme=dark] .auth-google-surface { background: #202124; }
+.auth-google-button { min-width: 0; border-radius: inherit; }
+/* Match Google's light-scheme document so the browser keeps iframe gutters transparent.
+   The Google renderButton theme, not color-scheme, controls the button's dark face. */
+.auth-google-button iframe { display: block; border-radius: 999px; background: transparent; color-scheme: light; }
 .auth-page { background-size: cover; padding-block: 36px; }
+.account-drawer .auth-input { border-radius: 999px; }
+.account-drawer .auth-submit { border-radius: 999px; }
 @media (prefers-reduced-motion: reduce) { .newsagg-auth *, .auth-submit { transition: none !important; transform: none !important; } }

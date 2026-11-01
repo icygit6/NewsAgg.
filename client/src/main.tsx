@@ -3,8 +3,10 @@ import App from "./app/App.tsx";
 import { RouteFallback } from "./app/components/RouteFallback";
 import { initSentry } from "./app/lib/sentry";
 import { loadRuntimeConfig } from "./app/lib/runtimeConfig";
+import { installStaleBuildGuard } from "./app/lib/staleBuild";
 import "./styles/index.css";
 
+installStaleBuildGuard();
 void initSentry();
 
 async function bootstrap() {

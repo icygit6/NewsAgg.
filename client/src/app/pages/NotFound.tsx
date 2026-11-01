@@ -1,16 +1,15 @@
 import { Link } from 'react-router';
 import { useApp } from '../contexts/AppContext';
+import { useUiText } from '../i18n/uiText';
+import { FeedState, feedStateButton } from '../components/feed/FeedState';
 
 export function NotFound() {
-  const { t, isDark } = useApp();
+  const { t } = useApp();
+  const ui = useUiText();
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
-      <div className="text-8xl mb-4">📰</div>
-      <h1 className={`font-poppins text-4xl font-bold mb-2 ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>404</h1>
-      <p className={`text-lg mb-6 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{t.pageNotFound}</p>
-      <Link to="/" className="px-6 py-3 rounded-full bg-gradient-to-r from-cyan-500 to-pink-500 text-white font-semibold hover:from-cyan-600 hover:to-pink-600 transition-all shadow-lg">
-        {t.backToHome}
-      </Link>
+    <div className="flex min-h-[60vh] flex-col items-center justify-center">
+      <h1 className="sr-only">404</h1>
+      <FeedState title={t.pageNotFound} body={ui('The link may be old, or the story was removed after 30 days.')} action={<Link to="/" className={feedStateButton}>{t.backToHome}</Link>} />
     </div>
   );
 }

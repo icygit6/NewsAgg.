@@ -49,8 +49,8 @@ export function ArticleBody({ article, isDark }: ArticleBodyProps) {
       {article.aiSummary && (
         <div className={`rounded-2xl border p-5 mb-6 ${panelBase}`}>
           <div className="flex items-center gap-2 mb-2">
-            <Sparkles size={15} className="text-cyan-500" />
-            <h2 className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>{ui("Extractive summary")}</h2>
+            <Sparkles size={15} className="text-blue-600 dark:text-blue-400" />
+            <h2 className={`text-lg font-semibold ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>{ui("Extractive summary")}</h2>
           </div>
           <div className={`space-y-2 leading-relaxed ${bodyText}`}>{article.aiSummary.split('\n').filter(Boolean).map((line, i) => <p key={i}>{line}</p>)}</div>
           {article.summaryMethod?.startsWith('extractive') && <p className={`mt-3 text-xs ${mutedText}`}>{ui("Key passages selected from the article.")}</p>}
@@ -70,10 +70,10 @@ export function ArticleBody({ article, isDark }: ArticleBodyProps) {
         </div>
       )}
 
-      <div className={`space-y-5 leading-relaxed mb-8 ${bodyText}`} style={{ fontSize: '1rem', lineHeight: '1.8', overflowWrap: 'anywhere' }}>
+      <div className={`article-body space-y-5 leading-relaxed mb-8 ${bodyText}`} style={{ fontSize: '1rem', lineHeight: '1.8', overflowWrap: 'anywhere' }}>
         {article.contentBlocks?.length ? article.contentBlocks.map((block, i) => {
           if (block.type === 'heading') return <h2 key={i} className="text-xl font-semibold pt-5">{block.text}</h2>;
-          if (block.type === 'quote') return <blockquote key={i} className="border-l-4 border-cyan-500 pl-5 italic">{block.text}</blockquote>;
+          if (block.type === 'quote') return <blockquote key={i} className="border-l-4 border-blue-500 pl-5 italic">{block.text}</blockquote>;
           if (block.type === 'caption') return <p key={i} className={`text-sm ${mutedText}`}>{block.text}</p>;
           if (block.type === 'list') { const Tag = block.ordered ? 'ol' : 'ul'; return <Tag key={i} className={`pl-6 space-y-2 ${block.ordered ? 'list-decimal' : 'list-disc'}`}>{block.items?.map((item, j) => <li key={j}>{item}</li>)}</Tag>; }
           return <p key={i}>{block.text}</p>;

@@ -1,9 +1,8 @@
 // Shared styling helpers for the sentiment analytics panels.
 
+// Opaque, one border tone, the same surface as the news cards (no glass).
 export const panelBaseClass = (isDark: boolean): string =>
-  isDark
-    ? 'bg-slate-800/80 border-slate-700/50 backdrop-blur-md'
-    : 'bg-white/80 border-white/60 backdrop-blur-md';
+  isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200';
 
 export const chartTextColor = (isDark: boolean): string => (isDark ? '#e2e8f0' : '#374151');
 

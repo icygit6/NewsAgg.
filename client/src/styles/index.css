@@ -2,3 +2,22 @@
 @import './tokens.css';
 @import './tailwind.css';
 @import './theme.css';
+@import './themes.css';
+
+/* The legend occupies the space beside the donut when the panel itself is wide
+   enough. Narrow rails and phones stack without squeezing labels. */
+.sentiment-visual-host { container-type: inline-size; }
+.sentiment-visual { display: grid; align-items: center; gap: 12px; min-width: 0; }
+.sentiment-visual > * { min-width: 0; }
+/* Stacked (narrow) layout leads with the pie; side by side keeps it on the right. */
+.sentiment-visual > :last-child { order: -1; }
+@container (min-width: 360px) {
+  .sentiment-visual { grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: 20px; }
+  .sentiment-visual > :last-child { order: 0; }
+}
+
+/* Reveal the resolved analytics without moving scroll containers or controls. */
+@keyframes insights-reveal { from { opacity: .65; } to { opacity: 1; } }
+@media (prefers-reduced-motion: no-preference) {
+  .insights-reveal { animation: insights-reveal 200ms cubic-bezier(.23, 1, .32, 1); }
+}

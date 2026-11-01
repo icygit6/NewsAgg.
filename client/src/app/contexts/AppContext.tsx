@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef, ReactNode } from 'react';
 import { Language, translations, Translations } from '../i18n/translations';
 import { Category } from '../constants';
 import { User, authService } from '../services/authService';
@@ -6,6 +6,7 @@ import { AUTH_UNAUTHORIZED_EVENT } from '../lib/apiFetch';
 import type { SentimentType } from '../types/sentiment';
 import type { ArticleSort } from '../services/newsAPI';
 import { UiLocaleContext } from '../i18n/uiText';
+import { applyTheme, getTheme, setTheme } from '../lib/theme';
 
 // UI + identity state only. Server state (articles, bookmarks, quotes,
 // preferences) lives in React Query hooks — see hooks/.
@@ -25,6 +26,10 @@ interface AppContextType {
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
   // Category filter
+  selectedCategories: Category[];
+  setSelectedCategories: (categories: Category[]) => void;
+  selectedSentiments: SentimentType[];
+  setSelectedSentiments: (sentiments: SentimentType[]) => void;
   selectedCategory: Category | 'all';
   setSelectedCategory: (cat: Category | 'all') => void;
   // Source filter (e.g. ['cnn', 'bbc', 'aljazeera', 'yahoo_tw'])
@@ -68,9 +73,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     localStorage.getItem('newsMode') === 'translated' ? 'translated' : 'original',
   );
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all');
+  const [selectedCategories, setSelectedCategories] = useState<Category[]>([]);
+  const selectedCategory = selectedCategories.length === 1 ? selectedCategories[0] : 'all';
+  const setSelectedCategory = useCallback((category: Category | 'all') => setSelectedCategories(category === 'all' ? [] : [category]), []);
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
-  const [selectedSentiment, setSelectedSentiment] = useState<SentimentType | 'all'>('all');
+  const [selectedSentiments, setSelectedSentiments] = useState<SentimentType[]>([]);
+  const selectedSentiment = selectedSentiments.length === 1 ? selectedSentiments[0] : 'all';
+  const setSelectedSentiment = useCallback((sentiment: SentimentType | 'all') => setSelectedSentiments(sentiment === 'all' ? [] : [sentiment]), []);
   const [selectedSort, setSelectedSort] = useState<ArticleSort>('latest');
   const [searchQuery, setSearchQuery] = useState('');
   const [user, setUser] = useState<User | null>(null);
@@ -100,7 +109,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
       root.classList.remove('dark');
     }
     localStorage.setItem('isDark', String(isDark));
+    applyTheme();
   }, [isDark]);
+
+  // The custom colour is an account perk: signing out puts the default template back, and a
+  // signed-out visitor never keeps a custom theme left on this browser.
+  const signedInRef = useRef(false);
+  useEffect(() => {
+    if (user) { signedInRef.current = true; return; }
+    if (signedInRef.current) { signedInRef.current = false; setTheme('newsagg'); return; }
+    if (authInitialized && getTheme().id === 'custom') setTheme('newsagg');
+  }, [user, authInitialized]);
 
   // Persist the selected language so it survives reloads
   useEffect(() => {
@@ -251,6 +270,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       sidebarOpen,
       setSidebarOpen,
       selectedCategory,
+      selectedCategories, setSelectedCategories, selectedSentiments, setSelectedSentiments,
       setSelectedCategory,
       selectedSources,
       setSelectedSources,
@@ -276,6 +296,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       t,
       sidebarOpen,
       selectedCategory,
+      selectedCategories, selectedSentiments,
       selectedSources,
       selectedSentiment,
       selectedSort,

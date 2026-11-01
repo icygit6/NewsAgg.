@@ -1,4 +1,5 @@
 import { isEditorialKeyword } from '../lib/keywords';
+import { cleanBBCPresentation } from '../lib/bbcPresentation';
 import { CATEGORY_TOPIC_MAP, TOPIC_TO_CATEGORY } from '../constants';
 import type {
   NewsTopic,
@@ -132,19 +133,21 @@ const normalizeSentiment = (value: unknown): NewsSentiment => {
     const split = (1 - score) / 2;
     probabilities = { positive: split, neutral: score, negative: split };
   }
-  return { type, score, comparative, probabilities, model: pickString(raw.model) ?? 'general' };
+  const hasStoredProbabilities = raw.hasStoredProbabilities !== false && total > 0 &&
+    ['positive', 'neutral', 'negative'].every(key => pickNumber(rawProbabilities[key]) !== null);
+  return { type, score, comparative, probabilities, model: pickString(raw.model) ?? 'general', hasStoredProbabilities };
 };
 
 const normalizeSource = (value: unknown): NewsSource => {
   const raw = asRecord(value);
   return {
-    // 确保有 ID，如果没有就给个预设值避免报错
+    // Always have an ID; fall back to a default so nothing downstream breaks
     id: pickString(raw.id, raw.source_id) ?? 'unknown',
-    // 优先拿 name，若无则拿 DB join 来的 source_name
+    // Prefer name, otherwise the source_name from the DB join
     name: pickString(raw.name, raw.source_name, raw.id, raw.source_id) ?? 'Unknown Source',
     domain: pickString(raw.domain, raw.source_domain),
     country: pickString(raw.country, raw.source_country),
-    // 语言给一个默认值 en
+    // Default the language to en
     language: pickString(raw.language, raw.source_language) ?? 'en',
     logo: pickString(raw.logo, raw.logo_url, raw.source_logo),
   };
@@ -220,7 +223,7 @@ const warnedTopics = new Set<string>();
 const normalizeArticle = (article: unknown): NewsArticle | null => {
   const raw = asRecord(article);
 
-  // 1. 处理 Topic
+  // 1. Topic
   const topic = normalizeTopic(raw.topic);
   if (!topic) {
     const rawTopic = asString(raw.topic) ?? '(empty)';
@@ -231,10 +234,10 @@ const normalizeArticle = (article: unknown): NewsArticle | null => {
     return null;
   }
 
-  // 2. 核心修正：处理扁平化的 Source (如果 raw.source 不存在，就从 source_id 等拼接)
+  // 2. Flattened source: when raw.source is missing, rebuild it from source_id and friends
   const sourceInput = raw.source || {
     id: raw.source_id,
-    name: raw.source_name || raw.source_id, // 备选方案
+    name: raw.source_name || raw.source_id, // fallback
     domain: raw.source_domain,
     country: raw.source_country,
     language: raw.source_language,
@@ -243,6 +246,7 @@ const normalizeArticle = (article: unknown): NewsArticle | null => {
   const source = normalizeSource(sourceInput);
 
   const sentimentInput = raw.sentiment || {
+    hasStoredProbabilities: [raw.sentiment_pos, raw.sentiment_neu, raw.sentiment_neg].every(value => numOrNull(value) !== null),
     type: raw.sentiment_type || 'neutral',
     score: Number(raw.sentiment_score) || 0,
     comparative: Number(raw.sentiment_polarity) || 0,
@@ -295,7 +299,7 @@ const normalizeArticle = (article: unknown): NewsArticle | null => {
     images: normalizeImages(raw.images),
     videoUrl: pickString(raw.video_url, raw.videoUrl),
 
-    // 使用刚才拼接的 Input
+    // Use the inputs assembled above
     sentiment: normalizeSentiment(sentimentInput),
     toxicity: normalizeToxicity(toxicityInput),
     readability: normalizeReadability(readabilityInput),
@@ -306,7 +310,7 @@ const normalizeArticle = (article: unknown): NewsArticle | null => {
     ogType: pickString(raw.og_type, raw.ogType),
     language: pickString(raw.language, source.language),
 
-    // 确保数组不为 null
+    // Make sure arrays are never null
     keywords: asStringArray(raw.keywords ?? []).filter(isEditorialKeyword),
     entities: normalizeEntities(raw.entities || {}),
     relatedUrls: asStringArray(raw.related_urls ?? raw.relatedUrls ?? []),
@@ -329,7 +333,7 @@ const normalizeArticle = (article: unknown): NewsArticle | null => {
     isAccessibleFree: pickBoolean(raw.is_accessible_free, raw.isAccessibleFree),
     jsonldWordCount: pickNumber(raw.jsonld_word_count, raw.jsonldWordCount),
 
-    // 处理 OG (DB 回传可能是 og_data)
+    // Open Graph (the DB may return it as og_data)
     og: normalizeOpenGraph(raw.og || raw.og_data),
   };
 };
@@ -350,7 +354,7 @@ export const getArticleId = (article: Pick<NewsArticle, 'id' | 'url' | 'title'>)
 export interface ArticlesPageParams {
   category?: NewsCategoryFilter | string;
   sources?: string[];
-  sentiment?: SentimentType | 'all' | '';
+  sentiment?: string;
   q?: string;
   sort?: ArticleSort;
   sinceHours?: number;
@@ -395,6 +399,7 @@ export const fetchArticlesPage = async (
 
   const articles = (raw.articles ?? [])
     .map(normalizeArticle)
+    .map(article => article ? cleanBBCPresentation(article) : null)
     .filter((article): article is NewsArticle => article !== null);
 
   return {
@@ -419,7 +424,8 @@ export const fetchArticleById = async (articleId: string): Promise<NewsArticle |
   }
   const json = await res.json();
   if (json?.success && json.data) {
-    return normalizeArticle(json.data);
+    const article = normalizeArticle(json.data);
+    return article ? cleanBBCPresentation(article) : null;
   }
   return null;
 };

@@ -2,8 +2,8 @@ import { EvidenceTable, type EvidenceText } from './EvaluationPanel';
 
 export function ResearchMethods({ tx }: { tx: EvidenceText }) {
   const models = [
-    ['cardiffnlp/twitter-xlm-roberta-base-sentiment', tx('General sentiment', '一般情感'), tx('Multilingual XLM-R scores positive, neutral and negative wording. Used for non-English business articles too; training-domain performance is not NewsAgg accuracy.', '多語 XLM-R 對正面、中性與負面語句評分；非英文商業文章也使用此模型。訓練領域表現不等於 NewsAgg 準確率。')],
-    ['ProsusAI/finbert', tx('Financial sentiment', '金融情感'), tx('English Business only. FinBERT is BERT adapted to financial language; other languages use the general model.', '僅用於英文商業新聞。FinBERT 是針對金融語言調整的 BERT；其他語言使用一般模型。')],
+    ['cardiffnlp/twitter-xlm-roberta-base-sentiment', tx('General sentiment', '一般情緒'), tx('Multilingual XLM-R scores positive, neutral and negative wording. Used for non-English business articles too; training-domain performance is not NewsAgg accuracy.', '多語 XLM-R 對正面、中性與負面語句評分；非英文商業文章也使用此模型。訓練領域表現不等於 NewsAgg 準確率。')],
+    ['ProsusAI/finbert', tx('Financial sentiment', '金融情緒'), tx('English Business only. FinBERT is BERT adapted to financial language; other languages use the general model.', '僅用於英文商業新聞。FinBERT 是針對金融語言調整的 BERT；其他語言使用一般模型。')],
     ['MoritzLaurer/mDeBERTa-v3-base-mnli-xnli', tx('Topic confirmation', '主題確認'), tx('Natural language inference (NLI) compares article text with eight topic descriptions without training a new NewsAgg classifier. Score ≥ 0.38 and lead ≥ 0.12 are project thresholds, not measured accuracy.', '自然語言推論（NLI）比較文章與八類主題描述，不另行訓練 NewsAgg 分類器。分數 ≥ 0.38 且領先 ≥ 0.12 為專案門檻，並非實測準確率。')],
     ['BAAI/bge-m3', tx('Semantic embeddings', '語意向量'), tx('Maps text to 1,024 numbers for similarity, extractive sentence selection and article-passage retrieval. BGE-M3 is a multilingual embedding model; an embedding is not a generated answer.', '將文字轉為 1,024 維數值，用於相似度、擷取摘要句子與檢索文章段落。BGE-M3 是多語向量模型，向量本身不是生成的答案。')],
     ['Davlan/xlm-roberta-base-ner-hrl', tx('Named entities', '命名實體'), tx('Named entity recognition (NER) extracts people, organizations and places. No manually scored NewsAgg NER benchmark is available in this evaluation.', '命名實體辨識（NER）擷取人名、組織與地點。本次評估尚無人工評分的 NewsAgg 實體辨識基準。')],
@@ -22,7 +22,7 @@ export function ResearchMethods({ tx }: { tx: EvidenceText }) {
       </EvidenceTable>
     </div>
     <div className="evidence-grid">
-      <div className="evidence-card"><h3>{tx('Sentiment & polarity', '情感與極性')}</h3>
+      <div className="evidence-card"><h3>{tx('Sentiment & polarity', '情緒與極性')}</h3>
         <code>P(c) = Σ(lengthᵢ × Pᵢ(c)) / Σ lengthᵢ<br />polarity = P(positive) − P(negative)</code>
         <p>{tx('Up to three 1,400-character passages represent the beginning, middle and end. Probabilities are weighted by passage length. Polarity ranges from −1 to +1.', '最多三段、每段 1,400 字元，代表開頭、中段與結尾；依段落長度加權機率。極性範圍為 −1 至 +1。')}</p>
         <p>{tx('Neutral if P(neutral) ≥ 0.52 and |polarity| ≤ 0.18. Otherwise positive at ≥ 0.10, negative at ≤ −0.10, else the highest-probability class. Confidence is P(chosen class), not a measured accuracy percentage.', 'P(中性) ≥ 0.52 且 |極性| ≤ 0.18 時判為中性；否則極性 ≥ 0.10 判正面、≤ −0.10 判負面，其餘取機率最高的類別。信心值為所選類別的機率，並非實測準確率。')}</p>
@@ -47,8 +47,8 @@ export function ResearchMethods({ tx }: { tx: EvidenceText }) {
       </div>
       <div className="evidence-card"><h3>{tx('Collection, cleaning & charts', '擷取、清理與圖表')}</h3>
         <p>{tx('Daily collection at 17:00 Taipei targets 20 articles per source/category across 28 supported pairs: at most 560, subject to quality and capacity gates. It is not a guaranteed count. Coverage and eligible article supply differ by publisher.', '每日臺北時間 17:00 擷取；28 組來源與分類各以 20 篇為目標，最多 560 篇，仍須通過品質與容量檢查，並非保證篇數。媒體涵蓋範圍及合格文章供應量皆不同。')}</p>
-        <p>{tx('Date parsing, the 48-hour window, body-length checks, topic confirmation, duplicate checks and evidence-preserving summaries gate publication. Stories without a publisher photo are rejected. The daily pipeline freezes the edition at 05:40 and sends email at 05:50 when readiness checks pass; a weekly job backs up the database and removes stories older than 45 days. The public feed retains 45 days.', '發布前檢查日期、48 小時範圍、正文長度、主題、重複與原文摘要。沒有出版者照片的新聞不予發布。每日流程於 05:40 固定當日版本，通過檢查後於 05:50 寄信；每週工作會先備份資料庫，再移除超過 45 天的新聞。公開新聞列表保留 45 天。')}</p>
-        <p>{tx('Sentiment share = class count / analysed count. Trending counts stored keyword occurrences after filtering boilerplate. Business trend averages stored polarity by date; its current query treats missing polarity as 0. Market prices are third-party context, not an NLP accuracy test.', '情感比例＝類別篇數／已分析篇數。熱門詞統計儲存的關鍵詞出現次數並排除制式文字。商業走勢按日期平均儲存的極性；目前查詢將缺少極性視為 0。市場行情屬第三方背景資訊，並非 NLP 準確率測試。')}</p>
+        <p>{tx('Date parsing, the 48-hour window, body-length checks, topic confirmation, duplicate checks and evidence-preserving summaries gate publication. Stories without a publisher photo are rejected. The daily pipeline freezes the edition at 05:40 and sends email at 05:50 when readiness checks pass; a weekly job backs up the database and removes stories older than 30 days. The public feed retains 30 days.', '發布前檢查日期、48 小時範圍、正文長度、主題、重複與原文摘要。沒有出版者照片的新聞不予發布。每日流程於 05:40 固定當日版本，通過檢查後於 05:50 寄信；每週工作會先備份資料庫，再移除超過 30 天的新聞。公開新聞列表保留 30 天。')}</p>
+        <p>{tx('Sentiment share = class count / analysed count. Trending counts stored keyword occurrences after filtering boilerplate. Business trend averages stored polarity by date; its current query treats missing polarity as 0. Market prices are third-party context, not an NLP accuracy test.', '情緒比例＝類別篇數／已分析篇數。熱門詞統計儲存的關鍵詞出現次數並排除制式文字。商業走勢按日期平均儲存的極性；目前查詢將缺少極性視為 0。市場行情屬第三方背景資訊，並非 NLP 準確率測試。')}</p>
       </div>
     </div>
   </div>;

@@ -60,21 +60,24 @@ test('the empty state explains itself', async ({ page }) => {
   await expect(page.getByText(/no posts yet/i)).toBeVisible();
 });
 
-test('the category strip scrolls by arrow and hides each one at its end', async ({ page }) => {
+test('the category strip keeps arrow space stable and hides only the arrow at each end', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto('/posts?data=one');
 
   const strip = page.getByRole('group', { name: /filter posts by category/i });
   await expect(strip).toBeVisible();
-  // The scrollbar is hidden, so the arrows are the only affordance: at the
-  // start there must be a right arrow and no left one.
-  await expect(page.getByRole('button', { name: /scroll categories left/i })).toHaveCount(0);
-  const right = page.getByRole('button', { name: /scroll categories right/i });
+  const left = page.getByRole('button', { name: /scroll categories left/i, includeHidden: true });
+  await expect(left).toBeDisabled();
+  await expect(left).toHaveCSS('opacity', '0');
+  const right = page.getByRole('button', { name: /scroll categories right/i, includeHidden: true });
   await expect(right).toBeVisible();
+  const initialWidth = await strip.evaluate(el => el.clientWidth);
 
   await strip.evaluate((el) => el.scrollTo({ left: el.scrollWidth }));
   await expect(page.getByRole('button', { name: /scroll categories left/i })).toBeVisible();
-  await expect(right).toHaveCount(0);
+  await expect(right).toBeDisabled();
+  await expect(right).toHaveCSS('opacity', '0');
+  expect(await strip.evaluate(el => el.clientWidth)).toBe(initialWidth);
 
   // And the strip must not reserve space for a scrollbar.
   const reserved = await strip.evaluate((el) => (el as HTMLElement).offsetHeight - el.clientHeight);

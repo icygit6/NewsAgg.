@@ -21,6 +21,13 @@ export function translateUi(text: string, language: Language): string {
   const translated = key ? translations[language][key] : text;
   return typeof translated === 'string' ? translated : text;
 }
+/** Punctuation that joins translated pieces: full-width in Chinese, ASCII with spacing in English. */
+export function useUiPunctuation() {
+  const zh = useContext(UiLocaleContext) === 'zhTW';
+  return useMemo(() => (zh
+    ? { colon: '：', open: '（', close: '）', stop: '。' }
+    : { colon: ': ', open: ' (', close: ')', stop: '. ' }), [zh]);
+}
 /** Translate curated interface copy only. Never apply this to publisher/user content. */
 export function useUiText() {
   const language = useContext(UiLocaleContext);

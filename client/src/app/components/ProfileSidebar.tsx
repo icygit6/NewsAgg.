@@ -1,36 +1,40 @@
 import { useUiText } from '../i18n/uiText';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
-import { X, LogOut, Bookmark, Sun, Moon, Check, UserCircle, ChevronRight, ShieldCheck } from 'lucide-react';
+import { X, LogOut, Bookmark, ChevronRight, Settings, ShieldCheck, MessageSquarePlus } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useApp } from '../contexts/AppContext';
 import { useBookmarks } from '../hooks/useBookmarks';
-import { useAdminOverview, useIsAdmin } from '../hooks/useAdmin';
+import { adminAttentionCount, useAdminOverview, useIsAdmin } from '../hooks/useAdmin';
+import { openFeedback } from '../hooks/useFeedback';
 import { useProfilePrivacy } from '../hooks/useProfilePrivacy';
 import { authService } from '../services/authService';
 import { AuthPanel } from './profile/AuthPanel';
-import { maskEmail } from './profile/ProfileHeader';
+import { maskEmail } from '../lib/maskEmail';
 import { FooterCompact } from './shell/Footer';
 import { useIsMobile } from './ui/use-mobile';
 import { BrandLogo } from './ui/BrandLogo';
 import { useInterfaceLanguage } from './ui/LanguageSwitcher';
 import { TranslateNewsToggle } from './ui/TranslateNewsToggle';
+import { ThemePicker } from './ui/ThemePicker';
+import { SegmentedControl } from './ui/SegmentedControl';
 import { useEffect, useRef } from 'react';
 
 /** Slim account drawer: identity card linking to /profile plus quick
- * settings rows. All account editing lives on the /profile page. */
+ * settings rows. All account editing lives on the /settings page. */
 export function ProfileSidebar() {
   const ui = useUiText();
   const {
-    sidebarOpen, setSidebarOpen, isDark, toggleTheme, t, user, setUser,
+    sidebarOpen, setSidebarOpen, isDark, t, user, setUser,
     avatarSrc,
   } = useApp();
   const { bookmarks } = useBookmarks();
   const admin = useIsAdmin();
   const adminOverview = useAdminOverview();
-  const openReports = (adminOverview.data?.open_article_reports ?? 0) + (adminOverview.data?.open_post_reports ?? 0);
+  const openReports = adminAttentionCount(adminOverview.data);
   const [hideEmail] = useProfilePrivacy('hideEmail');
   const navigate = useNavigate();
-  const isMobile = useIsMobile();
+  // Match NavRail/BottomTabBar: no left navigation below lg (1024px).
+  const isMobile = useIsMobile(1024);
   const reducedMotion = useReducedMotion();
   const drawerRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
@@ -79,7 +83,10 @@ export function ProfileSidebar() {
   const rowClass = `w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors ${
     isDark ? 'text-slate-200 hover:bg-slate-800' : 'text-gray-700 hover:bg-gray-50'
   }`;
-  const iconBox = `w-8 h-8 rounded-lg flex items-center justify-center ${isDark ? 'bg-slate-700' : 'bg-gray-100'}`;
+  // Settings groups: a hairline above each, labelled like the profile page's Preferences card.
+  const groupClass = `mt-5 pt-5 border-t ${isDark ? 'border-slate-800' : 'border-gray-100'}`;
+  const groupLabel = `mb-3 text-xs font-semibold ${isDark ? 'text-slate-500' : 'text-slate-400'}`;
+  const iconBox =`w-8 h-8 rounded-lg flex items-center justify-center ${isDark ? 'bg-slate-700' : 'bg-gray-100'}`;
 
   return (
     <AnimatePresence>
@@ -90,9 +97,9 @@ export function ProfileSidebar() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: reducedMotion ? 0 : 0.2 }}
+            transition={{ duration: reducedMotion ? 0 : 0.2, ease: 'easeOut' }}
             onClick={() => setSidebarOpen(false)}
-            className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm"
+            className="fixed inset-0 z-[60] bg-black/30 backdrop-blur-[2px]"
           />
 
           <motion.div
@@ -100,24 +107,24 @@ export function ProfileSidebar() {
             role="dialog"
             aria-modal="true"
             aria-label={user ? t.account : t.signIn}
-            initial={{ x: isMobile ? '100%' : '-100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: isMobile ? '100%' : '-100%' }}
-            transition={reducedMotion ? { duration: 0 } : { type: 'spring', stiffness: 350, damping: 35 }}
-            className={`fixed top-0 bottom-0 z-[70] ${user ? 'w-[344px]' : 'w-[400px]'} max-w-[95vw] flex flex-col shadow-2xl ${
-              isMobile ? 'right-0' : 'left-0'
+            initial={{ transform: `translateX(${isMobile ? '100%' : '-100%'})`, opacity: 0 }}
+            animate={{ transform: 'translateX(0%)', opacity: 1 }}
+            exit={{ transform: `translateX(${isMobile ? '100%' : '-100%'})`, opacity: 0, transition: { duration: reducedMotion ? 0 : 0.2 } }}
+            transition={{ duration: reducedMotion ? 0 : 0.3, ease: [0.32, 0.72, 0, 1] }}
+            className={`account-drawer fixed inset-y-0 z-[70] pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] w-[400px] max-w-[95vw] flex flex-col overflow-hidden shadow-2xl ${
+              isMobile ? 'right-0 rounded-l-[28px]' : 'left-0 rounded-r-[28px]'
             } ${
               isDark
-                ? isMobile ? 'bg-slate-900 border-l border-slate-700' : 'bg-slate-900 border-r border-slate-700'
-                : isMobile ? 'bg-white border-l border-gray-100' : 'bg-white border-r border-gray-100'
+                ? 'bg-slate-900'
+                : 'bg-white'
             }`}
           >
             {/* Header */}
-            <div className={`flex items-center justify-between p-5 border-b ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
+            <div className="flex shrink-0 items-center justify-between px-6 py-5">
               <div className="flex items-center gap-2">
                 <BrandLogo
                   markClassName="w-8 h-8"
-                  wordmarkClassName={`text-lg ${isDark ? 'text-slate-100' : 'text-slate-900'}`}
+                  wordmarkClassName="text-lg"
                 />
               </div>
               <button
@@ -129,7 +136,7 @@ export function ProfileSidebar() {
               </button>
             </div>
 
-            <div className="flex-1 p-4 overflow-y-auto no-scrollbar">
+            <div className="min-h-0 flex-1 px-6 pb-6 overflow-y-auto no-scrollbar">
               {user ? (
                 <>
                   {/* Identity card → /profile */}
@@ -139,31 +146,31 @@ export function ProfileSidebar() {
                       isDark ? 'bg-slate-800/70 hover:bg-slate-800' : 'bg-gray-50 hover:bg-gray-100'
                     }`}
                   >
-                    <img src={avatarSrc} alt={user.username} className="w-12 h-12 rounded-xl object-cover bg-slate-300" />
+                    <img src={avatarSrc} alt={user.username} className="w-12 h-12 rounded-full object-cover bg-slate-300" />
                     <div className="flex-1 min-w-0">
                       <p className={`font-poppins font-bold leading-tight truncate ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>
                         {user.username}
                       </p>
                       <p className={`text-xs truncate ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{hideEmail ? maskEmail(user.email) : user.email}</p>
-                      <span className="text-xs font-medium text-cyan-500">{t.viewProfile}</span>
+                      <span className="text-xs font-medium text-blue-600 dark:text-blue-400">{t.viewProfile}</span>
                     </div>
                     <ChevronRight size={16} className={isDark ? 'text-slate-500' : 'text-gray-400'} />
                   </button>
 
                   {/* Quick rows */}
                   <nav className="space-y-1">
-                    <button onClick={() => goTo('/profile')} className={rowClass}>
-                      <div className={iconBox}><UserCircle size={16} className={isDark ? 'text-cyan-400' : 'text-cyan-600'} /></div>
-                      <span className="font-medium flex-1">{t.profile}</span>
-                    </button>
                     <button onClick={() => goTo('/bookmarks')} className={rowClass}>
-                      <div className={iconBox}><Bookmark size={16} className={isDark ? 'text-cyan-400' : 'text-cyan-600'} /></div>
+                      <div className={iconBox}><Bookmark size={16} className={isDark ? 'text-blue-400' : 'text-blue-600'} /></div>
                       <span className="font-medium flex-1">{t.bookmarks}</span>
                       <span className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{bookmarks.length}</span>
                     </button>
+                    <button onClick={() => goTo('/settings')} className={rowClass}>
+                      <div className={iconBox}><Settings size={16} className={isDark ? 'text-blue-400' : 'text-blue-600'} /></div>
+                      <span className="font-medium flex-1">{t.settings}</span>
+                    </button>
                     {admin && (
                       <button onClick={() => goTo('/admin')} className={rowClass}>
-                        <div className={iconBox}><ShieldCheck size={16} className={isDark ? 'text-cyan-400' : 'text-cyan-600'} /></div>
+                        <div className={iconBox}><ShieldCheck size={16} className={isDark ? 'text-blue-400' : 'text-blue-600'} /></div>
                         <span className="font-medium flex-1">{ui('Admin')}</span>
                         {openReports > 0 && <span className="rounded-full bg-rose-500 px-1.5 text-[11px] font-bold leading-5 text-white">{openReports}</span>}
                       </button>
@@ -174,53 +181,38 @@ export function ProfileSidebar() {
                 <AuthPanel isDark={isDark} onAuthenticated={() => setSidebarOpen(false)} />
               )}
 
-              {/* Appearance */}
-              <p className={`mt-5 mb-2 text-[11px] font-semibold uppercase tracking-wide ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
-                {t.appearance}
-              </p>
-              <button onClick={toggleTheme} role="switch" aria-checked={isDark} className={rowClass}>
-                <div className={iconBox}>
-                  {isDark ? <Moon size={16} className="text-cyan-400" /> : <Sun size={16} className="text-yellow-500" />}
+              <section aria-labelledby="drawer-appearance" className={groupClass}>
+                <h3 id="drawer-appearance" className={groupLabel}>{ui('Appearance')}</h3>
+                <ThemePicker collapsible />
+              </section>
+
+              <section aria-labelledby="drawer-reading" className={groupClass}>
+                <h3 id="drawer-reading" className={groupLabel}>{ui('Reading')}</h3>
+                <SegmentedControl
+                  label={t.language}
+                  value={reading.choice}
+                  onChange={reading.choose}
+                  options={reading.options.map((opt) => ({ value: opt.code, title: opt.label, label: <span className="truncate">{opt.label}</span> }))}
+                />
+                <div className="mt-3">
+                  <TranslateNewsToggle isDark={isDark} tray />
                 </div>
-                <span className="font-medium flex-1">{isDark ? t.darkMode : t.lightMode}</span>
-                <div className={`relative w-11 h-6 rounded-full transition-colors ${isDark ? 'bg-cyan-500' : 'bg-gray-300'}`}>
-                  <div className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ease-out ${isDark ? 'translate-x-5' : 'translate-x-0'}`} />
-                </div>
+              </section>
+
+              {/* Feedback, for guests and signed-in readers alike */}
+              <button
+                onClick={() => { setSidebarOpen(false); openFeedback(); }}
+                className={`mt-6 flex w-full min-h-11 items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm transition-colors ${
+                  isDark ? 'bg-slate-800 text-slate-200 hover:bg-slate-700' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                <MessageSquarePlus size={16} className="shrink-0 text-slate-500 dark:text-slate-400" />
+                <span className="font-medium flex-1">{ui('Send feedback')}</span>
+                <ChevronRight size={16} className={isDark ? 'text-slate-500' : 'text-gray-400'} />
               </button>
 
-              {/* Language */}
-              <p className={`mt-4 mb-2 text-[11px] font-semibold uppercase tracking-wide ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
-                {t.language}
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                {reading.options.map((opt) => {
-                  const active = reading.choice === opt.code;
-                  return (
-                    <button
-                      key={opt.code}
-                      title={opt.label}
-                      onClick={() => reading.choose(opt.code)}
-                      className={`flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                        active
-                          ? 'bg-cyan-500 text-white'
-                          : isDark
-                            ? 'bg-slate-800 text-slate-200 hover:bg-slate-700'
-                            : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-                      }`}
-                    >
-                      <span className="truncate">{opt.label}</span>
-                      {active && <Check size={14} className="shrink-0" />}
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="mt-2">
-                <TranslateNewsToggle isDark={isDark} />
-              </div>
-
-
               <div className={`mt-6 pt-4 border-t ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
-                <FooterCompact />
+                <FooterCompact brief />
               </div>
             </div>
 

@@ -21,7 +21,7 @@ export function QuoteCard({ quote, pinned = false }: QuoteCardProps) {
       <div className="flex items-center gap-1.5 mb-2">
         <QuoteIcon size={12} className="text-[var(--brand,#2563eb)]" />
         <span
-          className={`text-[10px] font-mono uppercase tracking-wide ${isDark ? 'text-slate-500' : 'text-slate-400'}`}
+          className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}
         >
           {pinned ? t.quoteOfDay : 'FavQs'}
         </span>

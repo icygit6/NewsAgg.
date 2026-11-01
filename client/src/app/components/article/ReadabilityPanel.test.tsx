@@ -15,6 +15,18 @@ it('does not turn a missing English metric into zero', () => {
   render(<ReadabilityPanel article={article('en')} isDark={false} />);
   expect(screen.getAllByText('Unavailable')).toHaveLength(3);
 });
+it.each([
+  { id: 'yahoo_tw' },
+  { name: 'Yahoo TW' },
+  { name: 'Yahoo Taiwan' },
+  { domain: 'tw.news.yahoo.com' },
+])('hides readability for Yahoo Taiwan identified by %j', (source) => {
+  const item: NewsArticle = { ...article('zh-TW'), source: {
+    id: null, name: '', domain: null, country: null, logo: null, language: 'zh-TW', ...source,
+  } };
+  const { container } = render(<ReadabilityPanel article={item} isDark={false} />);
+  expect(container).toBeEmptyDOMElement();
+});
 it('preserves real zero Flesch/grade scores, but not the SMOG short-text sentinel', () => {
   render(<ReadabilityPanel article={article('en', { wordCount:100, readingTimeMin:1, fleschScore:0, fleschKincaid:0, smogIndex:0 })} isDark={false} />);
   expect(screen.getAllByText('0.0')).toHaveLength(2);

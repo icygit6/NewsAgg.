@@ -22,7 +22,7 @@ export function VerifyEmailBanner() {
   };
 
   return (
-    <div className="w-full bg-gradient-to-r from-cyan-500/95 to-pink-500/95 text-white text-sm">
+    <div className="w-full bg-[var(--brand)] text-white text-sm">
       <div className="max-w-7xl mx-auto px-4 py-2 flex items-center gap-3">
         <MailWarning size={16} className="shrink-0" />
         <span className="flex-1 min-w-0">
@@ -34,7 +34,7 @@ export function VerifyEmailBanner() {
           <button
             onClick={resend}
             disabled={state === 'sending'}
-            className="shrink-0 font-semibold underline underline-offset-2 hover:opacity-90 disabled:opacity-60"
+            className="shrink-0 font-semibold underline-offset-2 hover:underline hover:opacity-90 disabled:opacity-60"
           >
             {ui(state === 'sending' ? 'Sending…' : 'Resend')}
           </button>

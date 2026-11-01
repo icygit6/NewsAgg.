@@ -1,6 +1,7 @@
 import { useUiText } from '../../i18n/uiText';
 import React, { useState } from 'react'
 import { imageCandidates } from '../../lib/articleImages';
+import { BrandLogo } from '../ui/BrandLogo';
 
 export function ImageWithFallback(props: React.ImgHTMLAttributes<HTMLImageElement> & { fallbackSources?: string[] }) {
   const ui = useUiText();
@@ -27,13 +28,13 @@ export function ImageWithFallback(props: React.ImgHTMLAttributes<HTMLImageElemen
     <div
       role="img"
       aria-label={ui("No photo from the publisher")}
-      className={`@container relative inline-block overflow-hidden align-middle ${/h-auto/.test(className ?? '') ? 'aspect-[16/9]' : ''} ${className ?? ''}`}
-      style={{ background: 'linear-gradient(135deg, #173a63 0%, #2563eb 100%)', ...style }}
+      className={`@container relative inline-block overflow-hidden align-middle ${/\bh-auto\b/.test(className ?? '') ? 'aspect-[16/9]' : ''} ${className ?? ''}`}
+      style={{ background: 'var(--color-blue-800)', ...style }}
       data-original-url={src}
     >
       <div className="flex h-full w-full flex-col items-center justify-center gap-2 p-2 text-white/80">
-        <img src="/logo-mark.svg" alt="" aria-hidden="true" className="w-1/4 min-w-6 max-w-16 opacity-90" />
-        <span className="hidden text-[11px] font-medium tracking-wide @[11rem]:block">{ui("No photo from the publisher")}</span>
+        <span aria-hidden="true" className="grid aspect-square w-[28%] min-w-9 max-w-16 place-items-center rounded-xl bg-white/95 p-1.5 shadow-sm"><BrandLogo showWordmark={false} markClassName="h-full w-full" onLight /></span>
+        <span className="hidden text-xs font-medium @[11rem]:block">{ui("No photo from the publisher")}</span>
       </div>
     </div>
   ) : (

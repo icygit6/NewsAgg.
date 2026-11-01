@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router';
 import { Home, MessageSquareQuote, Bookmark, BarChart2, ShieldCheck } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
-import { useAdminOverview, useIsAdmin } from '../../hooks/useAdmin';
+import { adminAttentionCount, useAdminOverview, useIsAdmin } from '../../hooks/useAdmin';
 import { useUiText } from '../../i18n/uiText';
 import { POSTS_ENABLED } from '../../constants';
 
@@ -15,11 +15,11 @@ interface TabItem {
 /** Small/medium-screen bottom navigation (hidden ≥lg, where NavRail takes over). */
 export function BottomTabBar() {
   const ui = useUiText();
-  const { t, isDark, avatarSrc, user, authInitialized, setSidebarOpen } = useApp();
+  const { t, isDark, avatarSrc, sidebarOpen, setSidebarOpen } = useApp();
   // Admins get the same entry point the desktop rail gives them.
   const admin = useIsAdmin();
   const adminOverview = useAdminOverview();
-  const openReports = (adminOverview.data?.open_article_reports ?? 0) + (adminOverview.data?.open_post_reports ?? 0);
+  const openReports = adminAttentionCount(adminOverview.data);
   const scrollTop = () => {
     document.getElementById('main-scroll')?.scrollTo({ top: 0, behavior: 'instant' });
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -36,7 +36,7 @@ export function BottomTabBar() {
   const dense = items.length > 4;
   const tabClass = (isActive: boolean) =>
     `group flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl py-1.5 font-medium leading-none transition-[color,background-color,transform] duration-200 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 motion-reduce:transition-none ${
-      dense ? 'px-0 text-[10px]' : 'px-1 text-[11px]'
+      dense ? 'px-0 text-[11px]' : 'px-1 text-xs'
     } ${
       isActive
         ? 'text-[var(--brand,#2563eb)]'
@@ -65,10 +65,10 @@ export function BottomTabBar() {
 
   return (
     <nav
-      className={`fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur-xl lg:hidden
+      className={`fixed inset-x-0 bottom-0 z-40 border-t bg-[var(--page-bg)] before:pointer-events-none before:absolute before:inset-x-0 before:bottom-full before:h-2 before:bg-gradient-to-t before:from-[var(--page-bg)] before:to-transparent lg:hidden
         ${isDark
-          ? 'border-slate-700/70 bg-slate-950/95 shadow-[0_-8px_28px_rgba(0,0,0,0.24)]'
-          : 'border-slate-200/90 bg-white/95 shadow-[0_-8px_28px_rgba(15,23,42,0.08)]'}`}
+          ? 'border-slate-800'
+          : 'border-slate-200'}`}
       aria-label={t.menu}
     >
       <div
@@ -90,7 +90,7 @@ export function BottomTabBar() {
                   <Icon size={21} strokeWidth={isActive ? 2.4 : 1.9} aria-hidden="true" />
                   {badge ? (
                     <span
-                      className="absolute right-1 top-0 min-w-4 rounded-full bg-rose-500 px-1 text-center text-[10px] font-bold leading-4 text-white"
+                      className="absolute right-1 top-0 min-w-4 rounded-full bg-rose-500 px-1 text-center text-[11px] font-bold leading-4 text-white"
                       aria-label={`${badge} ${ui('open reports')}`}
                     >
                       {badge}
@@ -102,27 +102,17 @@ export function BottomTabBar() {
             )}
           </NavLink>
         ))}
-        {user || !authInitialized ? (
-          <NavLink
-            to="/profile"
-            onClick={scrollTop}
-            title={t.profile}
-            aria-label={t.profile}
-            className={({ isActive }) => tabClass(isActive)}
-          >
-            {({ isActive }) => profileContent(isActive)}
-          </NavLink>
-        ) : (
           <button
             type="button"
             onClick={() => setSidebarOpen(true)}
             title={t.profile}
             aria-label={t.profile}
-            className={tabClass(false)}
+            aria-haspopup="dialog"
+            aria-expanded={sidebarOpen}
+            className={tabClass(sidebarOpen)}
           >
-            {profileContent(false)}
+            {profileContent(sidebarOpen)}
           </button>
-        )}
       </div>
     </nav>
   );

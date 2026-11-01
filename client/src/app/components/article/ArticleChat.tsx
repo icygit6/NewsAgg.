@@ -188,7 +188,7 @@ function ArticleChatSession({ article, isDark }: ArticleChatProps) {
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="group inline-flex items-center gap-2 pl-4 pr-5 py-3 rounded-full text-sm font-semibold text-white shadow-lg shadow-cyan-500/25 ring-1 ring-white/20 bg-gradient-to-r from-cyan-500 to-pink-500 hover:from-cyan-600 hover:to-pink-600 hover:shadow-xl hover:-translate-y-0.5 transition-all"
+            className="group inline-flex items-center gap-2 pl-4 pr-5 py-3 rounded-full text-sm font-semibold text-white shadow-lg shadow-blue-600/25 ring-1 ring-white/20 bg-[var(--brand)] hover:bg-[var(--brand-hover)] hover:shadow-xl hover:-translate-y-0.5 transition-all"
           >
             <Sparkles size={16} className="transition-transform group-hover:rotate-12" />
             {askLabel}
@@ -221,10 +221,10 @@ function ArticleChatSession({ article, isDark }: ArticleChatProps) {
             >
               <div className={`relative shrink-0 px-4 py-3 border-b ${isDark ? 'border-slate-700/60' : 'border-gray-100'}`}>
                 {/* Gradient hairline, echoing the floating trigger. */}
-                <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-cyan-500 via-blue-500 to-pink-500" />
+                <div className="absolute inset-x-0 top-0 h-0.5 bg-[var(--brand)]" />
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <span className="shrink-0 grid place-items-center w-9 h-9 rounded-full text-white shadow-sm bg-gradient-to-br from-cyan-500 to-pink-500">
+                    <span className="shrink-0 grid place-items-center w-9 h-9 rounded-full text-white shadow-sm bg-[var(--brand)]">
                       <Sparkles size={16} />
                     </span>
                     <div className="min-w-0">
@@ -232,7 +232,7 @@ function ArticleChatSession({ article, isDark }: ArticleChatProps) {
                         <p className={`text-sm font-semibold truncate ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>{t.askAI}</p>
                         {modelLabel && (
                           <span
-                            className={`shrink-0 px-1.5 py-0.5 rounded-md text-[10px] font-semibold tracking-wide ${isDark ? 'bg-slate-800 text-cyan-300 ring-1 ring-slate-700' : 'bg-cyan-50 text-cyan-700 ring-1 ring-cyan-100'}`}
+                            className={`shrink-0 px-1.5 py-0.5 rounded-md text-xs font-medium ${isDark ? 'bg-slate-800 text-blue-300 ring-1 ring-slate-700' : 'bg-blue-50 text-blue-700 ring-1 ring-blue-100'}`}
                           >
                             {modelLabel}
                           </span>
@@ -269,7 +269,7 @@ function ArticleChatSession({ article, isDark }: ArticleChatProps) {
               <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
                 {messages.length === 0 && !loading && (
                   <div className="pt-6 text-center">
-                    <span className={`inline-grid place-items-center w-12 h-12 rounded-2xl ${isDark ? 'bg-slate-800 text-cyan-300' : 'bg-cyan-50 text-cyan-600'}`}>
+                    <span className={`inline-grid place-items-center w-12 h-12 rounded-2xl ${isDark ? 'bg-slate-800 text-blue-300' : 'bg-blue-50 text-blue-600 dark:text-blue-400'}`}>
                       <Sparkles size={20} />
                     </span>
                     <p className={`mt-3 text-sm leading-relaxed ${isDark ? 'text-slate-300' : 'text-gray-600'}`}>{t.chatWelcome}</p>
@@ -299,14 +299,14 @@ function ArticleChatSession({ article, isDark }: ArticleChatProps) {
                     className={`flex items-end gap-2 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     {message.role === 'assistant' && (
-                      <span className="shrink-0 grid place-items-center w-6 h-6 rounded-full text-white bg-gradient-to-br from-cyan-500 to-pink-500">
+                      <span className="shrink-0 grid place-items-center w-6 h-6 rounded-full text-white bg-[var(--brand)]">
                         <Sparkles size={12} />
                       </span>
                     )}
                     <div
                       className={`max-w-[82%] px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-line shadow-sm rounded-2xl ${
                         message.role === 'user'
-                          ? 'bg-gradient-to-br from-cyan-500 to-blue-500 text-white rounded-br-md'
+                          ? 'bg-[var(--brand)] text-white rounded-br-md'
                           : isDark
                             ? 'bg-slate-800 text-slate-100 ring-1 ring-slate-700/60 rounded-bl-md'
                             : 'bg-gray-50 text-gray-800 ring-1 ring-gray-100 rounded-bl-md'
@@ -316,7 +316,7 @@ function ArticleChatSession({ article, isDark }: ArticleChatProps) {
                       {message.role === 'assistant' && message.citations && message.citations.length > 0 && (
                         <details className={`group mt-2.5 pt-2.5 border-t ${isDark ? 'border-slate-700/60' : 'border-gray-200'}`}>
                           <summary
-                            className={`list-none cursor-pointer inline-flex items-center gap-1 text-[11px] font-medium ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-gray-500 hover:text-gray-700'}`}
+                            className={`list-none cursor-pointer inline-flex items-center gap-1 text-xs font-medium ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-gray-500 hover:text-gray-700'}`}
                           >
                             <ChevronDown size={12} className="transition-transform group-open:rotate-180" />
                             {t.chatSources} · {message.citations.length}
@@ -325,9 +325,9 @@ function ArticleChatSession({ article, isDark }: ArticleChatProps) {
                             {message.citations.map((citation) => (
                               <p
                                 key={citation.index}
-                                className={`line-clamp-4 rounded-lg px-2 py-1.5 text-[11px] leading-relaxed ${isDark ? 'bg-slate-900/60 text-slate-400' : 'bg-white text-gray-500'}`}
+                                className={`line-clamp-4 rounded-lg px-2 py-1.5 text-xs leading-relaxed ${isDark ? 'bg-slate-900/60 text-slate-400' : 'bg-white text-gray-500'}`}
                               >
-                                <span className={`mr-1 font-semibold ${isDark ? 'text-cyan-300' : 'text-cyan-600'}`}>[{citation.index}]</span>
+                                <span className={`mr-1 font-semibold ${isDark ? 'text-blue-300' : 'text-blue-600'}`}>[{citation.index}]</span>
                                 {citation.text}
                               </p>
                             ))}
@@ -339,7 +339,7 @@ function ArticleChatSession({ article, isDark }: ArticleChatProps) {
                 ))}
                 {loading && (
                   <div className="flex items-end gap-2 justify-start">
-                    <span className="shrink-0 grid place-items-center w-6 h-6 rounded-full text-white bg-gradient-to-br from-cyan-500 to-pink-500">
+                    <span className="shrink-0 grid place-items-center w-6 h-6 rounded-full text-white bg-[var(--brand)]">
                       <Sparkles size={12} />
                     </span>
                     <div className={`flex items-center gap-1 px-3.5 py-3 rounded-2xl rounded-bl-md shadow-sm ${isDark ? 'bg-slate-800 ring-1 ring-slate-700/60' : 'bg-gray-50 ring-1 ring-gray-100'}`}>
@@ -358,7 +358,7 @@ function ArticleChatSession({ article, isDark }: ArticleChatProps) {
 
               <div className={`shrink-0 px-4 py-3 border-t ${isDark ? 'border-slate-700/60' : 'border-gray-100'}`}>
                 <div
-                  className={`flex items-center gap-2 rounded-2xl pl-3.5 pr-1.5 py-1.5 ${isDark ? 'bg-slate-800 focus-within:ring-2 focus-within:ring-cyan-500/40' : 'bg-gray-100 focus-within:ring-2 focus-within:ring-cyan-500/30'}`}
+                  className={`flex items-center gap-2 rounded-2xl pl-3.5 pr-1.5 py-1.5 ${isDark ? 'bg-slate-800 focus-within:ring-2 focus-within:ring-blue-500/40' : 'bg-gray-100 focus-within:ring-2 focus-within:ring-blue-500/30'}`}
                 >
                   <input
                     name="chat-message"
@@ -376,7 +376,7 @@ function ArticleChatSession({ article, isDark }: ArticleChatProps) {
                     aria-label={t.chatSend}
                     title={t.chatSend}
                     disabled={!input.trim() || loading}
-                    className="grid place-items-center shrink-0 w-9 h-9 rounded-xl text-white bg-gradient-to-br from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 disabled:opacity-40 transition-all"
+                    className="grid place-items-center shrink-0 w-9 h-9 rounded-xl text-white bg-[var(--brand)] hover:bg-[var(--brand-hover)] disabled:opacity-40 transition-all"
                   >
                     {loading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                   </button>

@@ -1,15 +1,18 @@
 import { useUiText } from '../../i18n/uiText';
 import { useEffect, useState } from 'react';
-import { motion } from 'motion/react';
-import { Activity } from 'lucide-react';
+import { motion, useReducedMotion } from 'motion/react';
+import { InsightMark } from '../ui/InsightMark';
 import { useApp } from '../../contexts/AppContext';
-import { CATEGORY_BADGE_CLASS, CATEGORIES, CATEGORY_LABELS } from '../../constants';
+import { CATEGORY_ACCENT, CATEGORY_BADGE_CLASS, CATEGORIES, CATEGORY_LABELS } from '../../constants';
 import { useStatsOverview, type StatsOverview } from '../../hooks/useStats';
 import type { NewsCategoryFilter } from '../../types/article';
 import type { SentimentDistributionItem } from '../../types/sentiment';
-import { DonutChart } from './DonutChart';
+import { SentimentExplorer } from './SentimentExplorer';
+import { SentimentReasons } from './SentimentReasons';
 import { panelBaseClass, chartTextColor, chartMutedColor } from './shared';
 import { LoadingIndicator } from '../ui/ContentSkeleton';
+import { RollingNumber } from '../ui/RollingNumber';
+import { SENTIMENT_COLOR } from '../ui/chartTheme';
 
 const toDistribution = (overview: StatsOverview | undefined): SentimentDistributionItem[] =>
   (['positive', 'neutral', 'negative'] as const).map((type) => ({
@@ -17,57 +20,65 @@ const toDistribution = (overview: StatsOverview | undefined): SentimentDistribut
     count: overview?.sentiments[type] ?? 0,
   }));
 
-const SENTIMENT_COLORS = {
-  positive: '#10b981',
-  neutral: '#6b7280',
-  negative: '#ef4444',
-};
 
 const SENTIMENT_ROTATE_MS = 10000;
 
 export function SentimentChart() {
   const ui = useUiText();
-  const { t, isDark, selectedCategory } = useApp();
+  const reducedMotion = useReducedMotion();
+  const { t, isDark, selectedCategory, selectedSources = [], selectedCategories = [] } = useApp();
   const [sentimentCategoryIndex, setSentimentCategoryIndex] = useState(0);
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const [reasonsOpen, setReasonsOpen] = useState(false);
+  const paused = hovered || focused || reasonsOpen;
+  const rotationCategories = selectedCategories.length > 1 ? selectedCategories : CATEGORIES;
+  const rotationCount = rotationCategories.length;
 
   const rotatingSentimentCategory: NewsCategoryFilter = selectedCategory === 'all'
-    ? CATEGORIES[sentimentCategoryIndex]
+    ? rotationCategories[sentimentCategoryIndex % rotationCount]
     : selectedCategory;
 
   // SQL-side aggregates via /api/stats/overview (no full-dataset download).
-  const { data: overallOverview, isPending: overallLoading, isError: overallError } = useStatsOverview('all');
-  const { data: categoryOverview, isPending: categoryLoading, isError: categoryError } = useStatsOverview(rotatingSentimentCategory);
+  const { data: overallOverview, isPending: overallLoading, isError: overallError } = useStatsOverview(selectedCategory);
+  // Every split already comes with the overall request. Reuse it so rotation
+  // keeps the donut mounted instead of flashing a loader for each category.
+  const categoryOverview = overallOverview?.byCategory?.find((row) => row.topic === CATEGORY_LABELS[rotatingSentimentCategory]);
+  const categoryLoading = overallLoading;
+  const categoryError = overallError || Boolean(overallOverview && !Array.isArray(overallOverview.byCategory));
   const overallSentimentDistribution = toDistribution(overallOverview);
-  const categorySentimentDistribution = toDistribution(categoryOverview);
+  const categorySentimentDistribution = (['positive', 'neutral', 'negative'] as const).map((type) => ({type, count: categoryOverview?.sentiments[type] ?? 0}));
 
   // Rotation control: auto-cycle when viewing "all", otherwise lock to the selection.
   useEffect(() => {
     if (selectedCategory === 'all') {
+      if (paused || reducedMotion) return;
       const id = window.setInterval(
-        () => setSentimentCategoryIndex((prev) => (prev + 1) % CATEGORIES.length),
+        () => setSentimentCategoryIndex((prev) => (prev + 1) % rotationCount),
         SENTIMENT_ROTATE_MS
       );
       return () => window.clearInterval(id);
     }
     const categoryIndex = CATEGORIES.indexOf(selectedCategory);
     if (categoryIndex >= 0) setSentimentCategoryIndex(categoryIndex);
-  }, [selectedCategory]);
+  }, [selectedCategory, rotationCount, paused, sentimentCategoryIndex, reducedMotion]);
 
   const handleNextSentimentCategory = () => {
-    setSentimentCategoryIndex((prev) => (prev + 1) % CATEGORIES.length);
+    setReasonsOpen(false);
+    setSentimentCategoryIndex((prev) => (prev + 1) % rotationCount);
   };
 
   const overallSentimentData = overallSentimentDistribution.map((item) => ({
     name: t[item.type],
     value: item.count,
-    color: SENTIMENT_COLORS[item.type],
+    color: SENTIMENT_COLOR[item.type],
     type: item.type,
   }));
 
   const categorySentimentData = categorySentimentDistribution.map((item) => ({
     name: t[item.type],
     value: item.count,
-    color: SENTIMENT_COLORS[item.type],
+    color: SENTIMENT_COLOR[item.type],
     type: item.type,
   }));
 
@@ -79,12 +90,10 @@ export function SentimentChart() {
   const sentimentCategoryBadgeClass = CATEGORY_BADGE_CLASS[rotatingSentimentCategory];
 
   return (
-    <div className={`rounded-2xl border shadow-lg p-4 ${panelBaseClass(isDark)}`}>
+    <div className={`rounded-2xl border p-4 ${panelBaseClass(isDark)}`}>
       <div className="flex items-center gap-2 mb-3">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center">
-            <Activity size={13} className="text-white" />
-          </div>
+          <InsightMark kind="sentiment" />
           <h3 className={`font-poppins text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>
             {t.sentimentDistribution}
           </h3>
@@ -92,48 +101,29 @@ export function SentimentChart() {
       </div>
 
       <div className="space-y-3">
-        <div className={`rounded-xl border p-3 ${isDark ? 'border-slate-700 bg-slate-900/30' : 'border-gray-100 bg-gray-50/70'}`}>
-          <div className="flex items-center justify-between text-[11px] mb-2">
-            <span className={`font-semibold ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>{ui("Overall")}</span>
+        {selectedSources.length > 0 && <p className="text-xs opacity-70 break-words">{selectedSources.map(source => ({ bbc: 'BBC', cnn: 'CNN', aljazeera: 'Al Jazeera', yahoo_tw: 'Yahoo Taiwan' }[source] || source)).join(' · ')}</p>}
+        <div className={`rounded-xl p-3 ${isDark ? 'bg-slate-800/60' : 'bg-slate-50'}`}>
+          <div className="flex items-center justify-between text-xs mb-2">
+            <span className={`font-semibold ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>{selectedCategory === 'all' ? ui("Overall") : ui(CATEGORY_LABELS[selectedCategory])}</span>
             <span className={`px-2 py-0.5 rounded-full ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-gray-100 text-gray-700'}`}>
-              {t.allCategories}
+              {selectedCategories.length > 1 ? selectedCategories.map(cat => ui(CATEGORY_LABELS[cat])).join(' · ') : selectedCategory === 'all' ? t.allCategories : ui(CATEGORY_LABELS[selectedCategory])}
             </span>
           </div>
 
           {overallLoading ? <div className="grid min-h-44 place-items-center"><LoadingIndicator label={t.loading} /></div> : overallError ? <p role="alert">{t.fetchFailed}</p> : <>
-          <DonutChart segments={overallSentimentData} isDark={isDark} />
-
-          <div className="space-y-2">
-            {overallSentimentData.map((item) => {
-              const percentage = overallTotal > 0 ? Math.round((item.value / overallTotal) * 100) : 0;
-              return (
-                <div key={`overall-row-${item.type}`} className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: item.color }} />
-                    <span className="text-xs flex-1 truncate" style={{ color: textColor }}>{item.name}</span>
-                    <span className="text-xs font-semibold" style={{ color: item.color }}>
-                      {item.value} ({percentage}%)
-                    </span>
-                  </div>
-                  <div className={`h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-gray-100'}`}>
-                    <div className="h-full rounded-full transition-[width] duration-300 ease-out" style={{ width: `${percentage}%`, background: item.color }} />
-                  </div>
-                </div>
-              );
-            })}
+          <SentimentExplorer counts={overallOverview?.sentiments ?? {positive:0,neutral:0,negative:0}} sources={overallOverview?.bySource} scopeKey={selectedCategory} />
+          <div className="flex items-center justify-between text-xs pt-2">
+            <span style={{ color: mutedColor }}>{selectedCategory === 'all' ? ui("Total analyzed (Overall)") : `${ui("Total analyzed (")}${ui(CATEGORY_LABELS[selectedCategory])})`}</span>
+            <span className="font-semibold" style={{ color: textColor }}><RollingNumber value={overallTotal} /></span>
           </div>
-
-          <div className="flex items-center justify-between text-[11px] pt-2">
-            <span style={{ color: mutedColor }}>{ui("Total analyzed (Overall)")}</span>
-            <span className="font-semibold" style={{ color: textColor }}>{overallTotal}</span>
-          </div>
+          <SentimentReasons evidence={overallOverview?.evidence} />
           </>}
         </div>
 
-        <div className={`rounded-xl border p-3 ${isDark ? 'border-slate-700 bg-slate-900/30' : 'border-gray-100 bg-gray-50/70'}`}>
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <div className="flex items-center gap-2">
-              <span className={`text-[11px] font-semibold ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>{ui("Per Category")}</span>
+        {selectedCategory === 'all' && <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} onFocusCapture={() => setFocused(true)} onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false); }} className={`rounded-xl p-3 ${isDark ? 'bg-slate-800/60' : 'bg-slate-50'}`}>
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <span className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>{ui("Per Category")}</span>
               <span className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${sentimentCategoryBadgeClass}`}>
                 {sentimentCategoryLabel}
               </span>
@@ -142,8 +132,9 @@ export function SentimentChart() {
             {selectedCategory === 'all' && (
               <button
                 type="button"
+                onPointerDown={event => { if (event.pointerType === 'mouse') event.preventDefault(); }}
                 onClick={handleNextSentimentCategory}
-                className={`text-xs px-3 py-1.5 rounded-full font-semibold transition-colors ${isDark ? 'bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30' : 'bg-cyan-50 text-cyan-700 hover:bg-cyan-100'}`}
+                className={`text-xs px-3 py-1.5 rounded-full font-semibold transition-colors ${isDark ? 'bg-blue-500/20 text-blue-300 hover:bg-blue-500/30' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'}`}
               >
                 {t.next}
               </button>
@@ -151,50 +142,42 @@ export function SentimentChart() {
           </div>
 
           {categoryLoading ? <div className="grid min-h-44 place-items-center"><LoadingIndicator label={t.loading} /></div> : categoryError ? <p role="alert">{t.fetchFailed}</p> : <>
-          <DonutChart segments={categorySentimentData} isDark={isDark} />
-
-          <div className="space-y-2">
-            {categorySentimentData.map((item) => {
-              const percentage = categoryTotal > 0 ? Math.round((item.value / categoryTotal) * 100) : 0;
-              return (
-                <div key={`category-row-${item.type}`} className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: item.color }} />
-                    <span className="text-xs flex-1 truncate" style={{ color: textColor }}>{item.name}</span>
-                    <span className="text-xs font-semibold" style={{ color: item.color }}>
-                      {item.value} ({percentage}%)
-                    </span>
-                  </div>
-                  <div className={`h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-gray-100'}`}>
-                    <div className="h-full rounded-full transition-[width] duration-300 ease-out" style={{ width: `${percentage}%`, background: item.color }} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="flex items-center justify-between text-[11px] pt-2">
+          <SentimentExplorer counts={categoryOverview?.sentiments ?? {positive:0,neutral:0,negative:0}} sources={categoryOverview?.bySource} scopeKey={rotatingSentimentCategory} />
+          <div className="flex items-center justify-between text-xs pt-2">
             <span style={{ color: mutedColor }}>{ui("Total analyzed (")}{sentimentCategoryLabel})</span>
-            <span className="font-semibold" style={{ color: textColor }}>{categoryTotal}</span>
+            <span className="font-semibold" style={{ color: textColor }}><RollingNumber value={categoryTotal} /></span>
           </div>
+          <SentimentReasons key={rotatingSentimentCategory} evidence={categoryOverview?.evidence} onOpenChange={setReasonsOpen} />
           </>}
 
-          {selectedCategory === 'all' && (
-            <div className="mt-2">
-              <div className={`h-1 rounded-full overflow-hidden ${isDark ? 'bg-slate-1000' : 'bg-gray-100'}`}>
-                <motion.div
+          {selectedCategory === 'all' && <div className="mt-3 flex flex-wrap justify-center gap-1" role="group" aria-label={ui('Per Category')}>
+            {rotationCategories.map((category, index) => <button key={category} type="button"
+              aria-label={ui(CATEGORY_LABELS[category])} title={ui(CATEGORY_LABELS[category])}
+              aria-current={rotatingSentimentCategory === category ? 'true' : undefined}
+              onPointerDown={event => { if (event.pointerType === 'mouse') event.preventDefault(); }}
+              onClick={() => { setReasonsOpen(false); setSentimentCategoryIndex(index); }}
+              style={{ color: CATEGORY_ACCENT[category] }}
+              className="group grid h-9 w-9 place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-current">
+              <span className={`h-2.5 rounded-full transition-[background-color,width] duration-150 motion-reduce:transition-none group-hover:bg-current ${rotatingSentimentCategory === category ? 'w-5 bg-current' : 'w-2.5 bg-slate-300 dark:bg-slate-600'}`} />
+            </button>)}
+          </div>}
+          {/* The track always keeps its space so pausing on hover doesn't
+              shrink the panel and push the pointer back out of it. */}
+          {selectedCategory === 'all' && !reducedMotion && (
+            <div className="mt-2" aria-hidden={paused || undefined}>
+              <div className={`h-1 rounded-full overflow-hidden transition-opacity duration-150 ${paused ? 'opacity-0' : ''} ${isDark ? 'bg-slate-800' : 'bg-gray-100'}`}>
+                {!paused && <motion.div
                   key={sentimentCategoryLabel}
-                  initial={{ width: '0%' }}
-                  animate={{ width: '100%' }}
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: 1 }}
                   transition={{ duration: SENTIMENT_ROTATE_MS / 1000, ease: 'linear' }}
-                  className="h-full rounded-full bg-cyan-500"
-                />
+                  className="h-full w-full origin-left rounded-full bg-[var(--brand)]"
+                />}
               </div>
-              <p className="text-[11px] mt-1" style={{ color: mutedColor }}>{ui("Auto-rotate every")} {Math.round(SENTIMENT_ROTATE_MS / 1000)}s
-              </p>
+
             </div>
           )}
-        </div>
+        </div>}
       </div>
     </div>
   );

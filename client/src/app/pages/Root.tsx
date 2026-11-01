@@ -4,11 +4,14 @@ import { useApp } from '../contexts/AppContext';
 import { AppShell } from '../components/shell/AppShell';
 import { ScrollToTop } from '../components/ScrollToTop';
 import { VerifyEmailBanner } from '../components/auth/VerifyEmailBanner';
-import { LoadingIndicator } from '../components/ui/ContentSkeleton';
+import { DrawerSkeleton } from '../components/ui/ContentSkeleton';
+import { LazyFeedbackHost } from '../components/feedback/LazyFeedbackHost';
+import { Toaster } from 'sonner';
 
 // Dev-only stress-data switch; `false &&` in the production build, so the
 // chunk is never requested.
 const DataModeToggle = lazy(() => import('../dev/DataModeToggle').then((m) => ({ default: m.DataModeToggle })));
+
 
 const ProfileSidebar = lazy(() =>
   import('../components/ProfileSidebar').then((module) => ({ default: module.ProfileSidebar })),
@@ -26,10 +29,8 @@ export function Root() {
     <div
       className={`h-dvh flex flex-col overflow-hidden font-sans ${isDark ? 'text-slate-100' : 'text-slate-900'}`}
       style={{
-        // Quiet neutral canvas; local components provide the hierarchy.
-        background: isDark
-          ? 'linear-gradient(180deg, #0b1220 0%, #0f172a 100%)'
-          : 'linear-gradient(180deg, #f8fafc 0%, #f3f6fa 100%)',
+        // Quiet canvas from the active colour theme; local components provide the hierarchy.
+        background: 'var(--page-bg)',
       }}
     >
       <VerifyEmailBanner />
@@ -40,9 +41,19 @@ export function Root() {
 
       {/* Global overlays */}
       {hasOpenedSidebar && (
-        <Suspense fallback={<div className="fixed inset-0 z-[70] grid place-items-center bg-slate-950/30 backdrop-blur-sm"><div className="rounded-2xl bg-white px-6 py-4 text-slate-700 shadow-xl dark:bg-slate-900 dark:text-slate-200"><LoadingIndicator label={t.loading} /></div></div>}>
+        <Suspense fallback={<DrawerSkeleton label={t.loading} />}>
           <ProfileSidebar />
         </Suspense>
+      )}
+      <LazyFeedbackHost />
+      {(
+        <Toaster
+          theme={isDark ? 'dark' : 'light'}
+          position="bottom-right"
+          closeButton={false}
+          mobileOffset={{ bottom: 'calc(env(safe-area-inset-bottom) + 76px)' }}
+          toastOptions={{ style: { zIndex: 130, fontFamily: 'inherit', borderRadius: '14px' } }}
+        />
       )}
       <ScrollToTop />
       {import.meta.env.DEV && <Suspense fallback={null}><DataModeToggle /></Suspense>}

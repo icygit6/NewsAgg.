@@ -50,18 +50,54 @@ export const TOPIC_TO_CATEGORY: Record<CategoryTopic, Category> = {
   Climate: 'climate',
 };
 
-// White 11–12px badge text needs a 4.5:1 contrast ratio (WCAG AA); the
-// 500/600 orange, emerald, sky, teal and green shades fell short (2.8–4.1:1).
-export const CATEGORY_BADGE_CLASS: Record<Category, string> = {
-  sport: 'bg-orange-700 text-white',
-  health: 'bg-emerald-700 text-white',
-  business: 'bg-indigo-600 text-white',
-  world: 'bg-slate-600 text-white',
-  politics: 'bg-sky-700 text-white',
-  lifestyle: 'bg-fuchsia-600 text-white',
-  science: 'bg-teal-700 text-white',
-  climate: 'bg-green-700 text-white',
+/** One colour per category, used everywhere the category appears: badge, active chip, card
+ * edge, dot, hover and charts. Eight distinct hues; none is red (negative sentiment) or
+ * yellow (neutral sentiment). Each carries white 12px text at 4.5:1 or better (WCAG AA). */
+export const CATEGORY_ACCENT: Record<Category, string> = {
+  politics: '#1d4ed8',
+  business: '#6d28d9',
+  lifestyle: '#c026d3',
+  health: '#be185d',
+  sport: '#c2410c',
+  climate: '#15803d',
+  world: '#0f766e',
+  science: '#0369a1',
 };
+
+/** The same hue lifted for text on dark surfaces (hover titles, links). */
+export const CATEGORY_ACCENT_LIGHT: Record<Category, string> = {
+  politics: '#93c5fd',
+  business: '#c4b5fd',
+  lifestyle: '#f0abfc',
+  health: '#f9a8d4',
+  sport: '#fdba74',
+  climate: '#86efac',
+  world: '#5eead4',
+  science: '#7dd3fc',
+};
+
+// Literal classes (Tailwind only generates what it can read in source).
+export const CATEGORY_BADGE_CLASS: Record<Category, string> = {
+  politics: 'bg-[#1d4ed8] text-white',
+  business: 'bg-[#6d28d9] text-white',
+  lifestyle: 'bg-[#c026d3] text-white',
+  health: 'bg-[#be185d] text-white',
+  sport: 'bg-[#c2410c] text-white',
+  climate: 'bg-[#15803d] text-white',
+  world: 'bg-[#0f766e] text-white',
+  science: 'bg-[#0369a1] text-white',
+};
+
+/** CSS variables for a category, read by `hover:text-[var(--cat)]` and friends. */
+export function categoryVars(category: Category | undefined): Record<string, string> {
+  if (!category) return {};
+  return { '--cat': CATEGORY_ACCENT[category], '--cat-light': CATEGORY_ACCENT_LIGHT[category] };
+}
+
+/** Text in the category colour, readable in both modes. */
+export const CATEGORY_TEXT = 'text-[var(--cat)] dark:text-[var(--cat-light)]';
+export const CATEGORY_HOVER_TEXT = 'hover:text-[var(--cat)] dark:hover:text-[var(--cat-light)]';
+export const CATEGORY_GROUP_HOVER_TEXT = 'group-hover:text-[var(--cat)] dark:group-hover:text-[var(--cat-light)]';
 
 export const TOPIC_BADGE_CLASS: Record<CategoryTopic, string> = {
   Sport: CATEGORY_BADGE_CLASS.sport,
@@ -88,14 +124,14 @@ export interface SourceOption {
 }
 
 export const SOURCES: SourceOption[] = [
-  { id: 'cnn', name: 'CNN', domain: 'edition.cnn.com', matchers: ['cnn'] },
-  { id: 'bbc', name: 'BBC', domain: 'bbc.com', matchers: ['bbc'] },
   {
     id: 'aljazeera',
     name: 'Al Jazeera',
     domain: 'aljazeera.com',
     matchers: ['aljazeera', 'al jazeera', 'jazeera'],
   },
+  { id: 'bbc', name: 'BBC', domain: 'bbc.com', matchers: ['bbc'] },
+  { id: 'cnn', name: 'CNN', domain: 'edition.cnn.com', matchers: ['cnn'] },
   { id: 'yahoo_tw', name: 'Yahoo TW', domain: 'tw.news.yahoo.com', matchers: ['yahoo'] },
 ];
 

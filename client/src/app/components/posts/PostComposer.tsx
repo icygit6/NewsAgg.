@@ -23,7 +23,7 @@ export function PostComposer({ attachId, onAttachClear, autoFocus = false }: Pos
   const { create } = usePostMutations();
   const [content, setContent] = useState(() => localStorage.getItem('postDraft') || '');
   const [error, setError] = useState('');
-  const [category, setCategory] = useState('');
+  const [category, setCategory] = useState('General');
 
   const { data: attached, isError: attachmentError } = useArticle(attachId);
   useEffect(() => { if (content) localStorage.setItem('postDraft', content); else localStorage.removeItem('postDraft'); }, [content]);
@@ -35,11 +35,11 @@ export function PostComposer({ attachId, onAttachClear, autoFocus = false }: Pos
     if (!canSubmit) return;
     setError('');
     create.mutate(
-      { content: content.trim(), articleId: attachId, category: category || undefined },
+      { content: content.trim(), articleId: attachId, category },
       {
         onSuccess: () => {
           setContent('');
-          setCategory('');
+          setCategory('General');
           onAttachClear?.();
         },
         onError: (err) => setError(err.message || t.postFailed),
@@ -86,7 +86,7 @@ export function PostComposer({ attachId, onAttachClear, autoFocus = false }: Pos
                 />
               )}
               <div className="flex-1 min-w-0">
-                <p className={`text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                   {t.attachedArticle}
                 </p>
                 <p
@@ -111,7 +111,7 @@ export function PostComposer({ attachId, onAttachClear, autoFocus = false }: Pos
 
           {error && <p role="alert" aria-live="polite" className="text-xs text-rose-500 mb-2">{error}</p>}
 
-          <PostCategoryPicker value={category} onChange={setCategory} allLabel={ui('Auto category')} isDark={isDark} ariaLabel={ui('Post category')} />
+          <PostCategoryPicker value={category} onChange={setCategory} isDark={isDark} ariaLabel={ui('Post category')} />
           <div className="mt-3 flex items-center justify-end gap-3">
             <span
               className={`text-xs tabular-nums ${
@@ -130,7 +130,7 @@ export function PostComposer({ attachId, onAttachClear, autoFocus = false }: Pos
               onClick={submit}
               disabled={!canSubmit}
               className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold text-white transition-all disabled:opacity-50"
-              style={{ background: 'var(--brand-grad, #2563eb)' }}
+              style={{ background: 'var(--brand)' }}
             >
               {create.isPending ? (
                 <Loader2 size={14} className="animate-spin" />

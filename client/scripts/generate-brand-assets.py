@@ -8,12 +8,20 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 
-PAPER = (247, 244, 238, 255)
-INK = (23, 58, 99, 255)
+# PAPER is the app's light page background (--page-bg); INK is the mark's own navy (--brand-ink).
+PAPER = (243, 246, 250, 255)
+INK = (7, 65, 116, 255)
 SLATE = (71, 85, 105, 255)
 PUBLIC = Path(__file__).resolve().parent.parent / "public"
 LOGO_PATH = PUBLIC / "logo-mark.png"
-FONT = r"C:\Windows\Fonts\segoeuib.ttf"
+# Nunito is the app's wordmark face (variable weight, SIL OFL; licence in fonts/OFL.txt).
+FONT = Path(__file__).resolve().parent / "fonts" / "Nunito-wght.ttf"
+
+
+def nunito(size: int, weight: int) -> ImageFont.FreeTypeFont:
+    font = ImageFont.truetype(str(FONT), size)
+    font.set_variation_by_axes([weight])
+    return font
 
 
 def fitted_mark(source: Image.Image, size: int, fill: float) -> Image.Image:
@@ -48,6 +56,9 @@ logo = Image.open(LOGO_PATH).convert("RGBA")
 
 # Browser and installable-app assets all inherit the same canonical mark.
 save(icon(logo, 64, 0.88, 0.22), "favicon.png")
+# Legacy /favicon.ico for browsers, feed readers and crawlers that ask for it by name.
+icon(logo, 48, 0.88, 0.22).save(PUBLIC / "favicon.ico", sizes=[(16, 16), (32, 32), (48, 48)])
+print("wrote", (PUBLIC / "favicon.ico").relative_to(PUBLIC.parent))
 save(icon(logo, 180, 0.82), "apple-touch-icon.png")
 save(icon(logo, 192, 0.82, 0.22), "icon-192.png")
 save(icon(logo, 512, 0.82, 0.22), "icon-512.png")
@@ -57,12 +68,13 @@ save(icon(logo, 512, 0.64), "icon-maskable.png")
 og = Image.new("RGBA", (1200, 630), PAPER)
 og.alpha_composite(fitted_mark(logo, 230, 0.92), (485, 82))
 draw = ImageDraw.Draw(og)
-draw.text((600, 373), "NewsAgg", font=ImageFont.truetype(FONT, 84), fill=INK, anchor="mm")
+draw.text((600, 373), "NewsAgg", font=nunito(84, 700), fill=INK, anchor="mm")
 draw.text(
-    (600, 454),
-    "Breaking news, personalized — with sentiment analytics",
-    font=ImageFont.truetype(FONT, 32),
+    (600, 452),
+    "Automated News Aggregation, NLP-Based Sentiment and Topic Classification,",
+    font=nunito(25, 600),
     fill=SLATE,
     anchor="mm",
 )
+draw.text((600, 490), "and Topic Insights Dashboard", font=nunito(25, 600), fill=SLATE, anchor="mm")
 save(og.convert("RGB"), "og-image.png")

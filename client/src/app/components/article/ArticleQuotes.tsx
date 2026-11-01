@@ -1,0 +1,41 @@
+import { Link } from 'react-router';
+import { MessageSquareQuote } from 'lucide-react';
+import { useApp } from '../../contexts/AppContext';
+import { useUiText } from '../../i18n/uiText';
+import { usePosts } from '../../hooks/usePosts';
+import { PostCard } from '../posts/PostCard';
+import { ListSkeleton } from '../ui/ContentSkeleton';
+import { InfiniteScrollFooter } from '../ui/InfiniteScrollFooter';
+import { button } from '../ui/styles';
+
+/** Reader quotes are attached by article ID, independent of the feed's category. */
+export function ArticleQuotes({ articleId }: { articleId: string }) {
+  const ui = useUiText();
+  const { t } = useApp();
+  const { data, isPending, isError, refetch, hasNextPage, fetchNextPage, isFetchingNextPage, isFetchNextPageError } = usePosts({ articleId });
+  const posts = [...new Map((data?.pages.flatMap(page => page.posts) ?? []).map(post => [post.id, post])).values()];
+
+  return (
+    <section aria-labelledby="article-quotes-heading" className="mt-8 space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 id="article-quotes-heading" className="flex items-center gap-2 text-lg font-semibold">
+          <MessageSquareQuote size={20} className="shrink-0 text-[var(--brand)]" />
+          {ui('Quotes about this article')}
+        </h2>
+        <Link to={`/posts?compose=1&attach=${encodeURIComponent(articleId)}`} className={button.secondary}>
+          {t.quoteThis}
+        </Link>
+      </div>
+      {isPending && <ListSkeleton count={2} label={t.loading} />}
+      {isError && <p role="alert" className="text-sm text-rose-600 dark:text-rose-400">
+        {ui('Could not load quotes.')}{' '}
+        <button type="button" onClick={() => void refetch()} className="font-semibold hover:underline">{ui('Retry')}</button>
+      </p>}
+      {!isPending && !isError && posts.length === 0 && (
+        <p className="py-4 text-sm text-slate-600 dark:text-slate-300">{ui('No quotes for this article yet. Be the first to share your thoughts.')}</p>
+      )}
+      {posts.map(post => <PostCard key={post.id} post={post} hideArticlePreview />)}
+      <InfiniteScrollFooter hasNextPage={hasNextPage} isFetchingNextPage={isFetchingNextPage} isError={isFetchNextPageError} fetchNextPage={fetchNextPage} />
+    </section>
+  );
+}

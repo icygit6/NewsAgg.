@@ -56,7 +56,7 @@ export function VerifyEmailPage() {
         {status !== 'verifying' && (
           <Link
             to="/"
-            className="mt-2 w-full px-5 py-3 rounded-2xl bg-gradient-to-r from-cyan-500 to-pink-500 text-white font-semibold hover:from-cyan-600 hover:to-pink-600 transition-all shadow-lg shadow-cyan-500/20"
+            className="mt-2 w-full px-5 py-3 rounded-2xl bg-[var(--brand)] text-white font-semibold hover:bg-[var(--brand-hover)] transition-all shadow-lg shadow-blue-600/20"
           >{ui("Continue to NewsAgg")} </Link>
         )}
       </div>

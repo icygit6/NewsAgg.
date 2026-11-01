@@ -7,8 +7,10 @@ import { CATEGORY_BADGE_CLASS, CATEGORY_LABELS, POSTS_ENABLED, TOPIC_TO_CATEGORY
 import { getArticleId } from '../../services/newsAPI';
 import { ImageWithFallback } from '../utils/ImageWithFallback';
 import type { NewsArticle } from '../../types/article';
-import { SENTIMENT_STYLE, bodyTextClass, formatPublishedDate, mutedTextClass } from './helpers';
+import { SENTIMENT_STYLE, bodyTextClass, formatPublishedDate, formatLanguageName, mutedTextClass } from './helpers';
 import { SourceLogo } from '../ui/SourceLogo';
+import { SkeletonBlock } from '../ui/ContentSkeleton';
+import { useState } from 'react';
 
 interface ArticleHeaderProps {
   article: NewsArticle;
@@ -28,6 +30,9 @@ export function ArticleHeader({ article, isDark }: ArticleHeaderProps) {
   const topicBadgeClass = CATEGORY_BADGE_CLASS[TOPIC_TO_CATEGORY[article.topic]] ?? 'bg-slate-600 text-white';
 
   const articleId = getArticleId(article);
+  const imageKey = article.urlToImage || article.images[0]?.url || articleId;
+  const [loadedImage, setLoadedImage] = useState('');
+  const imagePending = Boolean(article.urlToImage || article.images.length) && loadedImage !== imageKey;
   const isBookmarked = isArticleBookmarked(articleId);
   const isBookmarking = add.isPending || remove.isPending;
 
@@ -46,13 +51,13 @@ export function ArticleHeader({ article, isDark }: ArticleHeaderProps) {
 
   return (
     <>
-      <div className="relative rounded-2xl overflow-hidden mb-5 shadow-lg">
-        <ImageWithFallback src={article.urlToImage || article.images[0]?.url || undefined} fallbackSources={article.images.map((image) => image.url)} alt={article.title} className="w-full h-auto object-contain" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/65 to-transparent" />
+      <div className="grid items-center gap-5 mb-5 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+      <div data-testid="article-cover" className="relative w-full rounded-2xl overflow-hidden">
+        {imagePending && <SkeletonBlock className="absolute inset-0 h-full w-full rounded-none" />}
+        <ImageWithFallback src={article.urlToImage || article.images[0]?.url || undefined} fallbackSources={article.images.map((image) => image.url)} alt={article.title} fetchPriority="high" decoding="async" onLoad={() => setLoadedImage(imageKey)} onError={() => setLoadedImage(imageKey)} style={{ viewTransitionName: `story-${getArticleId(article)}` }} className={`block h-auto w-full motion-safe:transition-opacity motion-safe:duration-200 ${imagePending ? 'min-h-48 opacity-0' : 'opacity-100'}`} />
         <div className="absolute top-3 left-3 flex flex-wrap items-center gap-2">
           <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${topicBadgeClass}`}>{ui(article.topic)}</span>
           <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${sentimentStyle.badge}`}>{t[article.sentiment.type]}</span>
-          {article.section && <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-black/35 text-white backdrop-blur-sm">{article.section}</span>}
           {article.videoUrl && (
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-black/35 text-white backdrop-blur-sm">
               <PlayCircle size={12} />{ui("Video")} </span>
@@ -60,6 +65,7 @@ export function ArticleHeader({ article, isDark }: ArticleHeaderProps) {
         </div>
       </div>
 
+      <div className="min-w-0">
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <SourceLogo source={article.source} isDark={isDark} className="w-10 h-10" />
         <div className="min-w-0">
@@ -68,16 +74,18 @@ export function ArticleHeader({ article, isDark }: ArticleHeaderProps) {
         </div>
       </div>
 
-      <h1 className={`font-poppins text-[2rem] font-bold leading-tight mb-4 ${isDark ? 'text-slate-50' : 'text-gray-900'}`}>
+      <h1 className={`article-title font-poppins text-[2rem] font-bold leading-tight mb-4 ${isDark ? 'text-slate-50' : 'text-gray-900'}`}>
         {article.title}
       </h1>
+      </div>
+      </div>
 
       <div className={`flex flex-wrap items-center gap-4 pb-4 mb-6 border-b text-sm ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
         <div className="flex items-center gap-1.5"><User size={14} className={mutedText} /><span className={bodyText}>{article.author || ui("Unknown")}</span></div>
         <div className="flex items-center gap-1.5"><Calendar size={14} className={mutedText} /><span className={bodyText}>{formatPublishedDate(article.publishedAt, locale)}</span></div>
         <div className="flex items-center gap-1.5"><Globe size={14} className={mutedText} /><span className={bodyText}>{article.source.name}</span></div>
         <div className="flex items-center gap-1.5"><Clock3 size={14} className={mutedText} /><span className={bodyText}>{ui(article.readability.readingTimeMin > 0 ? `${article.readability.readingTimeMin} min read` : 'Quick read')}</span></div>
-        {article.language && <div className="flex items-center gap-1.5"><Languages size={14} className={mutedText} /><span className={bodyText}>{article.language.toUpperCase()}</span></div>}
+        {article.language && <div className="flex items-center gap-1.5"><Languages size={14} className={mutedText} /><span className={bodyText}>{formatLanguageName(article.language, locale)}</span></div>}
         <button
           type="button"
           onClick={handleBookmark}

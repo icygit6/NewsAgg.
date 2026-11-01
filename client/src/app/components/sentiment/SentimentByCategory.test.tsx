@@ -34,16 +34,15 @@ it('ranks every category by volume and names the most positive and negative', ()
   expect(screen.getByText(/Most negative: Climate 85%/)).toBeInTheDocument();
 });
 
-it('applies a category site-wide and clears it on a second choice', () => {
+it('applies a category site-wide and hides the redundant comparison', () => {
   render(<SentimentByCategory />);
-  fireEvent.click(screen.getAllByRole('button', { pressed: false })[1]);
+  fireEvent.click(within(screen.getByRole('list')).getAllByRole('button')[1]);
   expect(state.setSelectedCategory).toHaveBeenCalledWith('climate');
 
   cleanup();
   state.selectedCategory = 'climate';
   render(<SentimentByCategory />);
-  fireEvent.click(screen.getByRole('button', { pressed: true }));
-  expect(state.setSelectedCategory).toHaveBeenLastCalledWith('all');
+  expect(screen.queryByRole('region', { name: 'All categories ranked' })).not.toBeInTheDocument();
   // The donut now describes the chosen category, not the whole dataset.
-  expect(within(screen.getByRole('region', { name: 'Sentiment: Climate' })).getByText('20')).toBeInTheDocument();
+  expect(within(screen.getByRole('region', { name: 'Sentiment: Climate' })).getByRole('group', { name: 'Positive: 1 (5%), Neutral: 2 (10%), Negative: 17 (85%)' })).toBeInTheDocument();
 });

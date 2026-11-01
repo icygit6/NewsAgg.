@@ -4,7 +4,8 @@ import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { ArrowUp } from 'lucide-react';
 import { useLocation, useNavigationType } from 'react-router';
 
-const getMain = () => document.getElementById('main-scroll');
+const getMain = () => (window.matchMedia('(min-width: 1024px)').matches
+  ? document.getElementById('article-reading-scroll') : null) || document.getElementById('main-scroll');
 const positions = new Map<string, number>();
 
 /** True once the main scroll area has moved past `threshold` pixels. */
@@ -17,7 +18,7 @@ export function useMainScrolledPast(threshold = 400, resetKey?: string) {
     let frame = 0;
     const update = () => {
       frame = 0;
-      const nextShow = el.scrollTop > threshold;
+      const nextShow = (getMain()?.scrollTop ?? 0) > threshold;
       if (nextShow !== showRef.current) {
         showRef.current = nextShow;
         setShow(nextShow);
@@ -27,10 +28,10 @@ export function useMainScrolledPast(threshold = 400, resetKey?: string) {
       if (!frame) frame = window.requestAnimationFrame(update);
     };
     update();
-    el.addEventListener('scroll', handleScroll, { passive: true });
+    document.addEventListener('scroll', handleScroll, { passive: true, capture: true });
     return () => {
       if (frame) window.cancelAnimationFrame(frame);
-      el.removeEventListener('scroll', handleScroll);
+      document.removeEventListener('scroll', handleScroll, true);
     };
   }, [threshold, resetKey]);
   return show;
@@ -98,7 +99,7 @@ export function ScrollToTop() {
           whileHover={shouldReduceMotion ? undefined : { scale: 1.06 }}
           whileTap={shouldReduceMotion ? undefined : { scale: 0.94 }}
           onClick={scrollToTop}
-          className={`fixed ${offset} right-6 z-50 w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500 to-pink-500 text-white shadow-lg shadow-cyan-500/30 flex items-center justify-center hover:shadow-xl hover:shadow-cyan-500/40 transition-shadow`}
+          className={`fixed ${offset} right-6 z-50 w-12 h-12 rounded-full bg-[var(--brand)] text-white shadow-lg shadow-blue-600/30 flex items-center justify-center hover:shadow-xl hover:shadow-blue-600/40 transition-shadow`}
           aria-label={ui("Scroll to top")}
         >
           <ArrowUp size={20} />

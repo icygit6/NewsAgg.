@@ -4,31 +4,31 @@ import type { SentimentType } from '../../types/sentiment';
 // ── Sentiment styling maps (shared across article sub-components) ──────────────
 export const SENTIMENT_STYLE: Record<SentimentType, { label: string; badge: string }> = {
   positive: { label: 'text-emerald-600', badge: 'bg-emerald-100 text-emerald-700' },
-  neutral: { label: 'text-gray-600', badge: 'bg-gray-100 text-gray-700' },
+  neutral: { label: 'text-amber-700', badge: 'bg-amber-100 text-amber-800' },
   negative: { label: 'text-red-600', badge: 'bg-red-100 text-red-700' },
 };
 
 export const SENTIMENT_BAR_STYLE: Record<SentimentType, string> = {
   positive: 'bg-emerald-500',
-  neutral: 'bg-gray-500',
+  neutral: 'bg-amber-500',
   negative: 'bg-red-500',
 };
 
 export const SENTIMENT_CHART_COLORS: Record<SentimentType, string> = {
   positive: '#10b981',
-  neutral: '#6b7280',
+  neutral: '#f59e0b',
   negative: '#ef4444',
 };
 
 export const sentimentTextClass: Record<SentimentType, string> = {
   positive: 'text-emerald-500',
-  neutral: 'text-gray-500',
+  neutral: 'text-amber-600',
   negative: 'text-red-500',
 };
 
 export const sentimentPillClass: Record<SentimentType, string> = {
   positive: 'bg-emerald-100 text-emerald-700',
-  neutral: 'bg-gray-100 text-gray-700',
+  neutral: 'bg-amber-100 text-amber-800',
   negative: 'bg-red-100 text-red-700',
 };
 
@@ -77,5 +77,19 @@ export const formatAccessStatus = (article: NewsArticle): string => {
   if (article.isPremium) return 'Premium';
   if (article.isAccessibleFree === true) return 'Free access';
   if (article.isAccessibleFree === false) return 'Restricted';
-  return 'Unknown';
+  return 'Not specified by publisher';
 };
+
+export function formatCountryName(value: string | null, locale = 'en'): string {
+  if (!value) return locale.startsWith('zh') ? '未提供' : 'Not provided';
+  const region = value.toUpperCase() === 'UK' ? 'GB' : value.toUpperCase();
+  if (!/^[A-Z]{2}$/.test(region)) return value;
+  try { return new Intl.DisplayNames([locale], { type: 'region', fallback: 'none' }).of(region) || value; }
+  catch { return value; }
+}
+
+export function formatLanguageName(value: string | null, locale = 'en'): string {
+  if (!value) return locale.startsWith('zh') ? '未提供' : 'Not provided';
+  try { return new Intl.DisplayNames([locale], { type: 'language', fallback: 'none' }).of(value.replace(/_/g, '-')) || value; }
+  catch { return value; }
+}

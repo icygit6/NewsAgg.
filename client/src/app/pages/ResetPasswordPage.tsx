@@ -23,8 +23,8 @@ export function ResetPasswordPage() {
 
   const inputClass = `w-full px-4 py-3 rounded-xl border transition ${
     isDark
-      ? 'bg-slate-800 border-slate-700 text-slate-100 placeholder-slate-500 focus:border-cyan-500'
-      : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-cyan-500'
+      ? 'bg-slate-800 border-slate-700 text-slate-100 placeholder-slate-500 focus:border-blue-500'
+      : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500'
   } focus:outline-none`;
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -67,7 +67,7 @@ export function ResetPasswordPage() {
         <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>{ui("This password reset link is missing or invalid. Request a new one from the sign-in screen.")} </p>
         <Link
           to="/"
-          className="mt-5 inline-block text-sm font-medium text-cyan-500 hover:text-cyan-400"
+          className="mt-5 inline-block text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
         >{ui("← Back to NewsAgg")} </Link>
       </AuthLayout>
     );

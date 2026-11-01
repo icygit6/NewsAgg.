@@ -1,6 +1,6 @@
 import { useUiText, useUiLocale } from '../../i18n/uiText';
 import { useTitleTranslations } from '../../hooks/useTitleTranslations';
-import { useMemo, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import {
   Building2,
@@ -17,7 +17,9 @@ import {
   TrendingUp,
   Users,
 } from 'lucide-react';
-import { DonutChart } from '../sentiment/DonutChart';
+import { SentimentExplorer } from '../sentiment/SentimentExplorer';
+import { SentimentReasons } from '../sentiment/SentimentReasons';
+import type { SourceSentiments, SentimentEvidence } from '../../hooks/useStats';
 import { ArticleSentimentPanel } from '../ArticleSentimentPanel';
 import { ReadabilityPanel } from './ReadabilityPanel';
 import { PanelHeading } from '../ui/PanelHeading';
@@ -26,10 +28,9 @@ import type { Translations } from '../../i18n/translations';
 import type { LiveEngagementItem, NewsArticle, TrendingKeyword } from '../../types/article';
 import type { SentimentDistributionItem } from '../../types/sentiment';
 import {
-  SENTIMENT_BAR_STYLE,
-  SENTIMENT_CHART_COLORS,
-  SENTIMENT_STYLE,
   formatAccessStatus,
+  formatCountryName,
+  formatLanguageName,
   formatCount,
   formatHost,
   formatPercent,
@@ -62,7 +63,7 @@ function EntityBlock({ title, values, icon, isDark }: EntityBlockProps) {
           {values.map((value) => (
             <span
               key={`${title}-${value}`}
-              className={`px-2.5 py-1 rounded-full text-xs ${isDark ? 'bg-slate-700 text-slate-200' : 'bg-gray-100 text-gray-700'}`}
+              className={`min-w-0 max-w-full break-words px-2.5 py-1 rounded-full text-xs ${isDark ? 'bg-slate-700 text-slate-200' : 'bg-gray-100 text-gray-700'}`}
             >
               {value}
             </span>
@@ -89,7 +90,7 @@ function MetricRow({ label, value, isDark, accentClass }: MetricRowProps) {
     >
       <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{label}</span>
       <span
-        className={`text-sm font-semibold ${accentClass ?? (isDark ? 'text-slate-100' : 'text-gray-900')}`}
+        className={`min-w-0 break-words text-right text-sm font-semibold ${accentClass ?? (isDark ? 'text-slate-100' : 'text-gray-900')}`}
       >
         {value}
       </span>
@@ -98,6 +99,8 @@ function MetricRow({ label, value, isDark, accentClass }: MetricRowProps) {
 }
 
 interface ArticleSidebarProps {
+  sentimentEvidence?: SentimentEvidence;
+  sentimentSources?: SourceSentiments[];
   article: NewsArticle;
   isDark: boolean;
   t: Translations;
@@ -107,7 +110,21 @@ interface ArticleSidebarProps {
   categoryLiveEngagement: LiveEngagementItem[];
 }
 
+const SIDEBAR_LIST_LIMIT = 10;
+
+function ShowMoreToggle({ count, open, onToggle }: { count: number; open: boolean; onToggle: () => void }) {
+  const ui = useUiText();
+  if (count <= SIDEBAR_LIST_LIMIT) return null;
+  return (
+    <button type="button" aria-expanded={open} onClick={onToggle} className="mt-3 rounded px-1 py-2 text-xs font-semibold text-[var(--brand)] hover:underline">
+      {open ? ui('Show less') : `${ui('Show more')} (${count - SIDEBAR_LIST_LIMIT})`}
+    </button>
+  );
+}
+
 export function ArticleSidebar({
+  sentimentEvidence,
+  sentimentSources,
   article,
   isDark,
   t,
@@ -125,28 +142,22 @@ export function ArticleSidebar({
     [categorySentimentDistribution],
   );
 
-  const categorySentimentChartData = useMemo(
-    () =>
-      categorySentimentDistribution.map((item) => ({
-        type: item.type,
-        name: t[item.type],
-        value: item.count,
-        color: SENTIMENT_CHART_COLORS[item.type],
-      })),
-    [categorySentimentDistribution, t],
-  );
-
-  const categoryArticlePreview = useTitleTranslations(categoryArticles.slice(0, 12));
+  const categoryArticlePreview = useTitleTranslations(categoryArticles);
 
   const categoryMaxKeywordCount = useMemo(
     () => categoryTrendingKeywords.reduce((max, item) => Math.max(max, item.count), 1),
     [categoryTrendingKeywords],
   );
 
+  // Long lists grow in place behind a toggle instead of scrolling inside the
+  // sidebar, which would trap the wheel and touch scroll of the page.
+  const [showAllTopics, setShowAllTopics] = useState(false);
+  const [showAllLive, setShowAllLive] = useState(false);
+  useEffect(() => { setShowAllTopics(false); setShowAllLive(false); }, [article.id]);
+
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4 [overflow-wrap:anywhere]">
       <ArticleSentimentPanel article={article} isDark={isDark} />
-      <ReadabilityPanel article={article} isDark={isDark} />
 
       {/* Category Sentiment Distribution — right under the article's own
           sentiment so the single-article and category views read together. */}
@@ -154,36 +165,7 @@ export function ArticleSidebar({
         <PanelHeading icon={PieChart} isDark={isDark} className="mb-2">{ui("Category Sentiment Distribution")}</PanelHeading>
         <p className={`text-xs mb-4 ${mutedText}`}>{ui(article.topic)} {ui("articles in current dataset")}</p>
 
-        <div className="mb-4">
-          <DonutChart segments={categorySentimentChartData} size={120} isDark={isDark} />
-        </div>
-
-        <div className="space-y-2.5">
-          {categorySentimentDistribution.map((item) => {
-            const percentage =
-              categorySentimentTotal > 0
-                ? Math.round((item.count / categorySentimentTotal) * 100)
-                : 0;
-            return (
-              <div key={item.type} className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className={`w-16 text-xs ${mutedText}`}>{t[item.type]}</span>
-                  <div
-                    className={`h-2 rounded-full overflow-hidden flex-1 ${isDark ? 'bg-slate-700' : 'bg-gray-100'}`}
-                  >
-                    <div
-                      className={`h-full rounded-full ${SENTIMENT_BAR_STYLE[item.type]}`}
-                      style={{ width: `${percentage}%` }}
-                    />
-                  </div>
-                  <span className={`text-xs font-semibold ${SENTIMENT_STYLE[item.type].label}`}>
-                    {item.count} ({percentage}%)
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <SentimentExplorer counts={{ positive: categorySentimentDistribution.find(item => item.type === 'positive')?.count ?? 0, neutral: categorySentimentDistribution.find(item => item.type === 'neutral')?.count ?? 0, negative: categorySentimentDistribution.find(item => item.type === 'negative')?.count ?? 0 }} sources={sentimentSources} scopeKey={article.topic} />
 
         <div className="flex items-center justify-between mt-4 text-xs">
           <span className={mutedText}>{ui("Total in category")}</span>
@@ -191,7 +173,10 @@ export function ArticleSidebar({
             {categorySentimentTotal}
           </span>
         </div>
+        <SentimentReasons evidence={sentimentEvidence} />
       </div>
+
+      <ReadabilityPanel article={article} isDark={isDark} />
 
       <div className={`rounded-2xl border p-5 ${panelBase}`}>
         <PanelHeading icon={Info} isDark={isDark}>{ui("Article details")}</PanelHeading>
@@ -233,14 +218,15 @@ export function ArticleSidebar({
             value={article.source.domain || formatHost(article.url)}
             isDark={isDark}
           />
-          <MetricRow label={ui("Country")} value={article.source.country || ui('Unknown')} isDark={isDark} />
+          <MetricRow label={ui("Country")} value={formatCountryName(article.source.country, locale)} isDark={isDark} />
           <MetricRow
             label={ui("Language")}
-            value={(article.language || article.source.language || 'Unknown').toUpperCase()}
+            value={formatLanguageName(article.language || article.source.language, locale)}
             isDark={isDark}
           />
           <MetricRow label={ui("Section")} value={article.section || ui('Unspecified')} isDark={isDark} />
           <MetricRow label={ui("Access")} value={ui(formatAccessStatus(article))} isDark={isDark} />
+          <p className={`text-xs leading-relaxed ${mutedText}`}>{ui('Access describes whether the publisher marks the original article as free or restricted. Missing metadata does not mean it is restricted.')}</p>
           <MetricRow
             label={ui("Updated")}
             value={article.modifiedAt ? formatPublishedDate(article.modifiedAt, locale) : ui('Unavailable')}
@@ -277,7 +263,7 @@ export function ArticleSidebar({
               {article.metaTags.map((tagValue) => (
                 <span
                   key={`meta-${tagValue}`}
-                  className={`px-2.5 py-1 rounded-full text-xs ${isDark ? 'bg-cyan-500/15 text-cyan-300' : 'bg-cyan-50 text-cyan-700'}`}
+                  className={`px-2.5 py-1 rounded-full text-xs ${isDark ? 'bg-blue-500/15 text-blue-300' : 'bg-blue-50 text-blue-700'}`}
                 >
                   {tagValue}
                 </span>
@@ -290,13 +276,13 @@ export function ArticleSidebar({
       {/* Trending Topics */}
       <div className={`rounded-2xl border p-5 ${panelBase}`}>
         <PanelHeading icon={TrendingUp} isDark={isDark} className="mb-3">{ui("Trending Topics (")}{ui(article.topic)})</PanelHeading>
-        <div className="space-y-2">
+        <div role="region" aria-label={ui('Trending Topics')} className="min-w-0 space-y-2">
           {categoryTrendingKeywords.length === 0 ? (
             <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
               {t.noResults}
             </p>
           ) : (
-            categoryTrendingKeywords.map((topic, index) => (
+            (showAllTopics ? categoryTrendingKeywords : categoryTrendingKeywords.slice(0, SIDEBAR_LIST_LIMIT)).map((topic, index) => (
               <div key={`${article.topic}-${topic.keyword}`} className="flex items-center gap-2">
                 <span className={`text-xs font-bold w-4 ${mutedText}`}>{index + 1}</span>
                 <div className="flex-1">
@@ -324,6 +310,7 @@ export function ArticleSidebar({
             ))
           )}
         </div>
+        <ShowMoreToggle count={categoryTrendingKeywords.length} open={showAllTopics} onToggle={() => setShowAllTopics(open => !open)} />
       </div>
 
       {/* Live View */}
@@ -335,13 +322,13 @@ export function ArticleSidebar({
           >
             {categoryArticles.length} {ui("articles")} </span>
         </div>
-        <div className="space-y-2.5 max-h-[260px] overflow-y-auto pr-1">
+        <div role="region" aria-label={ui('Live View')} className="min-w-0 space-y-2.5">
           {categoryArticlePreview.length === 0 ? (
             <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
               {t.noResults}
             </p>
           ) : (
-            categoryArticlePreview.map((categoryArticle) => (
+            (showAllLive ? categoryArticlePreview : categoryArticlePreview.slice(0, SIDEBAR_LIST_LIMIT)).map((categoryArticle) => (
               <Link
                 key={categoryArticle.id}
                 to={`/article/${getArticleId(categoryArticle)}`}
@@ -365,6 +352,7 @@ export function ArticleSidebar({
             ))
           )}
         </div>
+        <ShowMoreToggle count={categoryArticlePreview.length} open={showAllLive} onToggle={() => setShowAllLive(open => !open)} />
       </div>
 
       {/* Entities */}
@@ -374,25 +362,25 @@ export function ArticleSidebar({
           <EntityBlock
             title={ui("Persons")}
             values={article.entities.persons}
-            icon={<Users size={14} className="text-cyan-500" />}
+            icon={<Users size={14} className="text-blue-600 dark:text-blue-400" />}
             isDark={isDark}
           />
           <EntityBlock
             title={ui("Organizations")}
             values={article.entities.organizations}
-            icon={<Building2 size={14} className="text-cyan-500" />}
+            icon={<Building2 size={14} className="text-blue-600 dark:text-blue-400" />}
             isDark={isDark}
           />
           <EntityBlock
             title={ui("Locations")}
             values={article.entities.locations}
-            icon={<MapPin size={14} className="text-cyan-500" />}
+            icon={<MapPin size={14} className="text-blue-600 dark:text-blue-400" />}
             isDark={isDark}
           />
           <EntityBlock
             title={ui("Misc")}
             values={article.entities.misc}
-            icon={<Gauge size={14} className="text-cyan-500" />}
+            icon={<Gauge size={14} className="text-blue-600 dark:text-blue-400" />}
             isDark={isDark}
           />
         </div>
@@ -418,7 +406,7 @@ export function ArticleSidebar({
                 >
                   {url}
                 </p>
-                <div className="flex items-center gap-2 mt-1 text-[11px]">
+                <div className="flex items-center gap-2 mt-1 text-xs">
                   <span className={mutedText}>{formatHost(url)}</span>
                   <ExternalLink size={12} className={mutedText} />
                 </div>

@@ -7,7 +7,6 @@ import { authService } from '../../services/authService';
 import { Turnstile } from '../auth/Turnstile';
 import { LocalizedGoogleLogin } from '../auth/LocalizedGoogleLogin';
 import { LoadingIndicator } from '../ui/ContentSkeleton';
-import { BrandLogo } from '../ui/BrandLogo';
 import '../auth/auth.css';
 
 interface AuthPanelProps {
@@ -83,6 +82,7 @@ export function AuthPanel({ isDark, onAuthenticated }: AuthPanelProps) {
     setEmailUpdates(false);
     resetCaptcha();
     onAuthenticated?.();
+    window.location.reload();
   };
 
   const handleGoogleSuccess = async (credentialResponse: any) => {
@@ -238,15 +238,14 @@ export function AuthPanel({ isDark, onAuthenticated }: AuthPanelProps) {
   };
   const inputClass = `auth-input w-full px-4 py-3 rounded-xl border transition ${
     isDark
-      ? 'bg-slate-800 border-slate-700 text-slate-100 placeholder-slate-500 focus:border-cyan-500'
-      : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-cyan-500'
+      ? 'bg-slate-800 border-slate-700 text-slate-100 placeholder-slate-500 focus:border-blue-500'
+      : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500'
   } focus:outline-none`;
   const labelClass = `block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-gray-700'}`;
 
   return (
     <section className="newsagg-auth" data-theme={isDark ? 'dark' : 'light'}>
       <header className="auth-welcome">
-        <BrandLogo showWordmark={false} markClassName="w-10 h-10 shrink-0" />
         <div className="min-w-0">
           <h3 className="text-lg font-bold leading-snug">{ui(mode === 'login' ? 'Welcome back.' : mode === 'signup' ? 'Make room for perspective.' : 'A fresh start.')}</h3>
           <p className="mt-0.5 text-xs leading-relaxed">{ui('Save stories, join discussions, and make your reading experience your own.')}</p>
@@ -326,7 +325,7 @@ export function AuthPanel({ isDark, onAuthenticated }: AuthPanelProps) {
                 <button
                   type="button"
                   onClick={() => changeMode('forgot')}
-                  className={`min-h-11 text-xs font-medium transition ${isDark ? 'text-cyan-400 hover:text-cyan-300' : 'text-cyan-600 hover:text-cyan-700'}`}
+                  className={`min-h-11 text-xs font-medium transition ${isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 dark:text-blue-400 hover:text-blue-700'}`}
                 >{ui("Forgot password?")} </button>
               </div>
             )}
@@ -339,11 +338,11 @@ export function AuthPanel({ isDark, onAuthenticated }: AuthPanelProps) {
         {mode === 'signup' && (
           <div className="space-y-3">
             <label className={`flex items-start gap-3 text-sm ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
-              <input type="checkbox" checked={termsAccepted} onChange={(event) => setTermsAccepted(event.target.checked)} className="mt-1 h-4 w-4 rounded border-slate-300 text-cyan-600" />
-              <span>{ui("I agree to the")} <a href="/terms" target="_blank" rel="noreferrer" className="font-semibold text-cyan-600 underline">{ui("Terms of Service")}</a>. <span className="text-red-500">*</span></span>
+              <input type="checkbox" checked={termsAccepted} onChange={(event) => setTermsAccepted(event.target.checked)} className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 dark:text-blue-400" />
+              <span>{ui("I agree to the")} <a href="/terms" target="_blank" rel="noreferrer" className="font-semibold text-blue-600 dark:text-blue-400 hover:underline">{ui("Terms of Service")}</a>. <span className="text-red-500">*</span></span>
             </label>
             <label className={`flex items-start gap-3 text-sm ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
-              <input type="checkbox" checked={emailUpdates} onChange={(event) => setEmailUpdates(event.target.checked)} className="mt-1 h-4 w-4 rounded border-slate-300 text-cyan-600" />
+              <input type="checkbox" checked={emailUpdates} onChange={(event) => setEmailUpdates(event.target.checked)} className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 dark:text-blue-400" />
               <span>{ui("Yes, send me news and product updates by email. This is optional and can be changed in my profile.")}</span>
             </label>
           </div>
@@ -351,7 +350,7 @@ export function AuthPanel({ isDark, onAuthenticated }: AuthPanelProps) {
       </div>
 
       {info && !error && (
-        <div role="status" className={`mb-4 p-3 rounded-lg flex items-start gap-2 text-sm ${isDark ? 'bg-cyan-900/30 text-cyan-200' : 'bg-cyan-50 text-cyan-800'}`}>
+        <div role="status" className={`mb-4 p-3 rounded-lg flex items-start gap-2 text-sm ${isDark ? 'bg-blue-900/30 text-blue-200' : 'bg-blue-50 text-blue-800'}`}>
           <Info size={15} className="shrink-0 mt-0.5" />
           {ui(info)}
         </div>
@@ -390,10 +389,10 @@ export function AuthPanel({ isDark, onAuthenticated }: AuthPanelProps) {
           {captchaConfigured && !captchaToken ? (
             <p className={`rounded-xl border px-3 py-2.5 text-center text-xs leading-relaxed ${isDark ? 'border-slate-700 text-slate-400' : 'border-slate-200 text-slate-500'}`}>{ui("Complete the “I am not a robot” check above to continue with Google.")}</p>
           ) : (
-            <div className="flex justify-center">
+            <div className="auth-google-surface flex justify-center">
             <LocalizedGoogleLogin
-              // Redraw at the measured width; the language is handled inside.
-              key={googleWidth}
+              // Recreate Google's iframe when its dimensions or theme change.
+              key={`${googleWidth}-${isDark ? 'dark' : 'light'}-${mode}`}
               onSuccess={handleGoogleSuccess}
               onError={() =>
                 setError(
@@ -401,6 +400,9 @@ export function AuthPanel({ isDark, onAuthenticated }: AuthPanelProps) {
                 )
               }
               theme={isDark ? 'filled_black' : 'outline'}
+              // GSI's document uses a light browser color scheme even for filled_black.
+              // A dark host scheme gives its transparent iframe gutters a white canvas.
+              containerProps={{ className: 'auth-google-button', style: { colorScheme: 'light', maxWidth: '100%', background: 'transparent' } }}
               size="large"
               shape="pill"
               logo_alignment="center"
@@ -422,12 +424,12 @@ export function AuthPanel({ isDark, onAuthenticated }: AuthPanelProps) {
           type="button"
           disabled={loading}
           onClick={() => changeMode(mode === 'login' ? 'signup' : 'login')}
-          className={`min-h-11 text-sm font-medium transition ${isDark ? 'text-cyan-400 hover:text-cyan-300' : 'text-cyan-600 hover:text-cyan-700'}`}
+          className={`min-h-11 text-sm font-medium transition ${isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 dark:text-blue-400 hover:text-blue-700'}`}
         >
           {ui(mode === 'login' ? 'Create one' : mode === 'signup' ? 'Sign in' : '← Back to sign in')}
         </button>
       </div>
-      <p className="mt-3 text-center text-xs text-slate-500 dark:text-slate-400"><a className="underline underline-offset-4" href="/privacy" target="_blank" rel="noreferrer">{ui('Privacy Policy')}</a></p>
+      <p className="mt-3 text-center text-xs text-slate-500 dark:text-slate-400"><a className="font-semibold text-[var(--brand)] underline-offset-4 hover:underline" href="/privacy" target="_blank" rel="noreferrer">{ui('Privacy Policy')}</a></p>
     </section>
   );
 }

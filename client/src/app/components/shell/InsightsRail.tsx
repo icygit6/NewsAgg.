@@ -9,7 +9,8 @@ import { LiveView } from '../sentiment/LiveView';
 import { TrendingKeywords } from '../sentiment/TrendingKeywords';
 import { DatasetStats } from '../sentiment/DatasetStats';
 import { BusinessInsights } from '../widgets/BusinessInsights';
-import { PanelSkeleton } from '../ui/ContentSkeleton';
+import { ReportingAuthors } from '../sentiment/ReportingAuthors';
+import { RailSkeleton } from '../ui/ContentSkeleton';
 
 /** Compact analytics for the right rail's Insights tab — the full set from
  * the old SentimentPanel: sentiment donut, live view, trending keywords,
@@ -18,12 +19,12 @@ import { PanelSkeleton } from '../ui/ContentSkeleton';
  * legacy full-dataset store). */
 export function InsightsRail() {
   const ui = useUiText();
-  const { t, selectedCategory } = useApp();
+  const { t, selectedCategory, selectedCategories = [] } = useApp();
   const { data: overview, isLoading: overviewLoading } = useStatsOverview(selectedCategory);
-  const { data: latest, isLoading: latestLoading } = useLatestArticles({ limit: 8, category: selectedCategory });
+  const { data: latest, isLoading: latestLoading } = useLatestArticles({ limit: 30, category: selectedCategory });
 
   const categoryLabel =
-    selectedCategory === 'all' ? t.allCategories : ui(CATEGORY_LABELS[selectedCategory]);
+    selectedCategories.length > 1 ? selectedCategories.map(cat => ui(CATEGORY_LABELS[cat])).join(' · ') : selectedCategory === 'all' ? t.allCategories : ui(CATEGORY_LABELS[selectedCategory]);
 
   const snapshot: DatasetSnapshot = {
     status: 'ok',
@@ -36,14 +37,15 @@ export function InsightsRail() {
     sourceCount: overview?.sourceCount ?? 0,
   };
 
-  if (overviewLoading || latestLoading) return <PanelSkeleton />;
+  if (overviewLoading || latestLoading) return <RailSkeleton dual={selectedCategory === 'all'} />;
 
   return (
-    <div className="space-y-4 w-full">
+    <div className="insights-reveal space-y-4 w-full">
       <BusinessInsights />
       <SentimentChart />
       <LiveView articles={latest?.articles ?? []} categoryLabel={categoryLabel} />
       <TrendingKeywords />
+      <ReportingAuthors authors={overview?.reportingAuthors ?? []} total={overview?.total ?? 0} />
       <DatasetStats
         articleCount={overview?.total ?? 0}
         keywordCount={overview?.keywordCount ?? 0}

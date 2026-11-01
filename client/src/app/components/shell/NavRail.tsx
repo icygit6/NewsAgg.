@@ -1,13 +1,14 @@
 import { useUiText } from '../../i18n/uiText';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, Link } from 'react-router';
-import { Home, MessageSquareQuote, Bookmark, Sun, Moon, Languages, BarChart2, ShieldCheck } from 'lucide-react';
+import { Home, MessageSquareQuote, Bookmark, Palette, Languages, BarChart2, ShieldCheck } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { POSTS_ENABLED } from '../../constants';
 import { useInterfaceLanguage } from '../ui/LanguageSwitcher';
 import { TranslateNewsToggle } from '../ui/TranslateNewsToggle';
 import { BrandLogo } from '../ui/BrandLogo';
-import { useAdminOverview, useIsAdmin } from '../../hooks/useAdmin';
+import { ThemePicker } from '../ui/ThemePicker';
+import { adminAttentionCount, useAdminOverview, useIsAdmin } from '../../hooks/useAdmin';
 
 interface NavItem {
   to: string;
@@ -18,16 +19,46 @@ interface NavItem {
 
 export function NavRail() {
   const ui = useUiText();
-  const { t, isDark, toggleTheme, setSidebarOpen, avatarSrc, user } = useApp();
+  const { t, isDark, setSidebarOpen, avatarSrc, user } = useApp();
   const reading = useInterfaceLanguage();
   // The rail scrolls (overflow-y-auto), which would clip an absolutely
   // positioned menu; anchor a fixed menu to the button instead.
   const [langMenu, setLangMenu] = useState<{ left: number; bottom: number } | null>(null);
   const langOpen = langMenu !== null;
+  const langRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!langOpen) return;
+    const onDown = (event: PointerEvent) => {
+      if (!langRef.current?.contains(event.target as Node)) setLangMenu(null);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setLangMenu(null);
+        langRef.current?.querySelector('button')?.focus();
+      }
+    };
+    document.addEventListener('pointerdown', onDown, true);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onDown, true);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [langOpen]);
+  const [themeMenu, setThemeMenu] = useState<{ left: number; bottom: number } | null>(null);
+  const themeRef = useRef<HTMLDivElement>(null);
+  // The theme panel closes on Escape or a click outside it.
+  useEffect(() => {
+    if (!themeMenu) return;
+    const onDown = (event: MouseEvent) => { if (!themeRef.current?.contains(event.target as Node)) setThemeMenu(null); };
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') setThemeMenu(null); };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey); };
+  }, [themeMenu]);
   const currentLang = reading.current.short;
   const admin = useIsAdmin();
   const adminOverview = useAdminOverview();
-  const openReports = (adminOverview.data?.open_article_reports ?? 0) + (adminOverview.data?.open_post_reports ?? 0);
+  const openReports = adminAttentionCount(adminOverview.data);
 
   const items: NavItem[] = [
     { to: '/', icon: Home, label: t.home },
@@ -51,7 +82,7 @@ export function NavRail() {
       <Link to="/" className="mb-4 flex items-center gap-2 rounded-xl px-2 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500" aria-label={ui("NewsAgg home")}>
         <BrandLogo
           markClassName="w-10 h-10"
-          wordmarkClassName={`hidden xl:inline text-xl ${isDark ? 'text-slate-100' : 'text-slate-900'}`}
+          wordmarkClassName="hidden xl:inline text-xl"
         />
       </Link>
 
@@ -71,27 +102,39 @@ export function NavRail() {
         >
           <span className="relative shrink-0">
             <Icon size={22} />
-            {badge ? <span className="absolute -top-1.5 -right-2 min-w-4 rounded-full bg-rose-500 px-1 text-center text-[10px] font-bold leading-4 text-white" aria-label={`${badge} ${ui('open reports')}`}>{badge}</span> : null}
+            {badge ? <span className="absolute -top-1.5 -right-2 min-w-4 rounded-full bg-rose-500 px-1 text-center text-[11px] font-bold leading-4 text-white" aria-label={`${badge} ${ui('open reports')}`}>{badge}</span> : null}
           </span>
           <span className="hidden xl:inline text-[15px]">{label}</span>
         </NavLink>
       ))}
 
       <div className="mt-auto flex flex-col items-center xl:items-stretch gap-1 w-full">
-        <button
-          onClick={toggleTheme}
-          title={isDark ? t.lightMode : t.darkMode}
-          className={`${baseItem} ${isDark ? 'text-slate-200' : 'text-slate-700'}`}
-        >
-          {isDark ? (
-            <Sun size={22} className="shrink-0" />
-          ) : (
-            <Moon size={22} className="shrink-0" />
+        <div ref={themeRef} className="relative w-full">
+          <button
+            onClick={(e) => {
+              const r = e.currentTarget.getBoundingClientRect();
+              setThemeMenu((open) => (open ? null : { left: r.left, bottom: window.innerHeight - r.top + 4 }));
+            }}
+            title={ui('Theme')}
+            aria-expanded={themeMenu !== null}
+            className={`${baseItem} w-full ${isDark ? 'text-slate-200' : 'text-slate-700'}`}
+          >
+            <Palette size={22} className="shrink-0" />
+            <span className="hidden xl:inline text-[15px]">{ui('Theme')}</span>
+          </button>
+          {themeMenu && (
+            <div
+              role="dialog"
+              aria-label={ui('Theme')}
+              className={`fixed z-50 w-80 rounded-2xl border p-3 shadow-lg ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}
+              style={{ left: themeMenu.left, bottom: themeMenu.bottom }}
+            >
+              <ThemePicker />
+            </div>
           )}
-          <span className="hidden xl:inline text-[15px]">{isDark ? t.lightMode : t.darkMode}</span>
-        </button>
+        </div>
 
-        <div className="relative w-full">
+        <div ref={langRef} className="relative w-full">
           <button
             onClick={(e) => {
               const r = e.currentTarget.getBoundingClientRect();
@@ -127,7 +170,7 @@ export function NavRail() {
                         : 'text-slate-700 hover:bg-slate-100'
                   }`}
                   style={
-                    reading.choice === code ? { background: 'var(--brand-grad, #2563eb)' } : undefined
+                    reading.choice === code ? { background: 'var(--brand)' } : undefined
                   }
                 >
                   {short}

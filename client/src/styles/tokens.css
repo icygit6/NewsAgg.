@@ -1,53 +1,16 @@
 /**
- * Design tokens — Editorial Premium Dark (see CLAUDE.md "UI/UX PRODUCTION REDESIGN").
- *
- * NOTE: imported BEFORE theme.css so the shadcn tokens in theme.css keep
- * precedence on the shared names (--accent, --border). The redesign-specific
- * tokens below (--positive, --negative, --surface, --text-*, --font-*) are
- * additive and safe to consume directly via var(...).
+ * Brand tokens. Imported BEFORE theme.css, which owns the shadcn names (--accent, --border,
+ * --primary …); never redefine those here. Typography (--font-display) lives in theme.css, and
+ * the sentiment colours live in components/ui/chartTheme.ts.
  */
 :root {
-  /* Editorial signal identity: navy ink, paper, and semantic sentiment dots.
-     (imported after this file) owns --accent for the shadcn ui/ components,
-     so an --accent here would always be shadowed. */
-  --brand: #2563eb;
-  --brand-2: #173a63;
-  --brand-hover: #1d4ed8;
-  --brand-grad: linear-gradient(90deg, #173a63 0%, #2563eb 100%);
-  --brand-grad-hover: linear-gradient(90deg, #102f52 0%, #1d4ed8 100%);
-  --brand-ring: rgba(37, 99, 235, 0.38);
-  --brand-soft: rgba(37, 99, 235, 0.1);
-  --brand-soft-strong: rgba(37, 99, 235, 0.18);
-  --positive: #168c5b;
-  --neutral: #d99a1b;
-  --negative: #d64545;
-  --surface: #ffffff;
-  --surface-alt: #f7f4ee;
-  --border: #d8dee6;
-  --text-primary: #0b1f33;
-  --text-secondary: #475569;
-  --font-display: 'Nunito', 'PingFang TC', 'Microsoft JhengHei', 'Noto Sans TC', 'Noto Sans CJK TC', sans-serif;
-  --font-body: 'Nunito', 'PingFang TC', 'Microsoft JhengHei', 'Noto Sans TC', 'Noto Sans CJK TC', sans-serif;
-}
-
-.dark {
-  --surface: #0f172a;
-  --surface-alt: #1e293b;
-  --border: rgba(148, 163, 184, 0.15);
-  --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-}
-
-@layer components {
-  .brand-gradient {
-    background: var(--brand-grad);
-  }
-
-  .brand-gradient:hover {
-    background: var(--brand-grad-hover);
-  }
-
-  .brand-shadow {
-    box-shadow: 0 10px 24px var(--brand-ring);
-  }
+  /* The brand follows the active colour theme (styles/themes.css re-points the blue scale). */
+  --brand: var(--color-blue-600);
+  --brand-hover: var(--color-blue-700);
+  --brand-ring: color-mix(in srgb, var(--color-blue-600) 38%, transparent);
+  --brand-soft: color-mix(in srgb, var(--color-blue-600) 10%, transparent);
+  --brand-soft-strong: color-mix(in srgb, var(--color-blue-600) 18%, transparent);
+  /* The logo's own navy. Fixed: the mark does not follow the colour theme, so neither does the
+     wordmark beside it (also baked into the generated icons and social card). */
+  --brand-ink: #074174;
 }

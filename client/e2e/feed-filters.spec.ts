@@ -37,8 +37,11 @@ test('choosing a category closes the loop back to the chip strip', async ({ page
   await page.goto('/');
 
   await page.getByRole('button', { name: /filter/i }).first().click();
-  await page.getByRole('button', { name: 'Sport', exact: true }).first().click();
+  // The panel's options are toggles (aria-pressed); the chip strip's are not, and on desktop
+  // the strip comes first in the header now that the filter sits beside search.
+  await page.locator('button[aria-pressed]').filter({ hasText: /^Sport$/, visible: true }).click();
 
-  const active = page.locator('[aria-current="true"]');
+  // Scoped to the strip: the hero carousel's dots also mark the current slide.
+  const active = page.getByTestId('feed-categories').locator('[aria-current="true"]');
   await expect(active).toHaveText(/sport/i);
 });

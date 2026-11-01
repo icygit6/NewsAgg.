@@ -1,11 +1,14 @@
 import { ListSkeleton } from '../ui/ContentSkeleton';
-import { useUiText } from '../../i18n/uiText';
+import { InfiniteScrollFooter } from '../ui/InfiniteScrollFooter';
 import { useState } from 'react';
+import { Link } from 'react-router';
+import { PenLine } from 'lucide-react';
+import { useUiText } from '../../i18n/uiText';
 import { useApp } from '../../contexts/AppContext';
 import { POSTS_ENABLED } from '../../constants';
 import { usePosts } from '../../hooks/usePosts';
 import { PostCard } from '../posts/PostCard';
-import { BookmarkList } from './BookmarkList';
+import { BookmarkCollection } from './BookmarkCollection';
 
 interface ProfileTabsProps {
   isDark: boolean;
@@ -19,7 +22,7 @@ export function ProfileTabs({ isDark }: ProfileTabsProps) {
   const ui = useUiText();
   const { t } = useApp();
   const [tab, setTab] = useState<TabKey>(POSTS_ENABLED ? 'posts' : 'bookmarks');
-  const { data: mineData, isLoading: mineLoading, hasNextPage, fetchNextPage, isFetchingNextPage } = usePosts({ mine: true, pageSize: 20, enabled: POSTS_ENABLED });
+  const { data: mineData, isLoading: mineLoading, hasNextPage, fetchNextPage, isFetchingNextPage, isFetchNextPageError } = usePosts({ mine: true, pageSize: 20, enabled: POSTS_ENABLED });
   const myPosts = mineData?.pages.flatMap((p) => p.posts) ?? [];
 
   const tabs: { key: TabKey; label: string }[] = [
@@ -37,7 +40,7 @@ export function ProfileTabs({ isDark }: ProfileTabsProps) {
   return (
     <div>
       <div
-        className={`flex gap-1 rounded-xl p-1 mb-4 ${isDark ? 'bg-slate-950/60' : 'bg-slate-100'}`}
+        className={`mb-4 flex gap-6 border-b ${isDark ? 'border-slate-800' : 'border-slate-200'}`}
         role="tablist"
       >
         {tabs.map(({ key, label }) => (
@@ -53,35 +56,38 @@ export function ProfileTabs({ isDark }: ProfileTabsProps) {
               if (event.key === 'ArrowLeft') { event.preventDefault(); moveTab(key, -1); }
               if (event.key === 'ArrowRight') { event.preventDefault(); moveTab(key, 1); }
             }}
-            className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-colors ${
+            className={`-mb-px border-b-2 px-1 pb-3 pt-1 text-sm font-semibold transition-colors ${
               tab === key
-                ? 'text-white'
+                ? isDark ? 'text-slate-100' : 'text-slate-900'
                 : isDark
-                  ? 'text-slate-400 hover:text-slate-200'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'border-transparent text-slate-400 hover:text-slate-200'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
-            style={tab === key ? { background: 'var(--brand-grad, #2563eb)' } : undefined}
+            style={tab === key ? { borderColor: 'var(--brand)' } : undefined}
           >
             {label}
           </button>
         ))}
       </div>
 
-      {tab === 'bookmarks' && <div role="tabpanel" id="profile-panel-bookmarks" aria-labelledby="profile-tab-bookmarks"><BookmarkList compact /></div>}
+      {tab === 'bookmarks' && <div role="tabpanel" id="profile-panel-bookmarks" aria-labelledby="profile-tab-bookmarks"><BookmarkCollection /></div>}
       {tab === 'posts' &&
         POSTS_ENABLED &&
         <div role="tabpanel" id="profile-panel-posts" aria-labelledby="profile-tab-posts">{mineLoading ? (
           <ListSkeleton label={t.loading} />
         ) : myPosts.length === 0 ? (
-          <p className={`text-sm py-8 text-center ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-            {t.noPostsYet}
-          </p>
+          <div className="flex flex-col items-center gap-3 py-8 text-center">
+            <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{t.noPostsYet}</p>
+            <Link to="/posts?compose=1" className="inline-flex items-center gap-2 rounded-xl bg-[var(--brand)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--brand-hover)]">
+              <PenLine size={14} />{ui("Write a post")}
+            </Link>
+          </div>
         ) : (
           <div className="space-y-3">
             {myPosts.map((post) => (
               <PostCard key={post.id} post={post} />
             ))}
-            {hasNextPage && <button type="button" onClick={() => fetchNextPage()} disabled={isFetchingNextPage} className="w-full rounded-xl border py-2 text-sm">{ui(isFetchingNextPage ? 'Loading…' : 'Load more posts')}</button>}
+            <InfiniteScrollFooter hasNextPage={hasNextPage} isFetchingNextPage={isFetchingNextPage} isError={isFetchNextPageError} fetchNextPage={fetchNextPage} loading={<ListSkeleton count={2} label={t.loading} />} />
           </div>
         )}</div>}
     </div>

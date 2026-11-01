@@ -1,0 +1,56 @@
+/* NewsAgg skin for pgweb (the admin's read-only database viewer at /dbviewer/).
+ * Injected by nginx after pgweb's own app.css, so these rules only recolour and
+ * re-space; pgweb's layout and behaviour are untouched. */
+/* Not on FontAwesome glyphs (.fa): overriding their font turns every icon into an empty box. */
+#main, #main *:not(.fa) { font-family: 'Nunito', 'PingFang TC', 'Microsoft JhengHei', system-ui, sans-serif; }
+body { background: #f3f6fa; color: #0f172a; }
+
+/* Top bar and database header: NewsAgg navy instead of pgweb purple. */
+#nav, #sidebar .current-database, #sidebar .current-database input.typeahead { background: #074174; }
+#nav { border-bottom: 1px solid #0f2a4a; }
+#nav ul li { color: #c7d7ee; font-weight: 600; border-radius: 10px 10px 0 0; transition: color .15s; }
+#nav ul li:hover { color: #fff; }
+#nav ul li.selected { background: #f3f6fa; color: #074174; }
+#nav ul li.selected:before { background: #f3f6fa; }
+#nav .connection-actions .btn { border-radius: 10px; border: 1px solid rgb(255 255 255 / .25); background: transparent; color: #e2e8f0; }
+#nav .connection-actions .btn:hover { background: rgb(255 255 255 / .1); color: #fff; }
+
+/* Sidebar: a calm list with the brand blue for the open table. */
+#sidebar { background: #ffffff; border-right: 1px solid #e2e8f0; }
+#sidebar .objects-search { border-bottom: 1px solid #e2e8f0; }
+#sidebar .objects-search input[type="text"] { border-radius: 10px; background: #f1f5f9; color: #0f172a; }
+#sidebar div.tables-list .schema-group .schema-name, #sidebar .schema-name { color: #64748b; font-weight: 700; }
+#sidebar div.tables-list li { border-radius: 8px; margin: 1px 6px; color: #334155; }
+#sidebar div.tables-list li:hover { background: #eff6ff; color: #1d4ed8; }
+#sidebar div.tables-list li.active, #sidebar div.tables-list li.selected { background: #2563eb; color: #fff; }
+#sidebar div.tables-list li.active i, #sidebar div.tables-list li.selected i { color: #fff; }
+#sidebar div.table-information { background: #f8fafc; border-top: 1px solid #e2e8f0; }
+#sidebar div.table-information .title { color: #64748b; text-transform: none; letter-spacing: 0; font-weight: 700; }
+#sidebar div.table-information .lines .line { color: #475569; }
+#sidebar div.table-information .lines .line span { color: #0f172a; font-weight: 700; }
+
+/* Query area and buttons. */
+#input .actions { background: #ffffff; border-bottom: 1px solid #e2e8f0; }
+#input .actions .btn { border-radius: 10px; font-weight: 600; }
+#input .actions .btn-primary { border-color: #2563eb; color: #2563eb; }
+#input .actions .btn-primary:hover, #input .actions .btn:hover { background: #2563eb; border-color: #2563eb; color: #fff; }
+#input_resize_handler { background: #e2e8f0; }
+#input_resize_handler:hover, #input_resize_handler.dragging { background: #2563eb; }
+
+/* Results table: zebra rows, sticky readable header, brand-blue selection. */
+#output table, #results { font-variant-numeric: tabular-nums; }
+#results thead th, #output table thead th { background: #f1f5f9; color: #334155; font-weight: 700; border-bottom: 1px solid #e2e8f0; }
+#results tbody tr:nth-child(even) td { background: #f8fafc; }
+#results tbody tr:hover td { background: #eff6ff; }
+#results tbody tr.selected td, #results td.selected { background: #dbeafe !important; }
+#results td { color: #0f172a; border-color: #e2e8f0; }
+#results td .null { color: #94a3b8; font-style: italic; }
+#pagination { background: #ffffff; border-top: 1px solid #e2e8f0; }
+#pagination .btn, .btn-default { border-radius: 10px; }
+.btn-primary { background: #2563eb; border-color: #2563eb; }
+.btn-primary:hover, .btn-primary:focus { background: #1d4ed8; border-color: #1d4ed8; }
+a { color: #2563eb; }
+:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+
+/* Thin, quiet scrollbars inside the viewer's own panes. */
+* { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }

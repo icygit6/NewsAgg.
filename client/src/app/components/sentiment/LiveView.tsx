@@ -1,16 +1,20 @@
+import { AutoPages } from '../ui/AutoPages';
 import { useUiText } from '../../i18n/uiText';
 import { useTitleTranslations } from '../../hooks/useTitleTranslations';
 import { Link } from 'react-router';
-import { Clock3 } from 'lucide-react';
+import { InsightMark } from '../ui/InsightMark';
 import { useApp } from '../../contexts/AppContext';
 import { getArticleId } from '../../services/newsAPI';
 import type { NewsArticle } from '../../types/article';
 import type { SentimentType } from '../../types/sentiment';
 import { panelBaseClass, chartTextColor, chartMutedColor } from './shared';
+import { useEffect, useRef, useState } from 'react';
+import { CATEGORY_ACCENT, TOPIC_TO_CATEGORY } from '../../constants';
 
 interface LiveViewProps {
   articles: NewsArticle[];
   categoryLabel: string;
+  expanded?: boolean;
 }
 
 const formatRelativeTime = (value: string): string => {
@@ -29,7 +33,7 @@ const formatRelativeTime = (value: string): string => {
 
 const sentimentTextClass: Record<SentimentType, string> = {
   positive: 'text-emerald-500',
-  neutral: 'text-gray-500',
+  neutral: 'text-amber-600 dark:text-amber-400',
   negative: 'text-red-500',
 };
 
@@ -39,47 +43,62 @@ export function LiveView({ articles, categoryLabel }: LiveViewProps) {
   const { t, isDark } = useApp();
   const mutedColor = chartMutedColor(isDark);
   const textColor = chartTextColor(isDark);
+  // Rows that arrive after the first render slide in; the first batch does not.
+  // Rows not in the previous list are marked fresh until their entrance ends, so a re-render
+  // in between (scroll-fade edges, translations) cannot cut the animation short.
+  const seen = useRef<Set<string> | null>(null);
+  const [fresh, setFresh] = useState<Set<string>>(() => new Set());
+  const urls = articles.map((article) => article.url).join('\n');
+  useEffect(() => {
+    const current = urls ? urls.split('\n') : [];
+    if (seen.current) {
+      const previous = seen.current;
+      const arrived = current.filter((url) => !previous.has(url));
+      if (arrived.length) setFresh((old) => new Set([...old, ...arrived]));
+    }
+    seen.current = new Set(current);
+  }, [urls]);
+  const settle = (url: string) => setFresh((old) => { if (!old.has(url)) return old; const next = new Set(old); next.delete(url); return next; });
 
   return (
-    <div className={`rounded-2xl border shadow-lg p-4 ${panelBaseClass(isDark)}`}>
+    <div className={`rounded-2xl border p-4 ${panelBaseClass(isDark)}`}>
       <div className="flex items-center justify-between gap-2 mb-3">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center">
-            <Clock3 size={13} className="text-white" />
-          </div>
+          <InsightMark kind="live" />
           <h3 className={`font-poppins text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>{ui("Live View")} </h3>
         </div>
-        <span className={`text-[11px] px-2 py-0.5 rounded-full ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-gray-100 text-gray-600'}`}>
-          {articles.length} {ui("articles")} </span>
+        <span className={`shrink-0 whitespace-nowrap text-[11px] tabular-nums px-2 py-0.5 rounded-full ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-gray-100 text-gray-600'}`}>
+          {articles.length} {ui(articles.length === 1 ? "article" : "articles")} </span>
       </div>
 
-      <p className="text-[11px] mb-2" style={{ color: mutedColor }}>{ui("Category:")} {categoryLabel}
+      <p className="text-xs mb-2" style={{ color: mutedColor }}>{ui("Category:")} {categoryLabel}
       </p>
 
-      <div className="space-y-2.5 max-h-[320px] overflow-y-auto pr-1">
         {articles.length === 0 ? (
           <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{t.noResults}</p>
         ) : (
-          displayArticles.map((article) => (
+          <AutoPages label={ui("Live View")} scopeKey={categoryLabel}
+            pageClassName="space-y-2.5"
+            items={displayArticles.map((article) => (
             <Link
               key={article.url}
               to={`/article/${getArticleId(article)}`}
-              className={`block rounded-xl p-2.5 transition-colors ${isDark ? 'hover:bg-slate-700/60' : 'hover:bg-gray-50'}`}
+              onAnimationEnd={() => settle(article.url)}
+              className={`${fresh.has(article.url) ? 'live-row-in ' : ''}block rounded-xl p-2.5 transition-colors ${isDark ? 'hover:bg-slate-700/60' : 'hover:bg-gray-50'}`}
             >
-              <p className={`text-sm font-medium line-clamp-2 ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>
+              <p title={article.title} className={`text-sm font-medium line-clamp-2 break-words ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>
                 {article.title}
               </p>
               <div className="flex items-center gap-2 mt-1.5 text-xs flex-wrap">
                 <span style={{ color: mutedColor }}>{ui(formatRelativeTime(article.publishedAt))}</span>
                 <span className={`${isDark ? 'text-slate-400' : 'text-gray-500'}`}>•</span>
-                <span style={{ color: textColor }}>{ui(article.topic)}</span>
+                <span className="inline-flex items-center gap-1.5" style={{ color: textColor }}>{<span aria-hidden className="h-2 w-2 rounded-full" style={{ background: CATEGORY_ACCENT[TOPIC_TO_CATEGORY[article.topic]] }} />}{ui(article.topic)}</span>
                 <span className={`${isDark ? 'text-slate-400' : 'text-gray-500'}`}>•</span>
                 <span className={sentimentTextClass[article.sentiment.type]}>{t[article.sentiment.type]}</span>
               </div>
             </Link>
-          ))
+          ))} />
         )}
-      </div>
     </div>
   );
 }

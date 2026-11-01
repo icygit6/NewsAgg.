@@ -1,12 +1,22 @@
 import { isEditorialKeyword } from '../lib/keywords';
 import { useQuery } from '@tanstack/react-query';
 import { API_BASE_URL } from '../lib/apiFetch';
+import { useApp } from '../contexts/AppContext';
 
 // Hooks over the aggregate /api/stats/* and /api/markets/* endpoints — the
 // widgets read counters straight from SQL instead of downloading the whole
 // article dataset.
 
+export type SentimentEvidence = Record<'positive' | 'neutral' | 'negative', {
+  count: number;
+  themes: { label: string; count: number }[];
+  examples: { id: string; title: string; language: string | null }[];
+}>;
+export interface SourceSentiments { id: string | null; name: string; domain: string | null; total: number; sentiments: { positive: number; neutral: number; negative: number } }
 export interface StatsOverview {
+  reportingAuthors?: { name: string; source: string; count: number; articleId: string }[];
+  bySource?: SourceSentiments[];
+  evidence?: SentimentEvidence;
   total: number;
   sentiments: { positive: number; neutral: number; negative: number };
   sourceCount: number;
@@ -14,7 +24,7 @@ export interface StatsOverview {
   scrapedAt: string | null;
   categories: string[];
   /** Per-topic sentiment split, largest category first (overview of 'all'). */
-  byCategory?: Array<{ topic: string; total: number; sentiments: { positive: number; neutral: number; negative: number } }>;
+  byCategory?: Array<{ topic: string; total: number; sentiments: { positive: number; neutral: number; negative: number }; evidence?: SentimentEvidence; bySource?: SourceSentiments[] }>;
   aiModels: Record<string, string>;
   nlpModels?: Array<{ id: string; role: string }>;
 }
@@ -33,7 +43,7 @@ export interface TrendPoint {
 }
 
 export interface MarketsSummary {
-  fx: { base: 'USD'; idr: number; twd: number; eur: number; updatedAt: string | null; provider: string; fetchedAt: string; stale: boolean; unavailable: boolean };
+  fx: { rates?: Record<string, number>; base: 'USD'; idr: number; twd: number; eur: number; updatedAt: string | null; provider: string; fetchedAt: string; stale: boolean; unavailable: boolean };
   indices: { items: Array<{ symbol: string; name: string; close: number; changePct: number | null; spark: number[]; asOf: string | null; provider: string; exchangeTimezone: string | null }>; provider: string; fetchedAt: string; stale: boolean; unavailable: boolean };
   crypto: { items: Array<{ id: string; symbol: string; price: number; changePct24h: number | null; spark: number[]; asOf: string | null; provider: string }>; provider: string; fetchedAt: string; stale: boolean; unavailable: boolean };
 }
@@ -46,21 +56,27 @@ async function getJson<T>(path: string): Promise<T> {
   return json.data as T;
 }
 
+function useStatsScope(category: string) {
+  const { selectedSources = [], selectedSentiment = 'all', searchQuery = '', selectedCategories = [], selectedSentiments = [] } = useApp();
+  return new URLSearchParams({ category: category === 'all' && selectedCategories.length ? [...selectedCategories].sort().join(',') : category, sources: [...selectedSources].sort().join(','), sentiment: selectedSentiments.length ? [...selectedSentiments].sort().join(',') : selectedSentiment, q: searchQuery.trim() }).toString();
+}
 export function useStatsOverview(category: string = 'all') {
+  const sources = useStatsScope(category);
   return useQuery({
-    queryKey: ['stats', 'overview', category],
+    queryKey: ['stats', 'overview', category, sources],
     queryFn: () =>
-      getJson<StatsOverview>(`/api/stats/overview?category=${encodeURIComponent(category)}`),
+      getJson<StatsOverview>(`/api/stats/overview?${sources}`),
   });
 }
 
 export function useTrendingStats(limit = 10, category: string = 'all') {
+  const sources = useStatsScope(category);
   return useQuery({
-    queryKey: ['stats', 'trending', category, limit],
+    queryKey: ['stats', 'trending', category, limit, sources],
     select: (items: TrendingStat[]) => items.filter(item => isEditorialKeyword(item.keyword)),
     queryFn: () =>
       getJson<TrendingStat[]>(
-        `/api/stats/trending?limit=${limit}&category=${encodeURIComponent(category)}`
+        `/api/stats/trending?limit=${limit}&${sources}`
       ),
   });
 }

@@ -22,6 +22,8 @@ export interface DatasetSnapshot {
   categories: NewsTopic[];
   aiModels: Record<string, string>;
   nlpModels?: Array<{ id: string; role: string }>;
+  /** Translation and chat models (not part of the scoring pipeline). */
+  serviceModels?: Array<{ id: string; role: string }>;
   sourceCount: number;
 }
 

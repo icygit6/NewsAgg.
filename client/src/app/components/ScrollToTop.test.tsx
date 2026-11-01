@@ -12,6 +12,11 @@ function App() {
     <button onClick={() => navigate(-1)}>Back</button><ScrollToTop /></>;
 }
 beforeEach(() => {
+  vi.stubGlobal('matchMedia', vi.fn((query: string) => ({
+    matches: false, media: query, onchange: null,
+    addListener: vi.fn(), removeListener: vi.fn(),
+    addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn(),
+  })));
   vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
   HTMLElement.prototype.scrollTo = vi.fn(function(this: HTMLElement, options: ScrollToOptions | number = {}) {
     this.scrollTop = typeof options === 'number' ? options : options.top ?? 0;

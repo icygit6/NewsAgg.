@@ -6,11 +6,11 @@ import { UiLocaleContext } from '../i18n/uiText';
 const state = vi.hoisted(() => ({ language: 'en', isDark: false }));
 vi.mock('../contexts/AppContext', () => ({ useApp: () => state }));
 afterEach(() => { cleanup(); state.language = 'en'; });
-it('discloses personalization, external deletion boundaries and data controls', () => {
+it('discloses external deletion boundaries and data controls', () => {
   render(<MemoryRouter><PrivacyPage /></MemoryRouter>);
-  expect(screen.getByText(/Disabling personalization does not itself erase/)).toBeInTheDocument();
-  expect(screen.getByText(/Clear Mem0 reading interests separately/)).toBeInTheDocument();
-  expect(screen.getByRole('link', { name: 'Research evidence' })).toHaveAttribute('href', '/insights?view=research');
+  expect(screen.getByText(/Deletion does not prove removal from external provider logs/)).toBeInTheDocument();
+  expect(screen.queryByText(/Mem0/)).toBeNull();
+  expect(screen.getByRole('link', { name: 'Research & tests' })).toHaveAttribute('href', '/insights?view=research');
 });
 it('provides Chinese corrections policy without claiming guaranteed factual truth', () => {
   state.language = 'zhTW';

@@ -1,7 +1,8 @@
-import { PanelSkeleton } from '../ui/ContentSkeleton';
+import { RailSkeleton } from '../ui/ContentSkeleton';
 import { lazy, Suspense, useState } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { FooterCompact } from './Footer';
+import { useScrollFade, fadeMask } from '../../hooks/useScrollFade';
 
 const PulseRail = lazy(() => import('../posts/PulseRail').then((m) => ({ default: m.PulseRail })));
 const InsightsRail = lazy(() =>
@@ -11,8 +12,9 @@ const InsightsRail = lazy(() =>
 type RailTab = 'pulse' | 'insights';
 
 export function RightRail() {
-  const { t, isDark } = useApp();
+  const { t, isDark, selectedCategory } = useApp();
   const [tab, setTab] = useState<RailTab>('insights');
+  const scrollFade = useScrollFade<HTMLDivElement>();
 
   const tabButton = (key: RailTab, label: string) => (
     <button
@@ -30,7 +32,7 @@ export function RightRail() {
             ? 'text-slate-400 hover:text-slate-200'
             : 'text-slate-500 hover:text-slate-800'
       }`}
-      style={tab === key ? { background: 'var(--brand-grad, #2563eb)' } : undefined}
+      style={tab === key ? { background: 'var(--brand)' } : undefined}
     >
       {label}
     </button>
@@ -38,16 +40,11 @@ export function RightRail() {
 
   return (
     <aside
-      className={`hidden lg:flex flex-col shrink-0 border-l ${
-        isDark ? 'border-slate-800' : 'border-slate-200'
-      }`}
-      style={{ width: '30%' }}
+      className="hidden lg:flex min-h-0 min-w-0 flex-col overflow-hidden"
     >
       {/* Tab header — sibling to scroll container, mirrors FeedHeader structure */}
       <div
-        className={`shrink-0 h-[88px] px-4 flex items-center border-b ${
-          isDark ? 'border-slate-800/50' : 'border-slate-200/50'
-        }`}
+        className="shrink-0 h-[88px] px-4 flex items-center"
       >
         <div
           className={`flex gap-1 rounded-full border p-1 w-full ${
@@ -64,15 +61,16 @@ export function RightRail() {
       {/* Scrollable content — independent scroll container */}
       <div
         id="rail-panel"
+        ref={scrollFade.ref}
         role="tabpanel"
         aria-labelledby={`rail-tab-${tab}`}
-        className="flex-1 overflow-y-auto px-4 pb-6"
-        style={{ scrollbarWidth: 'none' }}
+        className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain px-4 pb-6"
+        style={{ scrollbarWidth: 'none', ...fadeMask(scrollFade.above, scrollFade.below, 20) }}
       >
-        <Suspense fallback={<PanelSkeleton />}>
+        <Suspense fallback={<RailSkeleton dual={selectedCategory === 'all'} />}>
           {tab === 'pulse' ? <PulseRail /> : <InsightsRail />}
         </Suspense>
-        <div className={`mt-6 pt-4 border-t ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+        <div className="mt-6 pt-4">
           <FooterCompact />
         </div>
       </div>

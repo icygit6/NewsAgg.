@@ -10,13 +10,13 @@
        viewport for the software keyboard, as iOS already does. -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
   <meta name="description" content="NewsAgg: Automated News Aggregation, NLP-Based Sentiment and Topic Classification, and Topic Insights Dashboard" />
-  <link rel="icon" type="image/png" href="/favicon.png?v=20260910-baseline" />
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20260910-baseline" />
-  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" type="image/png" href="/favicon.png?v=brand-20261031" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=brand-20261031" />
+  <link rel="manifest" href="/manifest.webmanifest?v=brand-20261031" />
   <!-- The status bar matches the top of the page, not the brand colour: the light
        canvas and the dark canvas from Root.tsx. The manifest keeps the brand navy
        for the installed app's launch and task-switcher chrome. -->
-  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f8fafc" />
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f3f6fa" />
   <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0b1220" />
   <meta name="color-scheme" content="light dark" />
 
@@ -26,11 +26,11 @@
   <meta property="og:site_name" content="NewsAgg" />
   <meta property="og:title" content="NewsAgg: Automated News Aggregation, NLP-Based Sentiment and Topic Classification, and Topic Insights Dashboard" />
   <meta property="og:description" content="English and Traditional Chinese news with sentiment, topic, and keyword insights." />
-  <meta property="og:image" content="/og-image.png?v=20260910-baseline" />
+  <meta property="og:image" content="/og-image.png?v=brand-20261031" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="NewsAgg: Automated News Aggregation, NLP-Based Sentiment and Topic Classification, and Topic Insights Dashboard" />
   <meta name="twitter:description" content="English and Traditional Chinese news with sentiment, topic, and keyword insights." />
-  <meta name="twitter:image" content="/og-image.png?v=20260910-baseline" />
+  <meta name="twitter:image" content="/og-image.png?v=brand-20261031" />
 
   <!-- The hero photo can come from any of the four publishers, so a full
        preconnect to each would mostly go unused; resolve their DNS early instead. -->
@@ -41,14 +41,38 @@
 
   <!-- Preconnect for Google Fonts to improve LCP / FCP -->
   <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://s.yimg.com" crossorigin />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'" />
-  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" /></noscript>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" media="print" onload="this.media='all'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" /></noscript>
   <title>NewsAgg: Automated News Aggregation, NLP-Based Sentiment and Topic Classification, and Topic Insights Dashboard</title>
+  <!-- First paint, before React: the same logo and shimmer as every in-app loading state
+       (see ContentSkeleton.tsx and the skeleton block in theme.css). Scoped to #boot, which
+       React replaces on mount, so none of it leaks into the app. -->
+  <script>try{var d=document.documentElement,k=localStorage.getItem('isDark')==='true',t=localStorage.getItem('newsagg-theme');if(k)d.classList.add('dark');if(t==='custom'&&!localStorage.getItem('user'))t=null;if(t&&t!=='newsagg'){d.dataset.theme=t;var b;if(t==='custom'){b=[localStorage.getItem('newsagg-theme-custom-light')||'#f6f7f9',localStorage.getItem('newsagg-theme-custom-dark')||'#0b0f17'];d.style.setProperty('--theme-custom',localStorage.getItem('newsagg-theme-custom')||'#0891b2');d.style.setProperty('--theme-custom-canvas',b[0]);d.style.setProperty('--theme-custom-canvas-dark',b[1])}else b={sand:['#f7f2ea','#141110'],forest:['#f3f5f8','#0d121a'],ocean:['#f1f5fa','#0c1420'],grape:['#f5f3fc','#100c1b'],rose:['#f5f5fc','#101020']}[t];if(b)d.style.background=b[k?1:0]}}catch(e){}</script>
+  <style>
+    /* The browser's default 8px body margin would frame the skeleton until the app's CSS arrives. */
+    html{background:#f3f6fa}html.dark{background:#0b1220}body{margin:0;background:transparent}
+    #boot{--skeleton-base:rgb(226 232 240/.8);--skeleton-shine:rgb(255 255 255/.6);min-height:100dvh;box-sizing:border-box;padding:12px 16px;display:flex;flex-direction:column;gap:16px}
+    .dark #boot{--skeleton-base:rgb(51 65 85/.6);--skeleton-shine:rgb(255 255 255/.08)}
+    #boot .skeleton{display:block;position:relative;overflow:hidden;background-color:var(--skeleton-base)}
+    #boot .skeleton::after{content:'';position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,var(--skeleton-shine),transparent)}
+    @media (prefers-reduced-motion:no-preference){#boot .skeleton::after{animation:boot-sweep 1.8s ease-in-out infinite}}
+    @keyframes boot-sweep{to{transform:translateX(100%)}}
+    #boot .top{display:flex;align-items:center;gap:12px}
+    #boot .top img{width:36px;height:36px;flex:none}
+    .dark #boot .top img{box-sizing:border-box;padding:3px;border-radius:28%;background:#f1f5f9}
+    #boot .search{flex:1;height:44px;border-radius:999px}
+    #boot .hero{height:300px;border-radius:16px}
+    #boot .grid{display:grid;gap:20px;grid-template-columns:1fr}
+    #boot .card{height:320px;border-radius:16px}
+    @media (min-width:640px){#boot .hero{height:360px}#boot .grid{grid-template-columns:1fr 1fr}}
+    @media (min-width:768px){#boot .hero{height:420px}}
+  </style>
 </head>
 
 <body>
-  <div id="root"></div>
+  <div id="root"><div id="boot" role="status" aria-busy="true" aria-label="Loading NewsAgg"><div class="top"><img src="/logo-mark-128.png?v=brand-20261031" width="128" height="128" alt="NewsAgg"><i class="skeleton search"></i></div><i class="skeleton hero"></i><div class="grid"><i class="skeleton card"></i><i class="skeleton card"></i></div></div></div>
   <script type="module" src="/src/main.tsx"></script>
 </body>
 

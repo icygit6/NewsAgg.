@@ -53,7 +53,7 @@ export function LanguageSwitcher({ isDark, isLoading = false, isAutoTranslated =
               aria-pressed={active}
               className={`min-h-8 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
                 active
-                  ? 'bg-cyan-500 text-white'
+                  ? 'bg-[var(--brand)] text-white'
                   : isDark
                   ? 'text-slate-300 hover:bg-slate-700'
                   : 'text-gray-600 hover:bg-gray-100'
@@ -75,13 +75,13 @@ export function LanguageSwitcher({ isDark, isLoading = false, isAutoTranslated =
 
       {/* Auto-translated badge */}
       {!isLoading && isAutoTranslated && (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-cyan-500/10 text-cyan-500 border border-cyan-500/20">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
           <Sparkles size={11} />
           {t.autoTranslated}
         </span>
       )}
       {!isLoading && error && (
-        <button type="button" onClick={onRetry} className="text-xs font-semibold text-red-600 underline decoration-red-300 underline-offset-4">
+        <button type="button" onClick={onRetry} className="text-xs font-semibold text-red-600 decoration-red-300 underline-offset-4 hover:underline">
           {t.noTranslation} {ui("· Retry")} </button>
       )}
     </div>

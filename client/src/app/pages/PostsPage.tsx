@@ -1,6 +1,7 @@
 import { useUiText } from '../i18n/uiText';
 import { ListSkeleton } from '../components/ui/ContentSkeleton';
-import { useEffect, useRef, useState } from 'react';
+import { InfiniteScrollFooter } from '../components/ui/InfiniteScrollFooter';
+import { useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { MessageSquareQuote } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
@@ -15,29 +16,14 @@ export function PostsPage() {
   const ui = useUiText();
   const { t, isDark, isAuthenticated, setSidebarOpen } = useApp();
   const [searchParams, setSearchParams] = useSearchParams();
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [category, setCategory] = useState('all');
   const [sort, setSort] = useState<'latest' | 'oldest' | 'popular'>('latest');
 
   const compose = searchParams.get('compose') === '1';
   const attachId = searchParams.get('attach') ?? undefined;
 
-  const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = usePosts({ sort, category });
+  const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage, isFetchNextPageError } = usePosts({ sort, category, live: true });
   const posts = data?.pages.flatMap((p) => p.posts) ?? [];
-
-  useEffect(() => {
-    if (!hasNextPage) return;
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting && !isFetchingNextPage) fetchNextPage();
-      },
-      { rootMargin: '200px' },
-    );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage, posts.length]);
 
   const clearAttach = () => setSearchParams({}, { replace: true });
 
@@ -49,11 +35,10 @@ export function PostsPage() {
         {t.posts}
       </h1>
       <div className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div role="group" aria-label={ui('Sort posts')} className={`inline-flex max-w-full overflow-x-auto rounded-xl border p-1 ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-slate-100'}`}>
-            {(['latest', 'oldest', 'popular'] as const).map(option => <button key={option} type="button" aria-pressed={sort === option} onClick={() => setSort(option)} className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${sort === option ? isDark ? 'bg-slate-700 text-white shadow-sm' : 'bg-white text-slate-900 shadow-sm' : isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>{ui(option === 'latest' ? 'Newest first' : option === 'oldest' ? 'Oldest first' : 'Most popular')}</button>)}
+        <div className="flex items-center gap-3">
+          <div role="group" aria-label={ui('Sort posts')} className={`inline-flex min-w-0 overflow-x-auto rounded-xl border p-1 ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-slate-100'}`}>
+            {(['latest', 'oldest', 'popular'] as const).map(option => <button key={option} type="button" aria-pressed={sort === option} onClick={() => setSort(option)} className={`whitespace-nowrap rounded-lg px-2.5 sm:px-3 py-1.5 text-[13px] font-semibold transition-colors ${sort === option ? isDark ? 'bg-slate-700 text-white shadow-sm' : 'bg-white text-slate-900 shadow-sm' : isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}><span className="hidden sm:inline">{ui(option === 'latest' ? 'Newest first' : option === 'oldest' ? 'Oldest first' : 'Most popular')}</span><span className="sm:hidden">{ui(option === 'latest' ? 'Newest' : option === 'oldest' ? 'Oldest' : 'Popular')}</span></button>)}
           </div>
-          <button type="button" onClick={() => refetch()} className="text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">{ui('Refresh')}</button>
         </div>
         <PostCategoryPicker value={category === 'all' ? '' : category} onChange={value => setCategory(value || 'all')} allLabel={ui('All categories')} isDark={isDark} ariaLabel={ui('Filter posts by category')} />
       </div>
@@ -76,7 +61,7 @@ export function PostsPage() {
 
       {isLoading && <ListSkeleton label={t.loading} />}
 
-      {isError && <div role="alert" className="rounded-xl border border-rose-300 p-4 text-rose-500">{ui("Could not load posts.")} <button onClick={()=>refetch()} className="underline">{ui("Retry")}</button></div>}
+      {isError && <div role="alert" className="rounded-xl border border-rose-300 p-4 text-rose-500">{ui("Could not load posts.")} <button onClick={()=>refetch()} className="font-semibold hover:underline">{ui("Retry")}</button></div>}
 
       {!isLoading && !isError && posts.length === 0 && (
         <div
@@ -93,11 +78,7 @@ export function PostsPage() {
         ))}
       </div>
 
-      {hasNextPage && (
-        <div ref={sentinelRef} className="min-h-4">
-          {isFetchingNextPage && <ListSkeleton count={2} label={t.loading} />}
-        </div>
-      )}
+      <InfiniteScrollFooter hasNextPage={hasNextPage} isFetchingNextPage={isFetchingNextPage} isError={isFetchNextPageError} fetchNextPage={fetchNextPage} loading={<ListSkeleton count={2} label={t.loading} />} />
     </div>
   );
 }

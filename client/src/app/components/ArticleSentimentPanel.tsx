@@ -1,30 +1,20 @@
 import { useUiText } from '../i18n/uiText';
 import { useApp } from '../contexts/AppContext';
-import { GradientBarWithPointer } from './ui/GradientBarWithPointer';
+import { SentimentMeter, SENTIMENT_TEXT } from './ui/SentimentMeter';
+import { SENTIMENT_COLOR } from './ui/chartTheme';
 import { PanelHeading } from './ui/PanelHeading';
+import { panelBaseClass } from './sentiment/shared';
 import { Activity } from 'lucide-react';
 import type { NewsArticle } from '../types/article';
 import type { SentimentType } from '../types/sentiment';
+import { RollingNumber } from './ui/RollingNumber';
+import { percent } from '../hooks/useRollingNumber';
+import { ArticleSentimentExplanation } from './article/ArticleSentimentExplanation';
 
 interface ArticleSentimentPanelProps {
     article: NewsArticle;
     isDark: boolean;
 }
-
-const PROBABILITY_STYLE: Record<SentimentType, { bar: string; text: string }> = {
-    positive: {
-        bar: 'bg-emerald-500',
-        text: 'text-emerald-600',
-    },
-    neutral: {
-        bar: 'bg-gray-500',
-        text: 'text-gray-600',
-    },
-    negative: {
-        bar: 'bg-red-500',
-        text: 'text-red-600',
-    },
-};
 
 const clampUnit = (value: number): number => Math.max(0, Math.min(1, value));
 
@@ -34,14 +24,9 @@ export function ArticleSentimentPanel({ article, isDark }: ArticleSentimentPanel
   const ui = useUiText();
     const { t } = useApp();
 
-    const panelBase = isDark
-        ? 'bg-slate-800/80 border-slate-700/50 backdrop-blur-md'
-        : 'bg-white/85 border-white/60 backdrop-blur-md';
+    const panelBase = panelBaseClass(isDark);
 
     const mutedText = isDark ? 'text-slate-400' : 'text-gray-500';
-    const trackClass = isDark ? 'bg-slate-700' : 'bg-gray-100';
-
-    const confidence = clampUnit(article.sentiment.score);
     const comparative = clampSignedUnit(article.sentiment.comparative);
 
     const rawProbabilities = article.sentiment.probabilities;
@@ -68,45 +53,41 @@ export function ArticleSentimentPanel({ article, isDark }: ArticleSentimentPanel
         { type: 'negative', label: t.negative, value: probabilities.negative },
     ];
 
+    const top = rows.reduce((best, row) => (row.value > best.value ? row : best));
+
     return (
         <div className={`rounded-2xl border p-5 ${panelBase}`}>
-            <PanelHeading icon={Activity} isDark={isDark} className="mb-3">{t.articleSentiment}</PanelHeading>
+            <PanelHeading icon={Activity} isDark={isDark} className="mb-4">{t.articleSentiment}</PanelHeading>
 
-            <div className="space-y-2">
-                <GradientBarWithPointer
-                    value={comparative}
-                    label={t[article.sentiment.type]}
-                    height={22}
-                    pointerSize={18}
-                    className="my-1"
-                />
+            <SentimentMeter value={comparative} type={article.sentiment.type} label={t[article.sentiment.type]} />
 
-                <p className={`text-xs ${mutedText}`}>{ui("Confidence:")} {(confidence * 100).toFixed(1)}%
-                </p>
-                <p className={`text-[11px] leading-relaxed ${mutedText}`}>{t.confidenceNote}</p>
+            <div className={`mt-5 border-t pt-4 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                <h4 className="text-sm font-semibold">{ui('Why this sentiment?')} · {t[article.sentiment.type]}</h4>
+                <ArticleSentimentExplanation article={article} />
             </div>
 
-            <div className="mt-4 space-y-2.5">
-                <p className={`text-xs font-medium ${mutedText}`}>{t.emotionBreakdown}</p>
-
-                {rows.map((row) => (
-                    <div key={row.type} className="flex items-center gap-2">
-                        <span className={`w-16 text-xs ${mutedText}`}>{row.label}</span>
-                        <div className={`h-2 rounded-full overflow-hidden flex-1 ${trackClass}`}>
-                            <div
-                                className={`h-full rounded-full ${PROBABILITY_STYLE[row.type].bar}`}
-                                style={{ width: `${(row.value * 100).toFixed(1)}%` }}
-                            />
-                        </div>
-                        <span className={`w-12 text-right text-xs font-semibold ${PROBABILITY_STYLE[row.type].text}`}>
-                            {(row.value * 100).toFixed(1)}%
-                        </span>
-                    </div>
-                ))}
+            <div className={`mt-4 border-t pt-4 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                <p className={`text-xs font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t.emotionBreakdown}</p>
+                <div className="bar-grow mt-2 flex h-2.5 gap-0.5 overflow-hidden rounded-full" aria-hidden="true">
+                    {rows.map((row) => row.value > 0 && (
+                        <div key={row.type} style={{ width: `${row.value * 100}%`, background: SENTIMENT_COLOR[row.type] }} />
+                    ))}
+                </div>
+                <ul className="mt-3 space-y-1.5">
+                    {rows.map((row) => (
+                        <li key={row.type} className="flex items-center gap-2 text-xs">
+                            <span aria-hidden className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: SENTIMENT_COLOR[row.type] }} />
+                            <span className={`flex-1 ${row.type === article.sentiment.type ? `font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}` : mutedText}`}>{row.label}</span>
+                            <span className={`font-semibold tabular-nums ${SENTIMENT_TEXT[row.type]}`}>
+                                <RollingNumber value={row.value * 100} format={percent(1)} />
+                            </span>
+                        </li>
+                    ))}
+                </ul>
                 {/* The decision rule is ordered, so the label is not always the
                     largest probability (report §II 4.3); say so when it happens. */}
-                {rows.reduce((top, row) => (row.value > top.value ? row : top)).type !== article.sentiment.type && (
-                    <p className={`pt-1 text-[11px] leading-relaxed ${mutedText}`}>{t.labelRuleNote}</p>
+                {top.type !== article.sentiment.type && (
+                    <p className={`pt-2 text-xs leading-relaxed ${mutedText}`}>{t.labelRuleNote}</p>
                 )}
             </div>
         </div>

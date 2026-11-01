@@ -13,11 +13,11 @@ export function TopBar() {
 
   return (
     <div
-      className={`sticky top-0 z-40 flex items-center gap-3 border-b px-4 py-2.5 backdrop-blur-xl lg:hidden
-        ${isDark ? 'border-slate-800 bg-slate-950/95' : 'border-slate-200 bg-white/95'}`}
+      className={`sticky top-0 z-40 flex items-center gap-3 border-b bg-[var(--page-bg)] px-4 py-2.5 lg:hidden
+        ${isDark ? 'border-slate-800' : 'border-slate-200'}`}
     >
       <Link to="/" className="shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500" aria-label={ui("NewsAgg home")}>
-        <BrandLogo showWordmark={false} markClassName="w-8 h-8" />
+        <BrandLogo showWordmark={false} markClassName="w-9 h-9" />
       </Link>
       <div className="flex-1 min-w-0">
         <SearchBox />

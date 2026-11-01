@@ -1,31 +1,37 @@
 import { useUiText } from '../i18n/uiText';
 import { useTitleTranslations } from '../hooks/useTitleTranslations';
-import { useEffect, useRef } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { useArticles, useRankedHeadlines } from '../hooks/useArticles';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { NewsCard } from './NewsCard';
 import { HeroCarousel } from './HeroCarousel';
 import { CATEGORY_LABELS } from '../constants';
-import { FeedSkeleton, LoadingIndicator } from './ui/ContentSkeleton';
+import { FeedSkeleton } from './ui/ContentSkeleton';
+import { InfiniteScrollFooter } from './ui/InfiniteScrollFooter';
+import { LeadStoryCard } from './LeadStoryCard';
+import { MoreInCategory } from './feed/MoreInCategory';
+import { FeedState, feedStateButton } from './feed/FeedState';
+import { withCategoryRunsByPage } from './feed/categoryRuns';
 
 export function NewsGrid() {
   const ui = useUiText();
   const {
     t,
-    isDark,
     selectedCategory,
     selectedSources,
     selectedSentiment,
     selectedSort,
     searchQuery,
+    setSelectedCategory,
+    setSelectedSources,
+    setSelectedSentiment,
+    setSearchQuery,
   } = useApp();
   const debouncedQuery = useDebouncedValue(searchQuery.trim(), 250);
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   // All filtering happens server-side now (category/source/sentiment/q),
   // 20 summary rows per page instead of the legacy 400-article payload.
-  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useArticles({
+  const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage, isFetchNextPageError } = useArticles({
     category: selectedCategory,
     sources: selectedSources,
     sentiment: selectedSentiment,
@@ -51,24 +57,6 @@ export function NewsGrid() {
   const gridArticles = articles.filter((article) => !heroIds.has(article.id));
   const displayArticles = useTitleTranslations(gridArticles);
 
-  // Infinite scroll: pull the next page when the sentinel becomes visible.
-  useEffect(() => {
-    if (!hasNextPage) return;
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting && !isFetchingNextPage) {
-          fetchNextPage();
-        }
-      },
-      { root: document.getElementById('main-scroll'), rootMargin: '200px' },
-    );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage, articles.length]);
-
   // Hold the grid until the carousel's headlines are known: filtering them
   // out after the cards had rendered pushed every card upwards (CLS 0.48).
   if (isLoading || (showHero && heroPending)) {
@@ -76,28 +64,18 @@ export function NewsGrid() {
   }
 
   if (isError) {
-    return (
-      <div
-        className={`flex flex-col items-center justify-center py-20 text-center ${isDark ? 'text-red-400' : 'text-red-500'}`}
-      >
-        <div className="text-5xl mb-4">⚠️</div>
-        <p className="text-lg font-medium">{t.errorTitle}</p>
-        <p className="text-sm mt-1">{t.fetchFailed}</p>
-      </div>
-    );
+    return <FeedState tone="error" title={t.errorTitle} body={t.fetchFailed} action={<button type="button" onClick={() => void refetch()} className={feedStateButton}>{ui('Try again')}</button>} />;
+  }
+  if (articles.length === 0) {
+    return <FeedState title={t.noResults} body={t.tryDifferent} action={<button type="button" onClick={() => { setSelectedCategory('all'); setSelectedSources([]); setSelectedSentiment('all'); setSearchQuery(''); }} className={feedStateButton}>{ui('Clear filters')}</button>} />;
   }
 
-  if (articles.length === 0) {
-    return (
-      <div
-        className={`flex flex-col items-center justify-center py-20 text-center ${isDark ? 'text-slate-400' : 'text-gray-400'}`}
-      >
-        <div className="text-5xl mb-4">📰</div>
-        <p className="text-lg font-medium">{t.noResults}</p>
-        <p className="text-sm mt-1">{t.tryDifferent}</p>
-      </div>
-    );
-  }
+
+  // Preserve server page boundaries when inserting category headline groups.
+  const lead = !debouncedQuery ? displayArticles[0] : undefined;
+  const rest = lead ? displayArticles.slice(1) : displayArticles;
+  const pageOf = new Map<string, number>();
+  data?.pages.forEach((page, index) => page.articles.forEach((article) => { if (!pageOf.has(article.id)) pageOf.set(article.id, index); }));
 
   return (
     <div className="w-full min-w-0">
@@ -121,19 +99,18 @@ export function NewsGrid() {
 
       {/* Vertical cards stay roomy while using the wider feed efficiently. */}
       <div className="@container min-w-0">
-      <div className="grid min-w-0 grid-cols-1 items-stretch gap-5 sm:grid-cols-2 @5xl:grid-cols-3">
-        {displayArticles.map((article) => (
-          <NewsCard key={article.id || article.url} article={article} />
-        ))}
+      {/* Desktop keeps three news cards per row; smaller screens reflow. */}
+      <div className="grid min-w-0 grid-cols-2 items-stretch gap-3 lg:grid-cols-3 lg:gap-4">
+        {lead && <LeadStoryCard article={lead} />}
+        {withCategoryRunsByPage(rest, pageOf).map((item) =>
+          item.kind === 'card'
+            ? <NewsCard key={item.article.id || item.article.url} article={item.article} />
+            : <MoreInCategory key={`more-${item.articles[0].id}`} articles={item.articles} />)}
       </div>
       </div>
 
-      {/* Infinite-scroll sentinel + loading indicator */}
-      {hasNextPage && (
-        <div ref={sentinelRef} className="min-h-16 flex items-center justify-center py-4 text-slate-500 dark:text-slate-400">
-          {isFetchingNextPage ? <LoadingIndicator label={t.loading} /> : <button type="button" onClick={() => void fetchNextPage()} className="min-h-11 rounded-xl border border-slate-300 px-6 text-sm font-semibold hover:bg-blue-50 dark:border-slate-700 dark:hover:bg-slate-800">{ui('Load more')}</button>}
-        </div>
-      )}
+      {/* The next page loads as the reader scrolls; there is deliberately no button. */}
+      <InfiniteScrollFooter hasNextPage={hasNextPage} isFetchingNextPage={isFetchingNextPage} isError={isFetchNextPageError} fetchNextPage={fetchNextPage} label={t.loading} />
     </div>
   );
 }

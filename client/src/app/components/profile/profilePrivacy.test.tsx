@@ -1,6 +1,7 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { MemoryRouter } from 'react-router';
 import { ProfileHeader } from './ProfileHeader';
 import { ProfilePreferences } from './ProfilePreferences';
 
@@ -23,46 +24,41 @@ vi.mock('../../contexts/AppContext', () => ({
 vi.mock('../../services/authService', () => ({
   authService: { updateBackground: vi.fn(), updatePreferences: vi.fn(), exportData: vi.fn() },
 }));
-vi.mock('../../services/mem0Service', () => ({
-  mem0Service: {
-    getUserPreferences: () => Promise.resolve({ enabled: true, topics: [] }),
-    setPersonalization: vi.fn(),
-    clearReadingHistory: vi.fn(),
-  },
-}));
 vi.mock('./AvatarEditor', () => ({ AvatarEditor: () => <div /> }));
 vi.mock('../ui/LanguageSwitcher', () => ({
   useInterfaceLanguage: () => ({ choice: 'en', choose: vi.fn(), options: [{ code: 'en', short: 'EN', label: 'English' }], current: { short: 'EN', label: 'English' } }),
 }));
 vi.mock('../ui/TranslateNewsToggle', () => ({ TranslateNewsToggle: () => <div /> }));
 
-const page = () => <>
+const page = () => <MemoryRouter>
   <ProfileHeader isDark={false} />
   <ProfilePreferences isDark={false} />
-</>;
+</MemoryRouter>;
 
 beforeEach(() => localStorage.clear());
 afterEach(cleanup);
 
-it('masks the email and the last active date from the privacy section, independently', async () => {
+it('keeps the email off the profile header and masks the last active date independently', async () => {
   const session = userEvent.setup();
   render(page());
-  await waitFor(() => expect(screen.getByText('reader@example.com')).toBeInTheDocument());
+  // The email moved to /settings and the account panel; the header never shows it.
+  await waitFor(() => expect(screen.getByText(/Last active/)).toBeInTheDocument());
+  expect(screen.queryByText('reader@example.com')).not.toBeInTheDocument();
   // The rendered date is locale-dependent; what matters is that it is not dotted out.
   expect(screen.getByText(/Last active/)).not.toHaveTextContent('••••');
 
-  await session.click(screen.getByRole('switch', { name: /Hide my email address/ }));
-  expect(screen.queryByText('reader@example.com')).not.toBeInTheDocument();
-  expect(screen.getByText('re••••@example.com')).toBeInTheDocument();
+  const hideEmail = screen.getByRole('switch', { name: /Hide my email address/ });
+  await session.click(hideEmail);
+  expect(hideEmail).toHaveAttribute('aria-checked', 'true');
   // The date is a separate switch, so it stays visible.
   expect(screen.getByText(/Last active/)).not.toHaveTextContent('••••');
 
   await session.click(screen.getByRole('switch', { name: /Hide my last active date/ }));
   expect(screen.getByText(/Last active/)).toHaveTextContent('••••');
-  expect(screen.getByText('re••••@example.com')).toBeInTheDocument();
+  expect(hideEmail).toHaveAttribute('aria-checked', 'true');
 
-  await session.click(screen.getByRole('switch', { name: /Hide my email address/ }));
-  expect(screen.getByText('reader@example.com')).toBeInTheDocument();
+  await session.click(hideEmail);
+  expect(hideEmail).toHaveAttribute('aria-checked', 'false');
   expect(screen.getByText(/Last active/)).toHaveTextContent('••••');
 });
 
@@ -74,5 +70,5 @@ it('remembers each choice across a remount', async () => {
 
   render(page());
   await waitFor(() => expect(screen.getByText(/Last active/)).toHaveTextContent('••••'));
-  expect(screen.getByText('reader@example.com')).toBeInTheDocument();
+  expect(screen.getByRole('switch', { name: /Hide my email address/ })).toHaveAttribute('aria-checked', 'false');
 });

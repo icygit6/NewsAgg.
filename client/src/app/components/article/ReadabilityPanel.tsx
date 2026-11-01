@@ -6,6 +6,11 @@ import { BookOpenText } from 'lucide-react';
 
 export function ReadabilityPanel({ article, isDark }: { article: NewsArticle; isDark: boolean }) {
   const ui = useUiText();
+  // Yahoo Taiwan publishes Chinese originals; English grade formulas are not applicable.
+  const yahooTaiwan = article.source.id === 'yahoo_tw'
+    || /^Yahoo\s*(?:TW|Taiwan)$/i.test(article.source.name || '')
+    || /^(?:https?:\/\/)?tw\.news\.yahoo\.com(?:[/:]|$)/i.test(article.source.domain || article.url || '');
+  if (yahooTaiwan) return null;
   const english = /^en(?:[-_]|$)/i.test(article.language || article.source.language || '');
   const metrics = article.readability;
   const value = (score: number | null, smog = false) => {

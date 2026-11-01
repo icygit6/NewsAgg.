@@ -2,6 +2,7 @@ import { useUiText } from '../../i18n/uiText';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { Users } from 'lucide-react';
+import { PanelIcon } from '../ui/PanelIcon';
 import { useApp } from '../../contexts/AppContext';
 import { buildLiveEngagement } from '../../services/newsAPI';
 import { useLatestArticles } from '../../hooks/useArticles';
@@ -16,7 +17,7 @@ const formatCount = (value: number): string => {
 
 const sentimentPillClass: Record<SentimentType, string> = {
   positive: 'bg-emerald-100 text-emerald-700',
-  neutral: 'bg-gray-100 text-gray-700',
+  neutral: 'bg-amber-100 text-amber-800',
   negative: 'bg-red-100 text-red-700',
 };
 
@@ -43,11 +44,9 @@ export function LiveEngagement() {
   const mutedColor = chartMutedColor(isDark);
 
   return (
-    <div className={`rounded-2xl border shadow-lg p-4 ${panelBaseClass(isDark)}`}>
+    <div className={`rounded-2xl border p-4 ${panelBaseClass(isDark)}`}>
       <div className="flex items-center gap-2 mb-3">
-        <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
-          <Users size={13} className="text-white" />
-        </div>
+        <PanelIcon icon={Users} />
         <h3 className={`font-poppins text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>{ui("Live Engagement")} </h3>
       </div>
 
@@ -62,7 +61,7 @@ export function LiveEngagement() {
               className={`block rounded-xl p-2.5 transition-colors ${isDark ? 'bg-slate-700/50 hover:bg-slate-700' : 'bg-gray-50/90 hover:bg-gray-100'}`}
             >
               <p className={`text-sm font-medium line-clamp-1 ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>{item.title}</p>
-              <div className="flex items-center gap-2 mt-1 text-[11px] flex-wrap">
+              <div className="flex items-center gap-2 mt-1 text-xs flex-wrap">
                 <span style={{ color: mutedColor }}>{item.topic}</span>
                 <span className={`${isDark ? 'text-slate-400' : 'text-gray-500'}`}>•</span>
                 <span className={`${sentimentPillClass[item.sentiment]} px-2 py-0.5 rounded-full`}>{item.sentiment}</span>

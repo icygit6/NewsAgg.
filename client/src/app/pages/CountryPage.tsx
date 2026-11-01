@@ -46,7 +46,7 @@ export function CountryPage() {
         animate={{ opacity: 1, y: 0 }}
         className="flex items-center gap-3 mb-6"
       >
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center shadow-lg">
+        <div className="w-10 h-10 rounded-xl bg-[var(--brand)] flex items-center justify-center">
           <Globe size={20} className="text-white" />
         </div>
         <div>

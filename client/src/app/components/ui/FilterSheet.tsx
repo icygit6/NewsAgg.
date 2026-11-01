@@ -1,12 +1,13 @@
 import { useUiText } from '../../i18n/uiText';
-import { useState, useEffect, type RefObject } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { useState, useEffect, useRef, type RefObject } from 'react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { X, Check, LayoutGrid, Newspaper, Gauge, ArrowUpDown } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
-import { CATEGORIES, CATEGORY_LABELS, SOURCES, sourceLogoUrl } from '../../constants';
+import { CATEGORIES, CATEGORY_ACCENT, CATEGORY_LABELS, SOURCES, sourceLogoUrl } from '../../constants';
 import { ImageWithFallback } from '../utils/ImageWithFallback';
 import type { SentimentType } from '../../types/sentiment';
 import type { ArticleSort } from '../../services/newsAPI';
+import { filterCount, type FilterControl } from './filterControl';
 
 interface FilterSheetProps {
   open: boolean;
@@ -14,7 +15,12 @@ interface FilterSheetProps {
   // Button the panel belongs to. The small-screen panel drops down from just
   // below it instead of rising from the bottom of the window.
   anchorRef?: RefObject<HTMLElement | null>;
+  /** Filters to edit instead of the home feed's (the bookmarks page has its own). */
+  control?: FilterControl;
+  /** Which edge of the anchor the desktop dropdown lines up with. */
+  align?: 'left' | 'right';
 }
+
 
 type FilterTab = 'category' | 'source' | 'sentiment' | 'sort';
 
@@ -57,50 +63,66 @@ function useAnchorBottom(anchorRef: RefObject<HTMLElement | null> | undefined, a
   return top;
 }
 
-export function FilterSheet({ open, onClose, anchorRef }: FilterSheetProps) {
+export function FilterSheet({ open, onClose, anchorRef, control, align = 'left' }: FilterSheetProps) {
   const ui = useUiText();
+  const reducedMotion = useReducedMotion();
   const {
     t,
     isDark,
-    selectedCategory,
+    selectedCategories, setSelectedCategories, selectedSentiments, setSelectedSentiments,
     setSelectedCategory,
     selectedSources,
     setSelectedSources,
-    selectedSentiment,
     setSelectedSentiment,
     selectedSort,
     setSelectedSort,
   } = useApp();
   const [tab, setTab] = useState<FilterTab>('category');
+  const panelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const outside = (event: PointerEvent) => {
+      if (!panelRef.current?.getClientRects().length) return;
+      const target = event.target as Node;
+      if (!panelRef.current?.contains(target) && !anchorRef?.current?.contains(target)) onClose();
+    };
+    const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); };
+    document.addEventListener('pointerdown', outside, true);
+    document.addEventListener('keydown', escape);
+    return () => { document.removeEventListener('pointerdown', outside, true); document.removeEventListener('keydown', escape); };
+  }, [open, onClose, anchorRef]);
   const isDesktop = useIsDesktop();
   const anchorBottom = useAnchorBottom(anchorRef, open && !isDesktop);
 
-  const toggleSource = (id: string) => {
-    setSelectedSources(
-      selectedSources.includes(id)
-        ? selectedSources.filter((s) => s !== id)
-        : [...selectedSources, id],
-    );
+  // The home feed's filters, used when no control is passed. Emptying a list
+  // goes through the 'all' setters, which also reset the single selection.
+  const feed: FilterControl = {
+    categories: selectedCategories,
+    setCategories: (value) => value.length ? setSelectedCategories(value as typeof selectedCategories) : setSelectedCategory('all'),
+    sources: selectedSources,
+    setSources: setSelectedSources,
+    sentiments: selectedSentiments,
+    setSentiments: (value) => value.length ? setSelectedSentiments(value) : setSelectedSentiment('all'),
+    sort: selectedSort,
+    setSort: (value) => setSelectedSort(value as ArticleSort),
+    sortOptions: [
+      { value: 'top', label: t.topStories },
+      { value: 'latest', label: t.newestFirst },
+      { value: 'oldest', label: t.oldestFirst },
+    ],
+    defaultSort: 'latest',
   };
+  const c = control ?? feed;
+  const toggle = <T,>(list: T[], value: T) => list.includes(value) ? list.filter((item) => item !== value) : [...list, value];
 
   const clearAll = () => {
-    setSelectedCategory('all');
-    setSelectedSources([]);
-    setSelectedSentiment('all');
-    setSelectedSort('latest');
+    c.setCategories([]);
+    c.setSources([]);
+    c.setSentiments([]);
+    c.setSort(c.defaultSort);
   };
 
-  const activeCount =
-    (selectedCategory !== 'all' ? 1 : 0) +
-    selectedSources.length +
-    (selectedSentiment !== 'all' ? 1 : 0) +
-    (selectedSort !== 'latest' ? 1 : 0);
-
-  const sortOptions: Array<{ value: ArticleSort; label: string }> = [
-    { value: 'top', label: t.topStories },
-    { value: 'latest', label: t.newestFirst },
-    { value: 'oldest', label: t.oldestFirst },
-  ];
+  const activeCount = filterCount(c);
 
   const sentimentLabel: Record<SentimentType, string> = {
     positive: t.positive,
@@ -126,7 +148,7 @@ export function FilterSheet({ open, onClose, anchorRef }: FilterSheetProps) {
             {t.filters}
           </span>
           {activeCount > 0 && (
-            <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-cyan-500 text-white text-[11px] font-bold">
+            <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-[var(--brand)] text-white text-[11px] font-bold">
               {activeCount}
             </span>
           )}
@@ -173,16 +195,16 @@ export function FilterSheet({ open, onClose, anchorRef }: FilterSheetProps) {
             <button
               key={key}
               onClick={() => setTab(key)}
-              className={`flex-1 min-w-0 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 px-1 py-2 rounded-lg text-center text-[11px] leading-tight sm:text-sm font-medium transition-colors ${
+              className={`flex-1 min-w-0 flex flex-col items-center justify-center gap-1.5 px-1 py-2 rounded-lg text-center text-xs leading-tight sm:text-sm font-medium transition-colors ${
                 active
-                  ? 'bg-cyan-500 text-white'
+                  ? 'bg-[var(--brand)] text-white'
                   : isDark
                     ? 'text-slate-300 hover:bg-slate-700'
                     : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
               <Icon size={15} className="shrink-0" />
-              {label}
+              <span>{label}</span>
             </button>
           );
         })}
@@ -194,17 +216,18 @@ export function FilterSheet({ open, onClose, anchorRef }: FilterSheetProps) {
           <div className="flex flex-wrap gap-2">
             <CategoryChip
               label={t.allCategories}
-              active={selectedCategory === 'all'}
+              active={c.categories.length === 0}
               isDark={isDark}
-              onClick={() => setSelectedCategory('all')}
+              onClick={() => c.setCategories([])}
             />
             {CATEGORIES.map((cat) => (
               <CategoryChip
                 key={cat}
                 label={ui(CATEGORY_LABELS[cat])}
-                active={selectedCategory === cat}
+                active={c.categories.includes(cat)}
                 isDark={isDark}
-                onClick={() => setSelectedCategory(cat)}
+                accent={CATEGORY_ACCENT[cat]}
+                onClick={() => c.setCategories(toggle(c.categories, cat))}
               />
             ))}
           </div>
@@ -212,30 +235,30 @@ export function FilterSheet({ open, onClose, anchorRef }: FilterSheetProps) {
           <div className="flex flex-wrap gap-2">
             <CategoryChip
               label={t.allSentiment}
-              active={selectedSentiment === 'all'}
+              active={c.sentiments.length === 0}
               isDark={isDark}
-              onClick={() => setSelectedSentiment('all')}
+              onClick={() => c.setSentiments([])}
             />
             {SENTIMENT_OPTIONS.map((s) => (
               <CategoryChip
                 key={s}
                 label={sentimentLabel[s]}
-                active={selectedSentiment === s}
+                active={c.sentiments.includes(s)}
                 isDark={isDark}
                 tone={s}
-                onClick={() => setSelectedSentiment(s)}
+                onClick={() => c.setSentiments(toggle(c.sentiments, s))}
               />
             ))}
           </div>
         ) : tab === 'sort' ? (
           <div className="grid grid-cols-1 gap-2">
-            {sortOptions.map((option) => (
+            {c.sortOptions.map((option) => (
               <SortOption
                 key={option.value}
                 label={option.label}
-                selected={selectedSort === option.value}
+                selected={c.sort === option.value}
                 isDark={isDark}
-                onClick={() => setSelectedSort(option.value)}
+                onClick={() => c.setSort(option.value)}
               />
             ))}
           </div>
@@ -244,18 +267,18 @@ export function FilterSheet({ open, onClose, anchorRef }: FilterSheetProps) {
             {/* "All Sources" resets the multi-select (empty = no source filter) */}
             <SourceRow
               name={t.allSources}
-              selected={selectedSources.length === 0}
+              selected={c.sources.length === 0}
               isDark={isDark}
-              onClick={() => setSelectedSources([])}
+              onClick={() => c.setSources([])}
             />
             {SOURCES.map((s) => (
               <SourceRow
                 key={s.id}
                 name={s.name}
                 logo={sourceLogoUrl(s.domain)}
-                selected={selectedSources.includes(s.id)}
+                selected={c.sources.includes(s.id)}
                 isDark={isDark}
-                onClick={() => toggleSource(s.id)}
+                onClick={() => c.setSources(toggle(c.sources, s.id))}
               />
             ))}
           </div>
@@ -269,11 +292,12 @@ export function FilterSheet({ open, onClose, anchorRef }: FilterSheetProps) {
       {open &&
         (isDesktop ? (
           <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.15 }}
-            className={`absolute left-0 top-full mt-2 w-[420px] rounded-2xl border shadow-xl overflow-hidden z-50 flex flex-col max-h-[calc(100vh-80px)] ${
+            ref={panelRef}
+            initial={{ opacity: 0, transform: 'translateY(-8px)' }}
+            animate={{ opacity: 1, transform: 'translateY(0px)' }}
+            exit={{ opacity: 0, transform: 'translateY(-8px)' }}
+            transition={{ duration: reducedMotion ? 0 : 0.16, ease: [0.23, 1, 0.32, 1] }}
+            className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} top-full mt-2 w-[420px] max-w-[calc(100vw-2rem)] rounded-2xl border shadow-xl overflow-hidden z-50 flex flex-col max-h-[calc(100vh-80px)] ${
               isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'
             }`}
           >
@@ -285,14 +309,16 @@ export function FilterSheet({ open, onClose, anchorRef }: FilterSheetProps) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              transition={{ duration: reducedMotion ? 0 : 0.16 }}
               onClick={onClose}
-              className="fixed inset-0 z-50 bg-black/40"
+              className="fixed inset-0 z-50 bg-black/30"
             />
             <motion.div
-              initial={{ opacity: 0, y: -12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ type: 'spring', stiffness: 340, damping: 34 }}
+              initial={{ opacity: 0, transform: 'translateY(-8px)' }}
+              ref={panelRef}
+              animate={{ opacity: 1, transform: 'translateY(0px)' }}
+              exit={{ opacity: 0, transform: 'translateY(-8px)' }}
+              transition={{ duration: reducedMotion ? 0 : 0.2, ease: [0.23, 1, 0.32, 1] }}
               className={`fixed left-2 right-2 z-50 flex flex-col overflow-hidden rounded-2xl border shadow-2xl ${
                 isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-100'
               }`}
@@ -320,7 +346,7 @@ function SortOption({ label, selected, isDark, onClick }: SortOptionProps) {
       onClick={onClick}
       className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors ${
         selected
-          ? 'bg-cyan-500 text-white'
+          ? 'bg-[var(--brand)] text-white'
           : isDark
             ? 'bg-slate-700/60 text-slate-200 hover:bg-slate-700'
             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -337,22 +363,27 @@ interface CategoryChipProps {
   active: boolean;
   isDark: boolean;
   onClick: () => void;
-  // Optional semantic tone for sentiment chips; defaults to the indigo accent.
+  // Optional semantic tone for sentiment chips; defaults to the theme accent.
   tone?: SentimentType;
+  /** Category colour for category chips: the active chip is filled with it, the rest show a dot. */
+  accent?: string;
 }
 
 const TONE_ACTIVE_CLASS: Record<SentimentType, string> = {
   positive: 'bg-emerald-500 text-white',
-  neutral: 'bg-amber-500 text-white',
+  neutral: 'bg-amber-500 text-amber-950',
   negative: 'bg-rose-500 text-white',
 };
 
-function CategoryChip({ label, active, isDark, onClick, tone }: CategoryChipProps) {
-  const activeClass = tone ? TONE_ACTIVE_CLASS[tone] : 'bg-cyan-500 text-white';
+function CategoryChip({ label, active, isDark, onClick, tone, accent }: CategoryChipProps) {
+  const activeClass = tone ? TONE_ACTIVE_CLASS[tone] : accent ? 'text-white' : 'bg-[var(--brand)] text-white';
   return (
     <button
+      type="button"
+      aria-pressed={active}
       onClick={onClick}
-      className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+      style={active && accent ? { background: accent } : undefined}
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
         active
           ? activeClass
           : isDark
@@ -360,6 +391,7 @@ function CategoryChip({ label, active, isDark, onClick, tone }: CategoryChipProp
             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
       }`}
     >
+      {accent && !active && <span aria-hidden className="h-2 w-2 rounded-full" style={{ background: accent }} />}
       {label}
     </button>
   );
@@ -379,7 +411,7 @@ function SourceRow({ name, logo, selected, isDark, onClick }: SourceRowProps) {
       onClick={onClick}
       className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-left transition-colors ${
         selected
-          ? 'bg-cyan-500/10 ring-1 ring-cyan-500/40'
+          ? 'bg-blue-500/10 ring-1 ring-blue-500/40'
           : isDark
             ? 'hover:bg-slate-700/60'
             : 'hover:bg-gray-100'
@@ -408,7 +440,7 @@ function SourceRow({ name, logo, selected, isDark, onClick }: SourceRowProps) {
       <span
         className={`w-5 h-5 rounded-md flex items-center justify-center border transition-colors ${
           selected
-            ? 'bg-cyan-500 border-cyan-500 text-white'
+            ? 'bg-[var(--brand)] border-blue-500 text-white'
             : isDark
               ? 'border-slate-600'
               : 'border-gray-300'

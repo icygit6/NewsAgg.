@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
-import { ArrowDownToLine, FlaskConical } from 'lucide-react';
+import { ArrowDownToLine, FlaskConical, BookOpen } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import data from '../../data/evaluation.json';
 import dataUrl from '../../data/evaluation.json?url';
@@ -16,7 +16,7 @@ export type EvidenceText = (en: string, zh: string) => string;
 const pct = (n: number) => `${(n * 100).toFixed(2)}%`;
 const dec = (n: number | null) => n === null ? '—' : n.toFixed(4);
 const sources: Record<string, string> = { bbc: 'BBC', cnn: 'CNN', aljazeera: 'Al Jazeera', yahoo_tw: 'Yahoo Taiwan', en: 'English', 'zh-TW': '繁體中文' };
-const labelsZh: Record<string, string> = { positive: '正面', neutral: '中性', negative: '負面', Sport: '運動', Health: '健康', Business: '商業', World: '國際', Politics: '政治', Lifestyle: '生活', Science: '科學', Climate: '氣候' };
+const labelsZh: Record<string, string> = { positive: '正面', neutral: '中性', negative: '負面', Sport: '體育', Health: '健康', Business: '商業', World: '國際', Politics: '政治', Lifestyle: '生活', Science: '科學', Climate: '氣候' };
 
 export function EvidenceTable({ caption, headers, children }: { caption: string; headers: string[]; children: ReactNode }) {
   return <div className="evidence-table-wrap" tabIndex={0} role="region" aria-label={caption}>
@@ -51,11 +51,14 @@ export function EvaluationPanel() {
 
   return <section id="research" className={`evidence mt-8 ${isDark ? 'evidence-dark' : ''}`} aria-labelledby="research-title">
     <div className="evidence-heading">
-      <div><p className="evidence-eyebrow"><FlaskConical size={16} aria-hidden /> {tx('RESEARCH NOTEBOOK', '研究紀錄')}</p>
+      <div><p className="evidence-eyebrow"><FlaskConical size={16} aria-hidden /> {tx('Research notebook', '研究紀錄')}</p>
         <h2 id="research-title">{tx('Behind the analysis', '分析背後的數據')}</h2>
         <p>{tx('A frozen evaluation sample, with traceable calculations and test evidence.', '以固定樣本呈現評估、可追溯的計算及測試證據。')}</p>
       </div>
-      <a className="evidence-download" href={dataUrl} download="NewsAgg-evaluation-2026-10-15.json"><ArrowDownToLine size={16} aria-hidden />{tx('Download aggregate JSON', '下載彙總 JSON')}</a>
+      <div className="flex flex-wrap gap-2">
+        <a className="evidence-download" href="/research-foundations.html"><BookOpen size={16} aria-hidden />{tx('Research foundations', '研究依據')}</a>
+        <a className="evidence-download" href={dataUrl} download="NewsAgg-evaluation-2026-10-15.json"><ArrowDownToLine size={16} aria-hidden />{tx('Download aggregate JSON', '下載彙總 JSON')}</a>
+      </div>
     </div>
     <div className="evidence-kpis">
       {[[String(data.sampleN), tx('unique articles', '篇獨立文章')], ['4 + 2', tx('human + AI references', '人工 + AI 參考')], [String(data.humanDisagreementUnion), tx('articles needing adjudication', '篇待人工裁決')], [data.date, tx('evaluation snapshot · Taipei', '評估快照 · 臺北時間')]].map(([value, caption]) => <div key={caption}><strong>{value}</strong><span>{caption}</span></div>)}
@@ -71,7 +74,7 @@ export function EvaluationPanel() {
       <div className="evidence-control">
         <span id="evidence-task-label">{tx('Task', '評估任務')}</span>
         <div className="evidence-segment" role="group" aria-labelledby="evidence-task-label">
-          {([['sentiment', tx('Sentiment · 3 classes', '情感 · 3 類')], ['topic', tx('Topic · 8 classes', '主題 · 8 類')]] as const).map(([value, title]) =>
+          {([['sentiment', tx('Sentiment · 3 classes', '情緒 · 3 類')], ['topic', tx('Topic · 8 classes', '主題 · 8 類')]] as const).map(([value, title]) =>
             <button type="button" key={value} aria-pressed={task === value} onClick={() => setTask(value)}>{title}</button>)}
         </div>
       </div>
@@ -133,7 +136,7 @@ export function EvaluationPanel() {
           <code>Precision = TP / (TP + FP) · Recall = TP / (TP + FN)</code>
           <code>F1 = 2TP / (2TP + FP + FN)</code>
           <code>Macro F1 = ({metric.classes.map(c => dec(c.f1)).join(' + ')}) / {metric.labels.length} = {dec(metric.macroF1)}</code>
-          <p>{tx('Macro F1 is the mean of the class F1 scores, so a rare class matters as much as a common one. All 3 sentiment or 8 topic classes are included; a zero denominator is assigned 0. Calculations use full precision; displayed values are rounded.', 'Macro F1 是各類 F1 的平均值，少數類與多數類同等重要。情感固定計入 3 類、主題固定 8 類；分母為零時記為 0。計算使用完整精度，顯示時才四捨五入。')}</p>
+          <p>{tx('Macro F1 is the mean of the class F1 scores, so a rare class matters as much as a common one. All 3 sentiment or 8 topic classes are included; a zero denominator is assigned 0. Calculations use full precision; displayed values are rounded.', 'Macro F1 是各類 F1 的平均值，少數類與多數類同等重要。情緒固定計入 3 類、主題固定 8 類；分母為零時記為 0。計算使用完整精度，顯示時才四捨五入。')}</p>
           <code>{tx('Agreement', '一致率')} = {metric.matches}/{metric.n} = {pct(metric.agreement)}</code>
           <code>pₑ = Σ(rowᵢ × columnᵢ) / n² = {dec(metric.chance)}; κ = (pₒ − pₑ) / (1 − pₑ) = {dec(metric.kappa)}</code>
           <p>{tx('Cohen κ corrects observed agreement pₒ for chance agreement pₑ estimated from class frequencies. κ is undefined when pₑ = 1. Neither κ nor F1 establishes who authored a label.', 'Cohen κ 以類別頻率估計偶然一致率 pₑ，校正觀察一致率 pₒ；pₑ＝1 時無法定義。κ 與 F1 均不能證明標註由誰完成。')}</p>
@@ -162,7 +165,7 @@ export function EvaluationPanel() {
       <ul>
         <li>{tx('Four complete human submissions and two AI submissions scored the same 120 articles: 720 annotation records, not 720 unique articles. Human references are pseudonymized A–D; raw identities, rationales and publisher text are not included in the public download.', '四份完整人工標註與兩份 AI 標註評估同一批 120 篇文章，共 720 筆標註紀錄，並非 720 篇文章。人工標註以 A–D 代稱，公開下載不含身分、理由或媒體原文。')}</li>
         <li>{tx('The model predicted 6 positive, 29 neutral and 85 negative labels. Humans labelled 25–33 articles positive. This is a sample-specific negative skew, not evidence that the news is false or that the publisher is biased.', '模型預測為正面 6 篇、中性 29 篇、負面 85 篇；人工正面標註為 25–33 篇。這是此樣本的負向分布偏差，不表示新聞不實或媒體有偏見。')}</li>
-        <li>{tx('The human guide defines sentiment as event direction, while the website describes linguistic tone. It also contains three sample-specific AI-labelled examples. Reading the guide, blind independence, full-text coverage and AI assistance are unverified; this is not a controlled independent benchmark.', '人工指南將情感定義為事件方向，網站則描述語句語氣；指南還包含三個特定樣本的 AI 標註範例。是否閱讀指南、盲測獨立性、全文閱讀及 AI 協助均未確認，因此不是受控的獨立基準測試。')}</li>
+        <li>{tx('The human guide defines sentiment as event direction, while the website describes linguistic tone. It also contains three sample-specific AI-labelled examples. Reading the guide, blind independence, full-text coverage and AI assistance are unverified; this is not a controlled independent benchmark.', '人工指南將情緒定義為事件方向，網站則描述語句語氣；指南還包含三個特定樣本的 AI 標註範例。是否閱讀指南、盲測獨立性、全文閱讀及 AI 協助均未確認，因此不是受控的獨立基準測試。')}</li>
         <li>{tx('Astra used selected excerpts for 116 articles and complete supplied text for 4. The Opus model name is declared in the submitted file; model identity and reading coverage are not independently authenticated. Agreement cannot establish independence or detect AI assistance.', 'Astra 以節錄評估 116 篇、完整提供文字評估 4 篇；Opus 模型名稱取自提交檔，未獨立驗證身分與閱讀範圍。一致程度無法判定獨立性或是否有 AI 協助。')}</li>
         <li>{tx('Adjudication has not started in this snapshot. Human reviewers must resolve differing labels and document reasons before a final gold-reference evaluation. AI labels are auxiliary references and are not included in human consensus.', '此快照尚未開始裁決；人工須討論分歧並記錄理由，之後才能建立最終標準答案。AI 標註僅為輔助參考，不納入人工共識。')}</li>
       </ul>

@@ -8,36 +8,36 @@
 
   /* Keep legacy cyan/pink/violet utility classes on the current navy/blue
      identity so every screen shares one accent system. */
-  --color-cyan-50: #eff6ff;
-  --color-cyan-100: #dbeafe;
-  --color-cyan-200: #bfdbfe;
-  --color-cyan-300: #93c5fd;
-  --color-cyan-400: #60a5fa;
-  --color-cyan-500: #2563eb;
-  --color-cyan-600: #1d4ed8;
-  --color-cyan-700: #1e40af;
-  --color-cyan-800: #1e3a8a;
-  --color-cyan-900: #172554;
-  --color-pink-50: #eff6ff;
-  --color-pink-100: #dbeafe;
-  --color-pink-200: #bfdbfe;
-  --color-pink-300: #93c5fd;
-  --color-pink-400: #3b82f6;
-  --color-pink-500: #173a63;
-  --color-pink-600: #102f52;
-  --color-pink-700: #0b2948;
-  --color-pink-800: #09223c;
-  --color-pink-900: #071b30;
-  --color-violet-50: #eff6ff;
-  --color-violet-100: #dbeafe;
-  --color-violet-200: #bfdbfe;
-  --color-violet-300: #93c5fd;
-  --color-violet-400: #60a5fa;
-  --color-violet-500: #1e40af;
-  --color-violet-600: #1e3a8a;
-  --color-violet-700: #172554;
-  --color-violet-800: #142047;
-  --color-violet-900: #101936;
+  --color-cyan-50: var(--color-blue-50);
+  --color-cyan-100: var(--color-blue-100);
+  --color-cyan-200: var(--color-blue-200);
+  --color-cyan-300: var(--color-blue-300);
+  --color-cyan-400: var(--color-blue-400);
+  --color-cyan-500: var(--color-blue-600);
+  --color-cyan-600: var(--color-blue-700);
+  --color-cyan-700: var(--color-blue-800);
+  --color-cyan-800: var(--color-blue-900);
+  --color-cyan-900: var(--color-blue-950);
+  --color-pink-50: var(--color-blue-50);
+  --color-pink-100: var(--color-blue-100);
+  --color-pink-200: var(--color-blue-200);
+  --color-pink-300: var(--color-blue-300);
+  --color-pink-400: var(--color-blue-500);
+  --color-pink-500: var(--color-blue-900);
+  --color-pink-600: var(--color-blue-900);
+  --color-pink-700: var(--color-blue-950);
+  --color-pink-800: var(--color-blue-950);
+  --color-pink-900: var(--color-blue-950);
+  --color-violet-50: var(--color-blue-50);
+  --color-violet-100: var(--color-blue-100);
+  --color-violet-200: var(--color-blue-200);
+  --color-violet-300: var(--color-blue-300);
+  --color-violet-400: var(--color-blue-400);
+  --color-violet-500: var(--color-blue-800);
+  --color-violet-600: var(--color-blue-900);
+  --color-violet-700: var(--color-blue-950);
+  --color-violet-800: var(--color-blue-950);
+  --color-violet-900: var(--color-blue-950);
 }
 
 :root {
@@ -88,7 +88,7 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.145 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: #60a5fa;
+  --primary: var(--color-blue-400);
   --primary-foreground: #0f172a;
   --secondary: #1e293b;
   --secondary-foreground: oklch(0.985 0 0);
@@ -100,7 +100,7 @@
   --destructive-foreground: oklch(0.637 0.237 25.331);
   --border: oklch(0.269 0 0);
   --input: oklch(0.269 0 0);
-  --ring: #60a5fa;
+  --ring: var(--color-blue-400);
   --font-weight-medium: 500;
   --font-weight-normal: 400;
   --chart-1: oklch(0.488 0.243 264.376);
@@ -110,12 +110,12 @@
   --chart-5: oklch(0.645 0.246 16.439);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: #2563eb;
+  --sidebar-primary: var(--brand);
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #24344d;
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: #60a5fa;
+  --sidebar-ring: var(--color-blue-400);
 }
 
 @theme inline {
@@ -313,3 +313,166 @@
     font-size: 16px;
   }
 }
+
+/* ── Loading skeletons ───────────────────────────────────────────────
+   One shimmer for every loading state (feed, rails, drawer, first paint).
+   Composite-only: the highlight is a pseudo-element that only ever moves with
+   transform, so it never forces layout or paint and keeps running while the
+   main thread is busy hydrating. Static under prefers-reduced-motion.
+   index.html carries a copy of this block for the pre-React first paint. */
+:root {
+  --skeleton-base: rgb(226 232 240 / 0.8);
+  --skeleton-shine: rgb(255 255 255 / 0.6);
+}
+
+.dark {
+  --skeleton-base: rgb(51 65 85 / 0.6);
+  --skeleton-shine: rgb(255 255 255 / 0.08);
+}
+
+@layer components {
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    background-color: var(--skeleton-base);
+  }
+
+  .skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, var(--skeleton-shine), transparent);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton::after {
+    animation: skeleton-sweep 1.8s ease-in-out infinite;
+    animation-delay: var(--skeleton-delay, 0ms);
+  }
+}
+
+@keyframes skeleton-sweep {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* Hero carousel progress. The bar and the slide timer are the same thing: the slide
+   advances when this animation ends (see HeroCarousel), so the line can never run
+   ahead of, or behind, the slide it times. transform only, so it keeps its pace
+   while the main thread is busy; paused with animation-play-state. */
+.hero-progress {
+  transform: scaleX(0);
+  animation: hero-progress 5s linear forwards;
+}
+
+@keyframes hero-progress {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* The same timer for the paged rail lists (Live View, Trending Topics, Reporting
+   authors), slower because each page is ten rows to read. */
+.auto-pages-progress {
+  transform: scaleX(0);
+  animation: hero-progress 10s linear forwards;
+}
+
+/* ---- Editorial refinement: fonts, category edge, motion ---- */
+:root {
+  /* Newsreader for Latin; Chinese uses the device's own serif (a web CJK serif cost ~1 MB). */
+  --font-display: 'Newsreader', 'Songti TC', 'Noto Serif CJK TC', 'Noto Serif TC', 'PMingLiU', 'MingLiU', Georgia, serif;
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+}
+::selection { background: color-mix(in srgb, var(--brand) 22%, transparent); }
+:focus-visible { outline-color: var(--brand); }
+
+/* A2: editorial headlines. Newsreader for Latin, Noto Serif TC for Chinese. */
+.news-headline {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+/* A3: the category shows as a 3px top edge on the card, coloured per category. */
+/* Drawn as ::before so it sits above the card image instead of under it. */
+.news-card-frame { position: relative; }
+.news-card-frame::before { content: ""; position: absolute; inset: 0 0 auto; height: 3px; background: var(--cat, var(--brand)); z-index: 2; pointer-events: none; }
+.news-card-frame:hover { box-shadow: 0 8px 24px rgb(15 23 42 / 0.08); }
+
+/* D3: press feedback on buttons, and a short pop when a bookmark or like toggles on. */
+@media (prefers-reduced-motion: no-preference) {
+  button, [role="button"] { transition-property: transform, color, background-color, border-color, opacity; transition-duration: 150ms; transition-timing-function: var(--ease-out-strong); }
+  button:not(:disabled):active,
+  [role="button"]:active { transform: scale(0.97); }
+  .toggle-pop[aria-pressed="true"] svg { animation: toggle-pop 320ms var(--ease-out-strong); }
+}
+@keyframes toggle-pop { 40% { transform: scale(1.3); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: no-preference) {
+  .menu-pop { transform-origin: top right; animation: menu-pop 140ms var(--ease-out-strong); }
+}
+@keyframes menu-pop { from { opacity: 0; transform: scale(0.95) translateY(-4px); } }
+
+/* D3 also drops the hover lift on every card (a motion tell); the image zoom stays. */
+.content-auto-card:hover { translate: none; }
+
+/* B1: the story image grows from the card into the article hero (View Transitions API). */
+::view-transition-group(*) { animation-duration: 380ms; animation-timing-function: var(--ease-out-strong); }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 200ms; }
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+}
+
+/* B2: reading progress, a 3px bar pinned to the top of the scrolling column. */
+.reading-progress { display: none; }
+@supports (animation-timeline: scroll()) {
+  #main-scroll { scroll-timeline: --page block; }
+  .reading-progress {
+    display: block; position: sticky; top: 0; z-index: 30; height: 3px; margin: -1.5rem -1rem calc(1.5rem - 3px);
+    background: var(--brand); transform-origin: 0 50%; transform: scaleX(0);
+    animation: reading-progress linear both; animation-timeline: --page;
+  }
+}
+@media (min-width: 768px) { .reading-progress { margin-inline: -1.5rem; } }
+@keyframes reading-progress { to { transform: scaleX(1); } }
+@media (min-width: 1024px) {
+  .article-reading-layout { timeline-scope: --article-reading; }
+  #article-reading-scroll { scroll-timeline: --article-reading block; }
+  .article-reading-layout .reading-progress { animation-timeline: --article-reading; }
+}
+
+/* B3: reading typography: display headline, ~68 characters a line, a touch larger and looser. */
+.article-title { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.015em; text-wrap: balance; font-size: clamp(1.9rem, 1.4rem + 1.6vw, 2.6rem); }
+.article-body { max-width: 68ch; font-size: 1.0625rem !important; line-height: 1.85 !important; }
+.article-body p { text-wrap: pretty; }
+
+/* B4 / C3: bars grow from their start once, transform only. */
+@media (prefers-reduced-motion: no-preference) {
+  .bar-grow, .chart-grow { transform-origin: 0 50%; animation: bar-grow 700ms var(--ease-out-strong) both; }
+  .chart-grow:nth-child(2) { animation-delay: 60ms; }
+  .chart-grow:nth-child(3) { animation-delay: 120ms; }
+}
+@keyframes bar-grow { from { transform: scaleX(0); } }
+
+/* C2: a new Live View row slides down into place. */
+@media (prefers-reduced-motion: no-preference) {
+  .live-row-in { animation: live-row-in 420ms var(--ease-out-strong) both; }
+}
+@keyframes live-row-in { from { opacity: 0; transform: translateY(-10px); } }
+
+/* B4: the sentiment marker slides out from neutral (0) to its value, once. */
+@media (prefers-reduced-motion: no-preference) {
+  .meter-slide { animation: meter-slide 800ms var(--ease-out-strong) both; }
+}
+@keyframes meter-slide { from { transform: translateX(50%); } }
+
+/* No visible scrollbars anywhere: every panel, rail, drawer and the page still scroll by wheel,
+ * touch and keyboard. Wide research tables keep a thin bar so their sideways scroll is findable. */
+* { scrollbar-width: none; }
+*::-webkit-scrollbar { width: 0; height: 0; display: none; }
+.evidence-table-wrap { scrollbar-width: thin; }
+.evidence-table-wrap::-webkit-scrollbar { display: block; height: 6px; }
+.evidence-table-wrap::-webkit-scrollbar-thumb { background: rgb(148 163 184 / 0.5); border-radius: 999px; }

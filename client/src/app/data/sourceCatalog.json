@@ -1,0 +1,1845 @@
+[
+  {
+    "id": "aljazeera",
+    "name": "Al Jazeera",
+    "language": "en",
+    "entries": [
+      {
+        "url": "https://www.aljazeera.com/sports/",
+        "kind": "Section page",
+        "categories": [
+          "Sport"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/tag/football/",
+        "kind": "Section page",
+        "categories": [
+          "Sport"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/tag/cricket/",
+        "kind": "Section page",
+        "categories": [
+          "Sport"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/tag/health/",
+        "kind": "Section page",
+        "categories": [
+          "Health"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/tag/mental-health/",
+        "kind": "Section page",
+        "categories": [
+          "Health"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/economy/",
+        "kind": "Section page",
+        "categories": [
+          "Business"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/tag/business-and-economy/",
+        "kind": "Section page",
+        "categories": [
+          "Business"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/tag/energy/",
+        "kind": "Section page",
+        "categories": [
+          "Business"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/business/",
+        "kind": "Section page",
+        "categories": [
+          "Business"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/tag/politics/",
+        "kind": "Section page",
+        "categories": [
+          "Politics"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/tag/elections/",
+        "kind": "Section page",
+        "categories": [
+          "Politics"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/tag/donald-trump/",
+        "kind": "Section page",
+        "categories": [
+          "Politics"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/tag/european-union/",
+        "kind": "Section page",
+        "categories": [
+          "Politics"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/tag/government/",
+        "kind": "Section page",
+        "categories": [
+          "Politics"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/tag/israel-palestine-conflict/",
+        "kind": "Section page",
+        "categories": [
+          "Politics"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/tag/arts-and-culture/",
+        "kind": "Section page",
+        "categories": [
+          "Lifestyle"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/tag/food/",
+        "kind": "Section page",
+        "categories": [
+          "Lifestyle"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/tag/music/",
+        "kind": "Section page",
+        "categories": [
+          "Lifestyle"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/tag/entertainment/",
+        "kind": "Section page",
+        "categories": [
+          "Lifestyle"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/tag/television/",
+        "kind": "Section page",
+        "categories": [
+          "Lifestyle"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/tag/social-media/",
+        "kind": "Section page",
+        "categories": [
+          "Lifestyle"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/tag/science-and-technology/",
+        "kind": "Section page",
+        "categories": [
+          "Science"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/tag/space/",
+        "kind": "Section page",
+        "categories": [
+          "Science"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/tag/internet/",
+        "kind": "Section page",
+        "categories": [
+          "Science"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/tag/cybersecurity/",
+        "kind": "Section page",
+        "categories": [
+          "Science"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/tag/technology/",
+        "kind": "Section page",
+        "categories": [
+          "Science"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/climate-crisis/",
+        "kind": "Section page",
+        "categories": [
+          "Climate"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/tag/climate-crisis/",
+        "kind": "Section page",
+        "categories": [
+          "Climate"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/tag/environment/",
+        "kind": "Section page",
+        "categories": [
+          "Climate"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/tag/wildlife/",
+        "kind": "Section page",
+        "categories": [
+          "Climate"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/tag/renewable-energy/",
+        "kind": "Section page",
+        "categories": [
+          "Climate"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/tag/floods/",
+        "kind": "Section page",
+        "categories": [
+          "Climate"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/news/",
+        "kind": "Section page",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/middle-east/",
+        "kind": "Section page",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/africa/",
+        "kind": "Section page",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/asia/",
+        "kind": "Section page",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/us-canada/",
+        "kind": "Section page",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/latin-america/",
+        "kind": "Section page",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/europe/",
+        "kind": "Section page",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/asia-pacific/",
+        "kind": "Section page",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/tag/conflict/",
+        "kind": "Section page",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/tag/human-rights/",
+        "kind": "Section page",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/tag/united-nations/",
+        "kind": "Section page",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/tag/migration/",
+        "kind": "Section page",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/features/",
+        "kind": "Section page",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/news-sitemap.xml",
+        "kind": "Shared feed / sitemap",
+        "categories": [
+          "Business",
+          "Climate",
+          "Health",
+          "Lifestyle",
+          "Politics",
+          "Science",
+          "Sport",
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/xml/rss/all.xml",
+        "kind": "Shared feed / sitemap",
+        "categories": [
+          "Business",
+          "Climate",
+          "Health",
+          "Lifestyle",
+          "Politics",
+          "Science",
+          "Sport",
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/sitemap.xml?yyyy={year}&mm={month}&dd={day}",
+        "kind": "Shared feed / sitemap",
+        "categories": [
+          "Business",
+          "Climate",
+          "Health",
+          "Lifestyle",
+          "Politics",
+          "Science",
+          "Sport",
+          "World"
+        ],
+        "daysAgo": 0,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/sitemap.xml?yyyy={year}&mm={month}&dd={day}",
+        "kind": "Shared feed / sitemap",
+        "categories": [
+          "Business",
+          "Climate",
+          "Health",
+          "Lifestyle",
+          "Politics",
+          "Science",
+          "Sport",
+          "World"
+        ],
+        "daysAgo": 1,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/sitemap.xml?yyyy={year}&mm={month}&dd={day}",
+        "kind": "Shared feed / sitemap",
+        "categories": [
+          "Business",
+          "Climate",
+          "Health",
+          "Lifestyle",
+          "Politics",
+          "Science",
+          "Sport",
+          "World"
+        ],
+        "daysAgo": 2,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/sitemap.xml?yyyy={year}&mm={month}&dd={day}",
+        "kind": "Shared feed / sitemap",
+        "categories": [
+          "Business",
+          "Climate",
+          "Health",
+          "Lifestyle",
+          "Politics",
+          "Science",
+          "Sport",
+          "World"
+        ],
+        "daysAgo": 3,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/sitemap.xml?yyyy={year}&mm={month}&dd={day}",
+        "kind": "Shared feed / sitemap",
+        "categories": [
+          "Business",
+          "Climate",
+          "Health",
+          "Lifestyle",
+          "Politics",
+          "Science",
+          "Sport",
+          "World"
+        ],
+        "daysAgo": 4,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/sitemap.xml?yyyy={year}&mm={month}&dd={day}",
+        "kind": "Shared feed / sitemap",
+        "categories": [
+          "Business",
+          "Climate",
+          "Health",
+          "Lifestyle",
+          "Politics",
+          "Science",
+          "Sport",
+          "World"
+        ],
+        "daysAgo": 5,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/sitemap.xml?yyyy={year}&mm={month}&dd={day}",
+        "kind": "Shared feed / sitemap",
+        "categories": [
+          "Business",
+          "Climate",
+          "Health",
+          "Lifestyle",
+          "Politics",
+          "Science",
+          "Sport",
+          "World"
+        ],
+        "daysAgo": 6,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/sitemap.xml?yyyy={year}&mm={month}&dd={day}",
+        "kind": "Shared feed / sitemap",
+        "categories": [
+          "Business",
+          "Climate",
+          "Health",
+          "Lifestyle",
+          "Politics",
+          "Science",
+          "Sport",
+          "World"
+        ],
+        "daysAgo": 7,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/sitemap.xml?yyyy={year}&mm={month}&dd={day}",
+        "kind": "Shared feed / sitemap",
+        "categories": [
+          "Business",
+          "Climate",
+          "Health",
+          "Lifestyle",
+          "Politics",
+          "Science",
+          "Sport",
+          "World"
+        ],
+        "daysAgo": 8,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/sitemap.xml?yyyy={year}&mm={month}&dd={day}",
+        "kind": "Shared feed / sitemap",
+        "categories": [
+          "Business",
+          "Climate",
+          "Health",
+          "Lifestyle",
+          "Politics",
+          "Science",
+          "Sport",
+          "World"
+        ],
+        "daysAgo": 9,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/sitemap.xml?yyyy={year}&mm={month}&dd={day}",
+        "kind": "Shared feed / sitemap",
+        "categories": [
+          "Business",
+          "Climate",
+          "Health",
+          "Lifestyle",
+          "Politics",
+          "Science",
+          "Sport",
+          "World"
+        ],
+        "daysAgo": 10,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/sitemap.xml?yyyy={year}&mm={month}&dd={day}",
+        "kind": "Shared feed / sitemap",
+        "categories": [
+          "Business",
+          "Climate",
+          "Health",
+          "Lifestyle",
+          "Politics",
+          "Science",
+          "Sport",
+          "World"
+        ],
+        "daysAgo": 11,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/sitemap.xml?yyyy={year}&mm={month}&dd={day}",
+        "kind": "Shared feed / sitemap",
+        "categories": [
+          "Business",
+          "Climate",
+          "Health",
+          "Lifestyle",
+          "Politics",
+          "Science",
+          "Sport",
+          "World"
+        ],
+        "daysAgo": 12,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.aljazeera.com/sitemap.xml?yyyy={year}&mm={month}&dd={day}",
+        "kind": "Shared feed / sitemap",
+        "categories": [
+          "Business",
+          "Climate",
+          "Health",
+          "Lifestyle",
+          "Politics",
+          "Science",
+          "Sport",
+          "World"
+        ],
+        "daysAgo": 13,
+        "monthsAgo": null
+      }
+    ]
+  },
+  {
+    "id": "bbc",
+    "name": "BBC",
+    "language": "en",
+    "entries": [
+      {
+        "url": "https://www.bbc.com/sport",
+        "kind": "Section page",
+        "categories": [
+          "Sport"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.bbc.com/sport/football",
+        "kind": "Section page",
+        "categories": [
+          "Sport"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.bbc.com/sport/tennis",
+        "kind": "Section page",
+        "categories": [
+          "Sport"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.bbc.com/news/health",
+        "kind": "Section page",
+        "categories": [
+          "Health"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.bbc.com/business",
+        "kind": "Section page",
+        "categories": [
+          "Business"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.bbc.com/news/business",
+        "kind": "Section page",
+        "categories": [
+          "Business"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.bbc.com/news/world",
+        "kind": "Section page",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.bbc.com/news/world/asia",
+        "kind": "Section page",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.bbc.com/news/world/us_and_canada",
+        "kind": "Section page",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.bbc.com/news/politics",
+        "kind": "Section page",
+        "categories": [
+          "Politics"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.bbc.com/arts",
+        "kind": "Section page",
+        "categories": [
+          "Lifestyle"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.bbc.com/travel",
+        "kind": "Section page",
+        "categories": [
+          "Lifestyle"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.bbc.com/culture",
+        "kind": "Section page",
+        "categories": [
+          "Lifestyle"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.bbc.com/technology",
+        "kind": "Section page",
+        "categories": [
+          "Science"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.bbc.com/innovation",
+        "kind": "Section page",
+        "categories": [
+          "Science"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.bbc.com/news/science_and_environment",
+        "kind": "Section page",
+        "categories": [
+          "Climate",
+          "Science"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.bbc.com/future-planet",
+        "kind": "Section page",
+        "categories": [
+          "Climate"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://feeds.bbci.co.uk/sport/rss.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "Sport"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://feeds.bbci.co.uk/sport/football/rss.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "Sport"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://feeds.bbci.co.uk/sport/tennis/rss.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "Sport"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://feeds.bbci.co.uk/sport/cricket/rss.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "Sport"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://feeds.bbci.co.uk/sport/formula1/rss.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "Sport"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://feeds.bbci.co.uk/sport/rugby-union/rss.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "Sport"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://feeds.bbci.co.uk/sport/golf/rss.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "Sport"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://feeds.bbci.co.uk/sport/cycling/rss.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "Sport"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://feeds.bbci.co.uk/news/health/rss.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "Health"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://feeds.bbci.co.uk/news/business/rss.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "Business"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://feeds.bbci.co.uk/news/world/rss.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://feeds.bbci.co.uk/news/world/asia/rss.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://feeds.bbci.co.uk/news/world/europe/rss.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://feeds.bbci.co.uk/news/world/us_and_canada/rss.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://feeds.bbci.co.uk/news/world/middle_east/rss.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://feeds.bbci.co.uk/news/world/africa/rss.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://feeds.bbci.co.uk/news/world/latin_america/rss.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://feeds.bbci.co.uk/news/politics/rss.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "Politics"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "Lifestyle"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.bbc.com/travel/feed.rss",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "Lifestyle"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.bbc.com/culture/feed.rss",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "Lifestyle"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://feeds.bbci.co.uk/news/technology/rss.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "Science"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "Climate",
+          "Science"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.bbc.com/future/feed.rss",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "Science"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.bbc.com/sitemaps/https-sitemap-com-news-1.xml",
+        "kind": "Shared feed / sitemap",
+        "categories": [
+          "Business",
+          "Climate",
+          "Health",
+          "Lifestyle",
+          "Politics",
+          "Science",
+          "Sport"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.bbc.com/sitemaps/https-sitemap-com-news-2.xml",
+        "kind": "Shared feed / sitemap",
+        "categories": [
+          "Business",
+          "Climate",
+          "Health",
+          "Lifestyle",
+          "Politics",
+          "Science",
+          "Sport"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.bbc.com/sitemaps/https-sitemap-com-news-3.xml",
+        "kind": "Shared feed / sitemap",
+        "categories": [
+          "Business",
+          "Climate",
+          "Health",
+          "Lifestyle",
+          "Politics",
+          "Science",
+          "Sport"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://feeds.bbci.co.uk/news/rss.xml",
+        "kind": "Shared feed / sitemap",
+        "categories": [
+          "Business",
+          "Climate",
+          "Health",
+          "Lifestyle",
+          "Politics",
+          "Science"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://feeds.bbci.co.uk/news/uk/rss.xml",
+        "kind": "Shared feed / sitemap",
+        "categories": [
+          "Business",
+          "Climate",
+          "Health",
+          "Lifestyle",
+          "Politics",
+          "Science"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml",
+        "kind": "Shared feed / sitemap",
+        "categories": [
+          "Health"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.bbc.com/future/feed.rss",
+        "kind": "Shared feed / sitemap",
+        "categories": [
+          "Climate"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      }
+    ]
+  },
+  {
+    "id": "cnn",
+    "name": "CNN",
+    "language": "en",
+    "entries": [
+      {
+        "url": "https://edition.cnn.com/sport",
+        "kind": "Section page",
+        "categories": [
+          "Sport"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/sport/football",
+        "kind": "Section page",
+        "categories": [
+          "Sport"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/sport/tennis",
+        "kind": "Section page",
+        "categories": [
+          "Sport"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/sport/golf",
+        "kind": "Section page",
+        "categories": [
+          "Sport"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/sport/olympics",
+        "kind": "Section page",
+        "categories": [
+          "Sport"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/sport/nfl",
+        "kind": "Section page",
+        "categories": [
+          "Sport"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/sport/nba",
+        "kind": "Section page",
+        "categories": [
+          "Sport"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/health",
+        "kind": "Section page",
+        "categories": [
+          "Health"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/business",
+        "kind": "Section page",
+        "categories": [
+          "Business"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/business/tech",
+        "kind": "Section page",
+        "categories": [
+          "Business"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/business/economy",
+        "kind": "Section page",
+        "categories": [
+          "Business"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/business/media",
+        "kind": "Section page",
+        "categories": [
+          "Business"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/business/investing",
+        "kind": "Section page",
+        "categories": [
+          "Business"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/markets",
+        "kind": "Section page",
+        "categories": [
+          "Business"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/world",
+        "kind": "Section page",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/world/europe",
+        "kind": "Section page",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/world/asia",
+        "kind": "Section page",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/world/middle-east",
+        "kind": "Section page",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/world/africa",
+        "kind": "Section page",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/world/americas",
+        "kind": "Section page",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/world/china",
+        "kind": "Section page",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/world/uk",
+        "kind": "Section page",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/us",
+        "kind": "Section page",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/politics",
+        "kind": "Section page",
+        "categories": [
+          "Politics"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/politics/supreme-court",
+        "kind": "Section page",
+        "categories": [
+          "Politics"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/politics/congress",
+        "kind": "Section page",
+        "categories": [
+          "Politics"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/politics/fact-check",
+        "kind": "Section page",
+        "categories": [
+          "Politics"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/entertainment",
+        "kind": "Section page",
+        "categories": [
+          "Lifestyle"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/style",
+        "kind": "Section page",
+        "categories": [
+          "Lifestyle"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/travel",
+        "kind": "Section page",
+        "categories": [
+          "Lifestyle"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/style/fashion",
+        "kind": "Section page",
+        "categories": [
+          "Lifestyle"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/style/arts",
+        "kind": "Section page",
+        "categories": [
+          "Lifestyle"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/entertainment/movies",
+        "kind": "Section page",
+        "categories": [
+          "Lifestyle"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/science",
+        "kind": "Section page",
+        "categories": [
+          "Science"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/science/space",
+        "kind": "Section page",
+        "categories": [
+          "Science"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/science/life",
+        "kind": "Section page",
+        "categories": [
+          "Science"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/tech",
+        "kind": "Section page",
+        "categories": [
+          "Science"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/climate",
+        "kind": "Section page",
+        "categories": [
+          "Climate"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://edition.cnn.com/climate/solutions",
+        "kind": "Section page",
+        "categories": [
+          "Climate"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://www.cnn.com/sitemap/article/sport/{year}/{month}.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "Sport"
+        ],
+        "daysAgo": null,
+        "monthsAgo": 0
+      },
+      {
+        "url": "https://www.cnn.com/sitemap/article/sport/{year}/{month}.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "Sport"
+        ],
+        "daysAgo": null,
+        "monthsAgo": 1
+      },
+      {
+        "url": "https://www.cnn.com/sitemap/article/health/{year}/{month}.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "Health"
+        ],
+        "daysAgo": null,
+        "monthsAgo": 0
+      },
+      {
+        "url": "https://www.cnn.com/sitemap/article/health/{year}/{month}.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "Health"
+        ],
+        "daysAgo": null,
+        "monthsAgo": 1
+      },
+      {
+        "url": "https://www.cnn.com/sitemap/article/business/{year}/{month}.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "Business"
+        ],
+        "daysAgo": null,
+        "monthsAgo": 0
+      },
+      {
+        "url": "https://www.cnn.com/sitemap/article/business/{year}/{month}.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "Business"
+        ],
+        "daysAgo": null,
+        "monthsAgo": 1
+      },
+      {
+        "url": "https://www.cnn.com/sitemap/article/world/{year}/{month}.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": 0
+      },
+      {
+        "url": "https://www.cnn.com/sitemap/article/world/{year}/{month}.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": 1
+      },
+      {
+        "url": "https://www.cnn.com/sitemap/article/us/{year}/{month}.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": 0
+      },
+      {
+        "url": "https://www.cnn.com/sitemap/article/us/{year}/{month}.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": 1
+      },
+      {
+        "url": "https://www.cnn.com/sitemap/article/politics/{year}/{month}.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "Politics"
+        ],
+        "daysAgo": null,
+        "monthsAgo": 0
+      },
+      {
+        "url": "https://www.cnn.com/sitemap/article/politics/{year}/{month}.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "Politics"
+        ],
+        "daysAgo": null,
+        "monthsAgo": 1
+      },
+      {
+        "url": "https://www.cnn.com/sitemap/article/entertainment/{year}/{month}.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "Lifestyle"
+        ],
+        "daysAgo": null,
+        "monthsAgo": 0
+      },
+      {
+        "url": "https://www.cnn.com/sitemap/article/entertainment/{year}/{month}.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "Lifestyle"
+        ],
+        "daysAgo": null,
+        "monthsAgo": 1
+      },
+      {
+        "url": "https://www.cnn.com/sitemap/article/style/{year}/{month}.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "Lifestyle"
+        ],
+        "daysAgo": null,
+        "monthsAgo": 0
+      },
+      {
+        "url": "https://www.cnn.com/sitemap/article/style/{year}/{month}.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "Lifestyle"
+        ],
+        "daysAgo": null,
+        "monthsAgo": 1
+      },
+      {
+        "url": "https://www.cnn.com/sitemap/article/travel/{year}/{month}.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "Lifestyle"
+        ],
+        "daysAgo": null,
+        "monthsAgo": 0
+      },
+      {
+        "url": "https://www.cnn.com/sitemap/article/travel/{year}/{month}.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "Lifestyle"
+        ],
+        "daysAgo": null,
+        "monthsAgo": 1
+      },
+      {
+        "url": "https://www.cnn.com/sitemap/article/science/{year}/{month}.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "Science"
+        ],
+        "daysAgo": null,
+        "monthsAgo": 0
+      },
+      {
+        "url": "https://www.cnn.com/sitemap/article/science/{year}/{month}.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "Science"
+        ],
+        "daysAgo": null,
+        "monthsAgo": 1
+      },
+      {
+        "url": "https://www.cnn.com/sitemap/article/climate/{year}/{month}.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "Climate"
+        ],
+        "daysAgo": null,
+        "monthsAgo": 0
+      },
+      {
+        "url": "https://www.cnn.com/sitemap/article/climate/{year}/{month}.xml",
+        "kind": "Category feed / sitemap",
+        "categories": [
+          "Climate"
+        ],
+        "daysAgo": null,
+        "monthsAgo": 1
+      },
+      {
+        "url": "https://www.cnn.com/sitemap/article/science/{year}/{month}.xml",
+        "kind": "Shared feed / sitemap",
+        "categories": [
+          "Climate",
+          "Health"
+        ],
+        "daysAgo": null,
+        "monthsAgo": 0
+      },
+      {
+        "url": "https://www.cnn.com/sitemap/article/science/{year}/{month}.xml",
+        "kind": "Shared feed / sitemap",
+        "categories": [
+          "Climate",
+          "Health"
+        ],
+        "daysAgo": null,
+        "monthsAgo": 1
+      },
+      {
+        "url": "https://www.cnn.com/sitemap/article/us/{year}/{month}.xml",
+        "kind": "Shared feed / sitemap",
+        "categories": [
+          "Climate",
+          "Health"
+        ],
+        "daysAgo": null,
+        "monthsAgo": 0
+      },
+      {
+        "url": "https://www.cnn.com/sitemap/article/us/{year}/{month}.xml",
+        "kind": "Shared feed / sitemap",
+        "categories": [
+          "Climate",
+          "Health"
+        ],
+        "daysAgo": null,
+        "monthsAgo": 1
+      },
+      {
+        "url": "https://www.cnn.com/sitemap/article/business/{year}/{month}.xml",
+        "kind": "Shared feed / sitemap",
+        "categories": [
+          "Climate",
+          "Science"
+        ],
+        "daysAgo": null,
+        "monthsAgo": 0
+      },
+      {
+        "url": "https://www.cnn.com/sitemap/article/business/{year}/{month}.xml",
+        "kind": "Shared feed / sitemap",
+        "categories": [
+          "Climate",
+          "Science"
+        ],
+        "daysAgo": null,
+        "monthsAgo": 1
+      },
+      {
+        "url": "https://www.cnn.com/sitemap/article/world/{year}/{month}.xml",
+        "kind": "Shared feed / sitemap",
+        "categories": [
+          "Climate",
+          "Science"
+        ],
+        "daysAgo": null,
+        "monthsAgo": 0
+      },
+      {
+        "url": "https://www.cnn.com/sitemap/article/world/{year}/{month}.xml",
+        "kind": "Shared feed / sitemap",
+        "categories": [
+          "Climate",
+          "Science"
+        ],
+        "daysAgo": null,
+        "monthsAgo": 1
+      }
+    ]
+  },
+  {
+    "id": "yahoo_tw",
+    "name": "Yahoo Taiwan",
+    "language": "zh-TW",
+    "entries": [
+      {
+        "url": "https://tw.news.yahoo.com/politics",
+        "kind": "Section page",
+        "categories": [
+          "Politics"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://tw.news.yahoo.com/finance",
+        "kind": "Section page",
+        "categories": [
+          "Business"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://tw.news.yahoo.com/sports",
+        "kind": "Section page",
+        "categories": [
+          "Sport"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://tw.news.yahoo.com/technology",
+        "kind": "Section page",
+        "categories": [
+          "Science"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://tw.news.yahoo.com/entertainment",
+        "kind": "Section page",
+        "categories": [
+          "Lifestyle"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://tw.news.yahoo.com/society",
+        "kind": "Section page",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      },
+      {
+        "url": "https://tw.news.yahoo.com/world",
+        "kind": "Section page",
+        "categories": [
+          "World"
+        ],
+        "daysAgo": null,
+        "monthsAgo": null
+      }
+    ]
+  }
+]
