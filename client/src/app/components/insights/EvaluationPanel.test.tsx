@@ -2,13 +2,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { EvaluationPanel } from './EvaluationPanel';
+import { UiLocaleContext } from '../../i18n/uiText';
 import data from '../../data/evaluation.json';
 
-const state = vi.hoisted(() => ({ language: 'en', isDark: false }));
+const state = vi.hoisted(() => ({ language: 'en' as 'en' | 'zhTW', isDark: false }));
 vi.mock('../../contexts/AppContext', () => ({ useApp: () => state }));
 beforeEach(() => { state.language = 'en'; state.isDark = false; });
 afterEach(cleanup);
-const mount = () => render(<MemoryRouter><EvaluationPanel /></MemoryRouter>);
+// Interface copy reads the locale from UiLocaleContext, which the app provides from state.language.
+const mount = () => render(<UiLocaleContext.Provider value={state.language}><MemoryRouter><EvaluationPanel /></MemoryRouter></UiLocaleContext.Provider>);
 
 describe('public research evidence', () => {
   it('recomputes every public confusion matrix and preserves class-denominator rules', () => {

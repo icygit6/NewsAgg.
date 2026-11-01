@@ -22,7 +22,7 @@ Place the footer **inside `<main>`** in `AppShell.tsx`, below `{children}`, so i
 
 **Column 1 — Brand**
 - NewsAgg logo: bold gradient "N" box (matches NavRail logo: `w-9 h-9 rounded-xl`, `background: var(--brand-grad)`) + "NewsAgg" text in `font-poppins font-bold`.
-- Tagline underneath: "AI-Powered News Intelligence" in muted text.
+- Tagline underneath: the localized official project title (without repeating the NewsAgg wordmark) in muted text.
 - Wrap logo in a `<Link to="/">`.
 
 **Column 2 — Navigate**

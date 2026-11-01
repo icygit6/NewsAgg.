@@ -5,12 +5,13 @@ import { motion } from 'motion/react';
 import { Globe } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { NewsCard } from '../components/NewsCard';
+import { FeedState } from '../components/feed/FeedState';
 import { fetchArticlesPage } from '../services/newsAPI';
 import { COUNTRIES, COUNTRY_SOURCE_MAP } from '../constants';
 
 export function CountryPage() {
   const { iso } = useParams<{ iso: string }>();
-  const { t, isDark } = useApp();
+  const { t } = useApp();
 
   const country = COUNTRIES.find(c => c.code === iso);
   const sources = COUNTRY_SOURCE_MAP[iso ?? ''] ?? [];
@@ -30,7 +31,7 @@ export function CountryPage() {
   if (error) {
     return (
       <div className="px-4 md:px-6 py-6 max-w-[1600px] mx-auto">
-        <div className={`flex flex-col items-center justify-center py-20 text-center ${isDark ? 'text-red-400' : 'text-red-500'}`}>
+        <div className={`flex flex-col items-center justify-center py-20 text-center text-red-500 dark:text-red-400`}>
           <div className="text-5xl mb-4">⚠️</div>
           <p className="text-lg font-medium">{t.errorTitle}</p>
           <p className="text-sm mt-1">{error}</p>
@@ -50,10 +51,10 @@ export function CountryPage() {
           <Globe size={20} className="text-white" />
         </div>
         <div>
-          <h1 className={`font-poppins font-bold ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>
+          <h1 className={`font-poppins font-bold text-slate-900 dark:text-slate-100`}>
             {country?.name || iso?.toUpperCase()} {t.newsLabel}
           </h1>
-          <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{t.filterByCountry}</p>
+          <p className={`text-sm text-slate-500 dark:text-slate-400`}>{t.filterByCountry}</p>
         </div>
       </motion.div>
 
@@ -64,10 +65,7 @@ export function CountryPage() {
           ))}
         </div>
       ) : (
-        <div className={`text-center py-20 ${isDark ? 'text-slate-400' : 'text-gray-400'}`}>
-          <div className="text-5xl mb-4">🌍</div>
-          <p>{t.noResults}</p>
-        </div>
+        <FeedState title={t.noResults} />
       )}
     </div>
   );

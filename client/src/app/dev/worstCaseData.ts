@@ -44,7 +44,7 @@ export const WORST_CASE_POSTS: PostItem[] = [
     content: '中文貼文：這是一段沒有空格可以斷行的長文字，用來測試版面在無法斷詞的情況下會不會被撐破，以及行高是否足夠容納中文字形。',
     article_id: 'demo-article',
     article_title: '矽晶圓行情慘淡！「這指標股」已連跌4日累跌17%、台勝科、合晶、環球晶圓同步走弱，分析師示警下半年恐再探底',
-    article_topic: 'Business', source_name: 'Yahoo TW',
+    article_topic: 'Business', source_name: 'Yahoo Taiwan',
     article_image: 'https://example.invalid/broken-thumbnail.jpg',
     like_count: 1284, comment_count: 342, created_at: ago(26),
   },

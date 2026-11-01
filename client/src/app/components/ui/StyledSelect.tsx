@@ -28,7 +28,7 @@ export function StyledSelect<T extends string>({ value, onChange, options, label
         <Select.Icon><ChevronDown size={variant === 'chip' ? 12 : 16} className={`shrink-0 transition-transform group-data-[state=open]:rotate-180 ${variant === 'chip' ? 'opacity-70' : 'text-slate-400'}`} /></Select.Icon>
       </Select.Trigger>
       <Select.Portal>
-        <Select.Content position="popper" sideOffset={6} collisionPadding={12} className={`z-[200] max-h-[var(--radix-select-content-available-height)] min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-24px)] overflow-hidden rounded-xl border p-1.5 shadow-xl duration-150 motion-reduce:transition-none motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 ${isDark ? 'border-slate-700 bg-slate-900 text-slate-100' : 'border-slate-200 bg-white text-slate-800'}`}>
+        <Select.Content position="popper" sideOffset={6} collisionPadding={12} className={`z-[200] max-h-[var(--radix-select-content-available-height)] min-w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-24px)] overflow-hidden rounded-xl border p-1.5 shadow-xl duration-150 motion-reduce:transition-none motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 border-slate-200 bg-white text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100`}>
           <Select.ScrollUpButton className="flex justify-center py-1"><ChevronUp size={16} /></Select.ScrollUpButton>
           <Select.Viewport className="max-h-64">
             {options.map((option, i) => (

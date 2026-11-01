@@ -16,9 +16,8 @@ const DESCRIPTION: Record<Type, string> = {
 };
 
 function Examples({ examples }: { examples: SentimentEvidence['positive']['examples'] }) {
-  const { isDark } = useApp();
   const translated = useTitleTranslations(examples);
-  return <ul className="mt-2 space-y-2">{translated.map(article => <li key={article.id}><Link className={`block rounded py-1 text-xs leading-relaxed underline-offset-2 hover:underline [overflow-wrap:anywhere] ${isDark ? 'text-blue-300' : 'text-blue-700'}`} to={`/article/${encodeURIComponent(article.id)}`}>{article.title}</Link></li>)}</ul>;
+  return <ul className="mt-2 space-y-2">{translated.map(article => <li key={article.id}><Link className={`block rounded py-1 text-xs leading-relaxed underline-offset-2 hover:underline [overflow-wrap:anywhere] text-blue-700 dark:text-blue-300`} to={`/article/${encodeURIComponent(article.id)}`}>{article.title}</Link></li>)}</ul>;
 }
 
 /** One sentiment at a time behind tabs. The caveats that apply to every tab
@@ -31,7 +30,7 @@ function ReasonTabs({ evidence, total, initial }: { evidence: SentimentEvidence;
   const [active, setActive] = useState<Type>(initial);
   const tabs = useRef<Partial<Record<Type, HTMLButtonElement | null>>>({});
   const group = evidence[active];
-  const muted = isDark ? 'text-slate-400' : 'text-slate-600';
+  const muted = 'text-slate-600 dark:text-slate-400';
   const move = (event: KeyboardEvent, index: number) => {
     const step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
     if (!step) return;
@@ -76,7 +75,7 @@ function ReasonTabs({ evidence, total, initial }: { evidence: SentimentEvidence;
 export function SentimentReasons({ evidence, onOpenChange, show = 'all' }: { show?: 'all' | 'open'; evidence?: SentimentEvidence; onOpenChange?: (open: boolean) => void }) {
   const ui = useUiText();
   const p = useUiPunctuation();
-  const { t, isDark, selectedSentiments = [], selectedSentiment = 'all' } = useApp();
+  const { t, selectedSentiments = [], selectedSentiment = 'all' } = useApp();
   const [open, setOpen] = useState(false);
   if (!evidence) return null;
   const total = TYPES.reduce((sum, type) => sum + evidence[type].count, 0);
@@ -91,7 +90,7 @@ export function SentimentReasons({ evidence, onOpenChange, show = 'all' }: { sho
       <p className="mt-1">{leaders.length === 1 ? <>{ui('Largest share')}{p.colon}<strong>{t[dominant]}{p.open}{Math.round(largest / total * 100)}%{p.close}</strong>{p.stop}{dominantTheme && <>{ui('Most frequent detected theme in this group')}{p.colon}{ui(dominantTheme.label)}{p.open}{dominantTheme.count.toLocaleString()} {ui('articles')}{p.close}{p.stop}</>}</> : <>{ui('Equal largest shares')}{p.colon}{leaders.map(type => t[type]).join(' / ')}{p.open}{Math.round(largest / total * 100)}%{p.close}{p.stop}</>}</p>
       {(selectedSentiments.length > 0 || selectedSentiment !== 'all') && <p className="mt-2 font-medium">{ui('Sentiment filters are active; these percentages describe only the selected sentiments.')}</p>}
       {show === 'all' && <details open={open} onToggle={event => { const next = event.currentTarget.open; setOpen(next); onOpenChange?.(next); }} className="mt-2">
-        <summary className={`min-h-11 cursor-pointer py-3 font-semibold ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>{ui('View reasons and examples')}</summary>
+        <summary className={`min-h-11 cursor-pointer py-3 font-semibold text-blue-700 dark:text-blue-300`}>{ui('View reasons and examples')}</summary>
         {open && tabs}
       </details>}
       {show === 'open' && <section className="mt-4">

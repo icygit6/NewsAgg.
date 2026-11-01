@@ -3,15 +3,18 @@ import { Link } from 'react-router';
 import { Bug, Check, Database, Eye, ExternalLink, EyeOff, Flag, Lightbulb, MessageSquare, RotateCcw, ShieldCheck, Trash2, Users, X } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { useUiText, useUiLocale } from '../i18n/uiText';
+import { errorBox, LoadError } from '../components/ui/ErrorNote';
 import {
   useAdminActions, useAdminFeedback, useAdminOverview, useAdminReports, useAdminUsers, useIsAdmin, useAdminPermissions, useDeletedContent,
   type AdminFeedback, type AdminUser, type ArticleReport, type PostReport,
 } from '../hooks/useAdmin';
+import { LoadingIndicator } from '../components/ui/ContentSkeleton';
+import { emptyNote } from '../components/ui/styles';
 
 type Tab = 'overview' | 'reports' | 'feedback' | 'users' | 'deleted';
 
 const FEEDBACK_KIND = {
-  bug: { label: 'Bug', icon: Bug, tone: 'bg-rose-500/10 text-rose-700 dark:text-rose-300' },
+  bug: { label: 'Bug', icon: Bug, tone: 'bg-red-500/10 text-red-700 dark:text-red-300' },
   suggestion: { label: 'Suggestion', icon: Lightbulb, tone: 'bg-amber-500/10 text-amber-700 dark:text-amber-300' },
   other: { label: 'Other', icon: MessageSquare, tone: 'bg-blue-500/10 text-blue-700 dark:text-blue-300' },
 } as const;
@@ -28,7 +31,7 @@ function StatusBadge({ status }: { status: string }) {
 function ActionButton({ onClick, disabled, tone = 'neutral', children }: { onClick: () => void; disabled?: boolean; tone?: 'neutral' | 'danger' | 'good'; children: ReactNode }) {
   const tones = {
     neutral: 'border-slate-400/40 hover:bg-slate-500/10',
-    danger: 'border-rose-500/40 text-rose-600 hover:bg-rose-500/10',
+    danger: 'border-red-500/40 text-red-600 hover:bg-red-500/10',
     good: 'border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10',
   };
   return <button type="button" onClick={onClick} disabled={disabled} className={`inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 ${tones[tone]}`}>{children}</button>;
@@ -37,7 +40,7 @@ function ActionButton({ onClick, disabled, tone = 'neutral', children }: { onCli
 export function AdminPage() {
   const ui = useUiText();
   const locale = useUiLocale();
-  const { user, isDark, setSidebarOpen } = useApp();
+  const { user, setSidebarOpen } = useApp();
   const admin = useIsAdmin();
   const [tab, setTab] = useState<Tab>('overview');
   const overview = useAdminOverview();
@@ -51,12 +54,12 @@ export function AdminPage() {
   const [confirmUser, setConfirmUser] = useState<number | null>(null);
   const [error, setError] = useState('');
 
-  const card = `rounded-2xl border p-5 ${isDark ? 'bg-slate-900/70 border-slate-800' : 'bg-white border-slate-200'}`;
+  const card = `rounded-2xl border p-5 bg-white border-slate-200 dark:bg-slate-900/70 dark:border-slate-800`;
   const when = (value: string | null) => (value ? new Date(value).toLocaleString(locale, { dateStyle: 'medium', timeStyle: 'short' }) : '—');
   const fail = (reason: unknown) => setError(reason instanceof Error ? reason.message : String(reason));
 
   if (!user) {
-    return <div className="text-center py-24"><ShieldCheck className="mx-auto mb-4" /><h1 className="text-2xl font-bold">{ui('Sign in as an admin')}</h1><button onClick={() => setSidebarOpen(true)} className="mt-4 px-6 py-3 rounded-xl bg-[var(--brand)] text-white">{ui('Sign In')}</button></div>;
+    return <div className="text-center py-24"><ShieldCheck className="mx-auto mb-4" /><h1 className="text-2xl font-bold">{ui('Sign in as an admin')}</h1><button onClick={() => setSidebarOpen(true)} className="mt-4 px-6 py-3 rounded-xl bg-[var(--brand)] text-white">{ui('Sign in')}</button></div>;
   }
   if (!admin) {
     return <div className="text-center py-24"><ShieldCheck className="mx-auto mb-4 opacity-50" /><h1 className="text-2xl font-bold">{ui('Admin access required')}</h1><p className="opacity-70 mt-2">{ui('This page is only available to the NewsAgg admin account.')}</p></div>;
@@ -81,18 +84,18 @@ export function AdminPage() {
         </div>
       </header>
 
-      <div role="tablist" className={`flex gap-1 overflow-x-auto no-scrollbar rounded-2xl border p-1 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+      <div role="tablist" className={`flex gap-1 overflow-x-auto no-scrollbar rounded-2xl border p-1 border-slate-200 dark:border-slate-800`}>
         {tabs.map(({ id, label, badge }) => (
           <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)}
             className={`flex-1 shrink-0 whitespace-nowrap inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${tab === id ? 'text-white' : 'opacity-70 hover:opacity-100'}`}
             style={tab === id ? { background: 'var(--brand, #2563eb)' } : undefined}>
             {label}
-            {badge ? <span className="rounded-full bg-rose-500 px-1.5 text-[11px] leading-5 text-white">{badge}</span> : null}
+            {badge ? <span className="rounded-full bg-red-500 px-1.5 text-[11px] leading-5 text-white">{badge}</span> : null}
           </button>
         ))}
       </div>
 
-      {error && <div role="alert" className="flex justify-between rounded-xl bg-rose-500/10 p-3 text-sm text-rose-600">{error}<button onClick={() => setError('')} aria-label={ui('Dismiss')}><X size={16} /></button></div>}
+      {error && <div role="alert" className={`flex justify-between ${errorBox}`}>{error}<button onClick={() => setError('')} aria-label={ui('Dismiss')}><X size={16} /></button></div>}
 
       {tab === 'overview' && (
         <>
@@ -125,7 +128,7 @@ export function AdminPage() {
                 <thead><tr className="text-left opacity-60"><th className="py-2 pr-4">{ui('Table')}</th><th className="py-2 pr-4 text-right">{ui('Rows (approx.)')}</th><th className="py-2 text-right">{ui('Size')}</th></tr></thead>
                 <tbody>
                   {overview.data?.tables.map((table) => (
-                    <tr key={table.name} className={`border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                    <tr key={table.name} className={`border-t border-slate-100 dark:border-slate-800`}>
                       <td className="py-1.5 pr-4 font-mono">{table.name}</td>
                       <td className="py-1.5 pr-4 text-right tabular-nums">{table.estimated_rows.toLocaleString(locale)}</td>
                       <td className="py-1.5 text-right tabular-nums">{formatBytes(table.bytes)}</td>
@@ -141,12 +144,12 @@ export function AdminPage() {
       {tab === 'reports' && (
         <>
           <section className={card}>
-            <h2 className="text-lg font-bold mb-3 flex items-center gap-2"><Flag size={18} />{ui('Article reports')}</h2>
-            {reports.isLoading && <p className="opacity-60">{ui('Loading…')}</p>}
-            {reports.data?.articleReports.length === 0 && <p className="opacity-60">{ui('No reports yet.')}</p>}
+            <h2 className="text-lg font-bold mb-3 flex items-center gap-2"><Flag size={20} />{ui('Article reports')}</h2>
+            {reports.isLoading && <LoadingIndicator label={ui('Loading…')} />}
+            {reports.data?.articleReports.length === 0 && <p className={emptyNote}>{ui('No reports yet.')}</p>}
             <ul className="space-y-3">
               {reports.data?.articleReports.map((report: ArticleReport) => (
-                <li key={report.id} className={`rounded-xl border p-3 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+                <li key={report.id} className={`rounded-xl border p-3 border-slate-200 dark:border-slate-800`}>
                   <div className="flex flex-wrap items-center gap-2 text-xs">
                     <StatusBadge status={report.status} />
                     <span className="rounded-full bg-blue-500/10 px-2 py-0.5 font-semibold text-blue-600">{report.reason}</span>
@@ -157,11 +160,11 @@ export function AdminPage() {
                   <div className="mt-3 flex flex-wrap gap-2">
                     {report.status === 'open' ? (
                       <>
-                        <ActionButton tone="good" disabled={actions.articleReport.isPending} onClick={() => actions.articleReport.mutate({ id: report.id, status: 'resolved' }, { onError: fail })}><Check size={13} />{ui('Mark resolved')}</ActionButton>
-                        <ActionButton disabled={actions.articleReport.isPending} onClick={() => actions.articleReport.mutate({ id: report.id, status: 'rejected' }, { onError: fail })}><X size={13} />{ui('Reject')}</ActionButton>
+                        <ActionButton tone="good" disabled={actions.articleReport.isPending} onClick={() => actions.articleReport.mutate({ id: report.id, status: 'resolved' }, { onError: fail })}><Check size={14} />{ui('Mark resolved')}</ActionButton>
+                        <ActionButton disabled={actions.articleReport.isPending} onClick={() => actions.articleReport.mutate({ id: report.id, status: 'rejected' }, { onError: fail })}><X size={14} />{ui('Reject')}</ActionButton>
                       </>
                     ) : (
-                      <ActionButton disabled={actions.articleReport.isPending} onClick={() => actions.articleReport.mutate({ id: report.id, status: 'open' }, { onError: fail })}><RotateCcw size={13} />{ui('Reopen')}</ActionButton>
+                      <ActionButton disabled={actions.articleReport.isPending} onClick={() => actions.articleReport.mutate({ id: report.id, status: 'open' }, { onError: fail })}><RotateCcw size={14} />{ui('Reopen')}</ActionButton>
                     )}
                   </div>
                 </li>
@@ -170,15 +173,15 @@ export function AdminPage() {
           </section>
 
           <section className={card}>
-            <h2 className="text-lg font-bold mb-3 flex items-center gap-2"><Flag size={18} />{ui('Post reports')}</h2>
-            {reports.data?.postReports.length === 0 && <p className="opacity-60">{ui('No reports yet.')}</p>}
+            <h2 className="text-lg font-bold mb-3 flex items-center gap-2"><Flag size={20} />{ui('Post reports')}</h2>
+            {reports.data?.postReports.length === 0 && <p className={emptyNote}>{ui('No reports yet.')}</p>}
             <ul className="space-y-3">
               {reports.data?.postReports.map((report: PostReport) => (
-                <li key={report.id} className={`rounded-xl border p-3 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+                <li key={report.id} className={`rounded-xl border p-3 border-slate-200 dark:border-slate-800`}>
                   <div className="flex flex-wrap items-center gap-2 text-xs">
                     <StatusBadge status={report.status} />
                     <span className="rounded-full bg-blue-500/10 px-2 py-0.5 font-semibold text-blue-600">{report.reason}</span>
-                    {report.post_deleted && <span className="rounded-full bg-rose-500/10 px-2 py-0.5 font-semibold text-rose-600">{ui('Post hidden')}</span>}
+                    {report.post_deleted && <span className="rounded-full bg-red-500/10 px-2 py-0.5 font-semibold text-red-600">{ui('Post hidden')}</span>}
                     <span className="opacity-60">{when(report.created_at)} · {ui('reported by')} @{report.reporter_username}</span>
                   </div>
                   <p className="mt-2 text-sm"><Link to={`/profile/${report.author_username}`} className="font-semibold hover:text-blue-600 dark:hover:text-blue-400">@{report.author_username}</Link></p>
@@ -187,11 +190,11 @@ export function AdminPage() {
                   <div className="mt-3 flex flex-wrap gap-2">
                     {report.status === 'open' ? (
                       <>
-                        <ActionButton tone="danger" disabled={actions.postReport.isPending} onClick={() => actions.postReport.mutate({ id: report.id, status: 'resolved', hidePost: true }, { onError: fail })}><EyeOff size={13} />{ui('Hide post and resolve')}</ActionButton>
-                        <ActionButton disabled={actions.postReport.isPending} onClick={() => actions.postReport.mutate({ id: report.id, status: 'dismissed' }, { onError: fail })}><X size={13} />{ui('Dismiss')}</ActionButton>
+                        <ActionButton tone="danger" disabled={actions.postReport.isPending} onClick={() => actions.postReport.mutate({ id: report.id, status: 'resolved', hidePost: true }, { onError: fail })}><EyeOff size={14} />{ui('Hide post and resolve')}</ActionButton>
+                        <ActionButton disabled={actions.postReport.isPending} onClick={() => actions.postReport.mutate({ id: report.id, status: 'dismissed' }, { onError: fail })}><X size={14} />{ui('Dismiss')}</ActionButton>
                       </>
                     ) : (
-                      <ActionButton disabled={actions.postReport.isPending} onClick={() => actions.postReport.mutate({ id: report.id, status: 'open' }, { onError: fail })}><RotateCcw size={13} />{ui('Reopen')}</ActionButton>
+                      <ActionButton disabled={actions.postReport.isPending} onClick={() => actions.postReport.mutate({ id: report.id, status: 'open' }, { onError: fail })}><RotateCcw size={14} />{ui('Reopen')}</ActionButton>
                     )}
                   </div>
                 </li>
@@ -203,11 +206,11 @@ export function AdminPage() {
 
       {tab === 'feedback' && (
         <section className={card}>
-          <h2 className="text-lg font-bold mb-1 flex items-center gap-2"><MessageSquare size={18} />{ui('User feedback')} {feedback.data && <span className="opacity-60 font-normal">({feedback.data.length})</span>}</h2>
+          <h2 className="text-lg font-bold mb-1 flex items-center gap-2"><MessageSquare size={20} />{ui('User feedback')} {feedback.data && <span className="opacity-60 font-normal">({feedback.data.length})</span>}</h2>
           <p className="text-sm opacity-70 mb-3">{ui('Bug reports, suggestions and other messages sent from the Send feedback form. New items are listed first.')}</p>
-          {feedback.isLoading && <p className="opacity-60">{ui('Loading…')}</p>}
-          {feedback.isError && <p className="text-rose-600">{ui('Could not load feedback.')}</p>}
-          {feedback.data?.length === 0 && <p className="opacity-60">{ui('No feedback yet.')}</p>}
+          {feedback.isLoading && <LoadingIndicator label={ui('Loading…')} />}
+          {feedback.isError && <p className="text-red-600">{ui('Could not load feedback.')}</p>}
+          {feedback.data?.length === 0 && <p className={emptyNote}>{ui('No feedback yet.')}</p>}
           <ul className="space-y-3">
             {feedback.data?.map((item: AdminFeedback) => {
               const kind = FEEDBACK_KIND[item.kind] ?? FEEDBACK_KIND.other;
@@ -215,10 +218,10 @@ export function AdminPage() {
               const busy = actions.feedback.isPending;
               const move = (status: AdminFeedback['status']) => actions.feedback.mutate({ id: item.id, status }, { onError: fail });
               return (
-                <li key={item.id} className={`rounded-xl border p-3 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+                <li key={item.id} className={`rounded-xl border p-3 border-slate-200 dark:border-slate-800`}>
                   <div className="flex flex-wrap items-center gap-2 text-xs">
                     <StatusBadge status={item.status} />
-                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold ${kind.tone}`}><KindIcon size={12} />{ui(kind.label)}</span>
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold ${kind.tone}`}><KindIcon size={14} />{ui(kind.label)}</span>
                     <span className="opacity-60">#{item.id} · {when(item.created_at)}</span>
                   </div>
                   <p className="mt-2 text-sm whitespace-pre-wrap break-words">{item.message}</p>
@@ -232,9 +235,9 @@ export function AdminPage() {
                     {item.user_agent && <span className="truncate" title={item.user_agent}>{ui('Device')}: {item.user_agent}</span>}
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {item.status === 'open' && <ActionButton disabled={busy} onClick={() => move('reviewed')}><Eye size={13} />{ui('Mark reviewed')}</ActionButton>}
-                    {item.status !== 'resolved' && <ActionButton tone="good" disabled={busy} onClick={() => move('resolved')}><Check size={13} />{ui('Mark resolved')}</ActionButton>}
-                    {item.status !== 'open' && <ActionButton disabled={busy} onClick={() => move('open')}><RotateCcw size={13} />{ui('Reopen')}</ActionButton>}
+                    {item.status === 'open' && <ActionButton disabled={busy} onClick={() => move('reviewed')}><Eye size={14} />{ui('Mark reviewed')}</ActionButton>}
+                    {item.status !== 'resolved' && <ActionButton tone="good" disabled={busy} onClick={() => move('resolved')}><Check size={14} />{ui('Mark resolved')}</ActionButton>}
+                    {item.status !== 'open' && <ActionButton disabled={busy} onClick={() => move('open')}><RotateCcw size={14} />{ui('Reopen')}</ActionButton>}
                   </div>
                 </li>
               );
@@ -245,9 +248,9 @@ export function AdminPage() {
 
       {tab === 'deleted' && <section className={card}>
         <h2 className="text-lg font-bold mb-3">{ui('Deleted content')}</h2>
-        {deleted.isLoading && <p>{ui('Loading…')}</p>}
-        {deleted.isError && <p role="alert">{ui('Could not load deleted content.')}</p>}
-        {deleted.data?.length === 0 && <p>{ui('No deleted content.')}</p>}
+        {deleted.isLoading && <LoadingIndicator label={ui('Loading…')} />}
+        {deleted.isError && <LoadError message={ui('Could not load deleted content.')} />}
+        {deleted.data?.length === 0 && <p className={emptyNote}>{ui('No deleted content.')}</p>}
         <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="text-left"><th>{ui('Type')}</th><th>{ui('Post')}</th><th>{ui('Message')}</th><th>{ui('Deleted by')}</th><th>{ui('Date')}</th></tr></thead><tbody>
           {deleted.data?.map(item => <tr key={item.id} className="border-t border-slate-400/20 align-top">
             <td className="p-3">{item.kind} #{item.target_id}</td><td className="p-3">#{item.post_id}</td>
@@ -259,8 +262,8 @@ export function AdminPage() {
       </section>}
       {tab === 'users' && (
         <section className={card}>
-          <h2 className="text-lg font-bold mb-3 flex items-center gap-2"><Users size={18} />{ui('Users')} {users.data && <span className="opacity-60 font-normal">({users.data.length})</span>}</h2>
-          {users.isLoading && <p className="opacity-60">{ui('Loading…')}</p>}
+          <h2 className="text-lg font-bold mb-3 flex items-center gap-2"><Users size={20} />{ui('Users')} {users.data && <span className="opacity-60 font-normal">({users.data.length})</span>}</h2>
+          {users.isLoading && <LoadingIndicator label={ui('Loading…')} />}
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead><tr className="text-left opacity-60"><th className="py-2 pr-3">{ui('Account')}</th><th className="py-2 pr-3">{ui('Email')}</th><th className="py-2 pr-3 text-right">{ui('Posts')}</th><th className="py-2 pr-3 text-right">{ui('Reported')}</th><th className="py-2 pr-3">{ui('Joined')}</th><th className="py-2 pr-3">{ui('Last active')}</th><th className="py-2" /></tr></thead>
@@ -268,7 +271,7 @@ export function AdminPage() {
                 {users.data?.map((account: AdminUser) => {
                   const isAdminAccount = account.role === 'admin';
                   return (
-                    <tr key={account.id} className={`border-t align-top ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                    <tr key={account.id} className={`border-t align-top border-slate-100 dark:border-slate-800`}>
                       <td className="py-2 pr-3">
                         <Link to={`/profile/${account.username}`} className="font-semibold hover:text-blue-600 dark:hover:text-blue-400">{account.display_name || account.username}</Link>
                         <div className="text-xs opacity-60">@{account.username}{isAdminAccount && <span className="ml-1 rounded-full bg-blue-600 px-2 py-0.5 text-xs font-medium text-white">Admin</span>}</div>
@@ -286,7 +289,7 @@ export function AdminPage() {
                             <ActionButton onClick={() => setConfirmUser(null)}>{ui('Cancel')}</ActionButton>
                           </span>
                         ) : (
-                          <ActionButton tone="danger" onClick={() => setConfirmUser(account.id)}><Trash2 size={13} />{ui('Delete user')}</ActionButton>
+                          <ActionButton tone="danger" onClick={() => setConfirmUser(account.id)}><Trash2 size={14} />{ui('Delete user')}</ActionButton>
                         ))}
                       </td>
                     </tr>

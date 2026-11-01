@@ -21,12 +21,12 @@ export function PostCategoryPicker({ value, onChange, allLabel, isDark, ariaLabe
     const active = ref.current?.querySelector<HTMLElement>('[aria-pressed="true"]');
     if (active) revealItem(active, true);
   }, [ref, value, revealItem]);
-  const arrow = `flex h-9 w-9 pointer-coarse:h-11 pointer-coarse:w-11 shrink-0 items-center justify-center rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 ${isDark ? 'border-slate-700 bg-slate-900 text-slate-200 enabled:hover:bg-slate-800 disabled:text-slate-600' : 'border-slate-200 bg-white text-slate-700 enabled:hover:bg-slate-50 disabled:text-slate-400'}`;
+  const arrow = `flex h-9 w-9 pointer-coarse:h-11 pointer-coarse:w-11 shrink-0 items-center justify-center rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 border-slate-200 bg-white text-slate-700 enabled:hover:bg-slate-50 disabled:text-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:enabled:hover:bg-slate-800 dark:disabled:text-slate-600`;
 
   return <CategoryScrollFrame previous={<button type="button" disabled={!canScrollLeft} aria-hidden={!canScrollLeft} style={{ opacity: canScrollLeft ? 1 : 0, pointerEvents: canScrollLeft ? 'auto' : 'none' }} onClick={() => scrollByPage(-1)} aria-label={ui('Scroll categories left')} className={arrow}>
-      <ChevronLeft size={15} />
+      <ChevronLeft size={16} />
     </button>} next={<button type="button" disabled={!canScrollRight} aria-hidden={!canScrollRight} style={{ opacity: canScrollRight ? 1 : 0, pointerEvents: canScrollRight ? 'auto' : 'none' }} onClick={() => scrollByPage(1)} aria-label={ui('Scroll categories right')} className={arrow}>
-      <ChevronRight size={15} />
+      <ChevronRight size={16} />
     </button>}>
     <div ref={ref} data-testid="post-categories" role="group" aria-label={ariaLabel} className="no-scrollbar flex min-w-0 flex-1 gap-2 overflow-x-auto overscroll-x-contain px-1 py-1">
       {[...(allLabel ? [{ value: '', label: allLabel }] : []), ...postCategories.map(label => ({ value: label, label: ui(label) }))].map(option => {

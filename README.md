@@ -9,10 +9,10 @@ The English-language demo video and bilingual project report are distributed sep
 ## Architecture
 
 ```text
-scraper/   Python — scrapes CNN / BBC / Al Jazeera / Yahoo TW, enriches with
+scraper/   Python — scrapes CNN / BBC / Al Jazeera / Yahoo Taiwan, enriches with
            multilingual NLP (XLM-R sentiment, FinBERT for English business news,
            XLM-R NER, zero-shot topic, readability, toxicity) and upserts into
-           PostgreSQL (Neon).
+           PostgreSQL (the compose `db` service; Neon was retired on 2026-10-19).
 server/    Express + TypeScript API (port 3001) — articles, stats, markets,
            quotes, auth (email + Google, password reset, email verification,
            opt-in Cloudflare Turnstile CAPTCHA), account, bookmarks, posts,
@@ -51,7 +51,7 @@ npm install
 npm start
 ```
 
-Scraper (reads `server/.env` automatically; Yahoo TW needs Playwright Chromium):
+Scraper (reads `server/.env` automatically; Yahoo Taiwan needs Playwright Chromium):
 
 ```powershell
 cd scraper
@@ -63,16 +63,19 @@ Docker: `docker compose up -d --build` runs server + client; the scraper is an o
 
 ## API surface (selected)
 
+Signed-in requests use the HttpOnly session cookie (a Bearer token is still accepted for older clients).
+
 ```text
 GET  /api/news-from-db?category=&source=&sentiment=&q=&sort=rank|latest&page=&pageSize=&fields=summary
 GET  /api/articles/:id            GET  /api/articles/:id/translate?lang=
 GET  /api/stats/overview          GET  /api/stats/trending        GET  /api/stats/business-trend
 GET  /api/markets/summary         GET  /api/quotes/random|list
-POST /api/chat                    { message, articleContent, lang, messages? }  → multi-turn Groq
-POST /auth/register|login|google                      GET/PATCH/PUT/DELETE /api/account/...   [Bearer]
-POST /auth/forgot-password|reset-password|verify-email                 POST /auth/resend-verification [Bearer]
-GET/POST /bookmarks               GET/POST/DELETE /api/posts (+ /:id/like)       [Bearer for writes]
-GET  /health                      DB-backed liveness probe → 200 {ok:true} | 503 when Postgres is down
+POST /api/chat                    { message, articleId, lang, messages? }  → multi-turn Groq [signed in]
+POST /auth/register|login|google                      GET/PATCH/PUT/DELETE /api/account/...   [signed in]
+POST /auth/forgot-password|reset-password|verify-email                 POST /auth/resend-verification [signed in]
+GET/POST /api/bookmarks [signed in]   GET/POST/DELETE /api/posts (+ /:id/like) [signed in for writes]
+GET  /health[?db=1]               liveness probe; ?db=1 also checks Postgres → 503 when it is down
+                                  (the integration list is returned only to local, unproxied callers)
 ```
 
 ## Conventions
@@ -149,7 +152,7 @@ Run the same gates locally for the server and client before pushing:
 ```powershell
 npm run lint        # ESLint (flat config)
 npm run typecheck   # tsc --noEmit
-npm test            # Vitest — server: auth routes + token helpers; client: components + services
+npm test            # Vitest — server 137 tests (routes, auth, helpers); client 195 (components, hooks, services)
 npm run build
 ```
 
@@ -180,9 +183,8 @@ Notable optimizations from the latest audit pass:
   `aria-label` (`goToSlide`) / `aria-current` and 24px tap targets; the
   `health` and `science` category badges were darkened (emerald/teal 600 → 700)
   to clear WCAG contrast.
-- **Best practices (clean console)** — Recharts panels only mount their
-  `ResponsiveContainer` once the box has a non-zero size (`ui/ChartFrame.tsx`,
-  no "width(0) and height(0)" warnings while a rail is hidden); the router ships a
+- **Best practices (clean console)** — the charts are drawn as plain SVG, so a
+  hidden rail never logs zero-size chart warnings; the router ships a
   `HydrateFallback` for the initial lazy-route hydration
   (`components/RouteFallback.tsx`); and every form field carries a `name` +
   `autoComplete` so the browser can autofill and DevTools stops flagging

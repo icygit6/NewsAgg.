@@ -251,14 +251,14 @@ export function DrawerSkeleton({ label }: { label?: string }) {
         role="status"
         aria-label={label}
         aria-busy="true"
-        className={`fixed inset-y-0 z-[70] flex w-[400px] max-w-[95vw] pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] flex-col overflow-hidden bg-white shadow-2xl dark:bg-slate-900 ${isMobile ? 'right-0 rounded-l-[28px]' : 'left-0 rounded-r-[28px]'} border-gray-100 dark:border-slate-700`}
+        className={`fixed inset-y-0 z-[70] flex w-[400px] max-w-[95vw] pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] flex-col overflow-hidden bg-white shadow-2xl dark:bg-slate-900 ${isMobile ? 'right-0 rounded-l-[28px]' : 'left-0 rounded-r-[28px]'} border-slate-100 dark:border-slate-700`}
       >
         <span className="sr-only">{label}</span>
         <div className="flex items-center gap-2 px-6 py-5">
-          <BrandLogo markClassName="w-8 h-8" wordmarkClassName="text-lg" />
+          <BrandLogo size="sm" />
         </div>
         <div aria-hidden="true" className="space-y-4 px-6 pb-6">
-          <div className="flex items-center gap-3 rounded-2xl bg-gray-50 p-3 dark:bg-slate-800/70">
+          <div className="flex items-center gap-3 rounded-2xl bg-slate-50 p-3 dark:bg-slate-800/70">
             <SkeletonBlock className="h-12 w-12 shrink-0 rounded-xl" />
             <div className="flex-1 space-y-2"><SkeletonBlock className="h-4 w-28" /><SkeletonBlock className="h-3 w-40" /></div>
           </div>

@@ -18,7 +18,7 @@ const RAIL_POSTS = 12;
  * no posts yet the feed degrades to a quotes-only list. */
 export function PulseRail() {
   const ui = useUiText();
-  const { t, isDark, isAuthenticated, setSidebarOpen, selectedCategory, setSelectedCategory } = useApp();
+  const { t, isAuthenticated, setSidebarOpen, selectedCategory, setSelectedCategory } = useApp();
   // Pulse follows the site-wide category like the feed and Insights do. Post
   // categories are stored by label ("Sport"), the filter by key ("sport").
   const categoryLabel = selectedCategory === 'all' ? null : CATEGORY_LABELS[selectedCategory];
@@ -63,16 +63,12 @@ export function PulseRail() {
     });
   }
 
-  const teaserClasses = `w-full flex items-center gap-3 rounded-full border px-4 py-2.5 text-sm text-left transition-colors ${
-    isDark
-      ? 'bg-slate-900 border-slate-700 text-slate-500 hover:border-slate-600'
-      : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'
-  }`;
+  const teaserClasses = `w-full flex items-center gap-3 rounded-full border px-4 py-2.5 text-sm text-left transition-colors bg-white border-slate-200 text-slate-400 hover:border-slate-300 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-500 dark:hover:border-slate-600`;
 
   return (
     <div className="flex flex-col gap-3">
       {categoryLabel && selectedCategory !== 'all' && (
-        <div className={`flex items-center justify-between gap-2 rounded-xl border px-3 py-2 text-xs ${isDark ? 'border-slate-800 bg-slate-900 text-slate-300' : 'border-slate-200 bg-white text-slate-600'}`}>
+        <div className={`flex items-center justify-between gap-2 rounded-xl border px-3 py-2 text-xs border-slate-200 bg-white text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300`}>
           <span className="flex items-center gap-2">
             {ui('Showing')}
             <span className={`rounded-full px-2 py-0.5 font-semibold ${CATEGORY_BADGE_CLASS[selectedCategory]}`}>{ui(categoryLabel)}</span>
@@ -107,7 +103,7 @@ export function PulseRail() {
       {items}
 
       {POSTS_ENABLED && categoryLabel && !postsPending && postCards.length === 0 && (
-        <p className={`rounded-xl border border-dashed px-4 py-6 text-center text-sm ${isDark ? 'border-slate-700 text-slate-400' : 'border-slate-300 text-slate-500'}`}>
+        <p className={`rounded-xl border border-dashed px-4 py-6 text-center text-sm border-slate-300 text-slate-500 dark:border-slate-700 dark:text-slate-400`}>
           {ui('No posts in this category yet.')}
         </p>
       )}

@@ -8,7 +8,7 @@ export const button = {
   primary: `inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--brand)] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[var(--brand-hover)] disabled:opacity-50 ${focus}`,
   secondary: `inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 ${focus}`,
   ghost: `inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100 disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800 ${focus}`,
-  danger: `inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-rose-700 disabled:opacity-50 ${focus}`,
+  danger: `inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-50 ${focus}`,
 } as const;
 
 export const chip = {
@@ -32,3 +32,6 @@ export const segment = {
   item: `rounded-lg px-3 py-1.5 text-[13px] font-semibold text-slate-600 transition-colors hover:text-slate-900 dark:text-slate-300 dark:hover:text-white ${focus}`,
   active: `rounded-lg bg-white px-3 py-1.5 text-[13px] font-semibold text-[var(--brand)] shadow-[0_1px_2px_rgb(15_23_42/0.08)] dark:bg-slate-900 dark:text-blue-300 ${focus}`,
 } as const;
+
+/** "Nothing here yet" inside a panel or list. A whole page or main panel uses <FeedState> instead. */
+export const emptyNote = 'text-sm text-slate-500 dark:text-slate-400';

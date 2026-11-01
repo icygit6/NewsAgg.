@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApp } from '../contexts/AppContext';
-import { API_BASE_URL, AUTH_UNAUTHORIZED_EVENT } from '../lib/apiFetch';
+import { authFetch } from '../lib/apiFetch';
 
 export interface AdminTable { name: string; estimated_rows: number; bytes: number }
 export interface AdminOverview {
@@ -34,8 +34,7 @@ export interface AdminUser {
 }
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, { ...init, credentials: 'include', headers: { 'Content-Type': 'application/json' } });
-  if (response.status === 401) window.dispatchEvent(new Event(AUTH_UNAUTHORIZED_EVENT));
+  const response = await authFetch(path, { ...init, headers: { 'Content-Type': 'application/json' } });
   const body = await response.json();
   if (!response.ok || !body.success) throw new Error(body.error || `HTTP ${response.status}`);
   return body.data as T;

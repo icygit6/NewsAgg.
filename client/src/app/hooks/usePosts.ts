@@ -1,11 +1,11 @@
 import { useInfiniteQuery,useMutation,useQueryClient,type InfiniteData } from '@tanstack/react-query';
 import { useApp } from '../contexts/AppContext';
-import { API_BASE_URL,AUTH_UNAUTHORIZED_EVENT } from '../lib/apiFetch';
+import { authFetch } from '../lib/apiFetch';
 export interface PostItem {id:number;content:string;category?:string;created_at:string;updated_at:string|null;article_id:string|null;user_id:number;username:string;display_name:string|null;avatar:string|null;article_title:string|null;article_image:string|null;article_topic:string|null;source_name:string|null;like_count:number;comment_count:number;liked_by_me:boolean}
 export interface PostsPage {posts:PostItem[];nextCursor:string|null}
 export interface PostComment {id:number;post_id:number;root_id:number;removed?:boolean;user_id:number|null;parent_id:number|null;parent_username:string|null;content:string;created_at:string;username:string;display_name:string|null;avatar:string|null}
 export interface CommentsPage {comments:PostComment[];nextOffset:number|null}
-async function request(path:string,init:RequestInit={}){const r=await fetch(`${API_BASE_URL}${path}`,{...init,credentials:'include',headers:{'Content-Type':'application/json'}});if(r.status===401)window.dispatchEvent(new Event(AUTH_UNAUTHORIZED_EVENT));const j=await r.json();if(!r.ok||!j.success)throw new Error(j.error||`HTTP ${r.status}`);return j.data;}
+async function request(path:string,init:RequestInit={}){const r=await authFetch(path,{...init,headers:{'Content-Type':'application/json'}});const j=await r.json();if(!r.ok||!j.success)throw new Error(j.error||`HTTP ${r.status}`);return j.data;}
 export function usePosts({mine=false,pageSize=20,enabled=true,sort='latest',username,category='all',articleId,live=false}:{mine?:boolean;pageSize?:number;enabled?:boolean;sort?:'latest'|'oldest'|'popular';username?:string;category?:string;articleId?:string;live?:boolean}={}){const{user}=useApp();return useInfiniteQuery({queryKey:['posts',{mine,userId:user?.id??null,sort,username,category,pageSize,articleId}],initialPageParam:'',queryFn:async({pageParam})=>{const q=new URLSearchParams({limit:String(pageSize),sort,category});if(mine)q.set('mine','1');if(username)q.set('username',username);if(articleId)q.set('articleId',articleId);if(pageParam)q.set('cursor',pageParam);
  // Dev stress fixtures (?data=worst). import.meta.env.DEV is a build-time
  // constant, so this whole block — and the fixture chunk — is dropped in prod.

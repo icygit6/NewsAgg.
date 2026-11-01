@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router';
 import { Search, SlidersHorizontal, X } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { useBookmarkMeta } from '../../hooks/useBookmarks';
-import { useCollectionLabel } from './CollectionPicker';
+import { useCollectionLabel } from './collections';
 import { ManageCollectionsMenu } from './ManageCollections';
 import { useUiText } from '../../i18n/uiText';
 import { StyledSelect } from '../ui/StyledSelect';
@@ -40,7 +40,7 @@ export function BookmarkCollection() {
   };
   const active = filterCount(control);
   // The home feed header's round icon button.
-  const iconButton = (on: boolean) => `inline-flex items-center justify-center rounded-full p-2 transition-colors pointer-coarse:min-h-11 pointer-coarse:min-w-11 ${on ? 'text-[var(--brand,#2563eb)]' : isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-100'}`;
+  const iconButton = (on: boolean) => `inline-flex items-center justify-center rounded-full p-2 transition-colors pointer-coarse:min-h-11 pointer-coarse:min-w-11 ${on ? 'text-[var(--brand,#2563eb)]' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'}`;
 
   return (
     <div>
@@ -63,7 +63,7 @@ export function BookmarkCollection() {
             onDeleted={name => { if (collection === name) setCollection(''); }} />
           <div ref={filterAnchor} className="shrink-0">
             <button onClick={() => setFilterOpen(open => !open)} aria-expanded={filterOpen} aria-label={ui('Filter bookmarks')} title={ui('Filter bookmarks')}
-              className={`flex items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors pointer-coarse:min-h-11 pointer-coarse:min-w-11 ${active > 0 || filterOpen ? 'text-[var(--brand,#2563eb)]' : isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-100'}`}>
+              className={`flex items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors pointer-coarse:min-h-11 pointer-coarse:min-w-11 ${active > 0 || filterOpen ? 'text-[var(--brand,#2563eb)]' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'}`}>
               <SlidersHorizontal size={16} aria-hidden="true" />
               {active > 0 && <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold text-white" style={{ background: 'var(--brand, #2563eb)' }}>{active}</span>}
             </button>
@@ -79,7 +79,7 @@ export function BookmarkCollection() {
 
 /** Search as an icon that drops down the home header's search field. The
  * icon stays highlighted while a search is applied. */
-function BookmarkSearch({ value, onChange, isDark, buttonClassName }: {
+function BookmarkSearch({ value, onChange, buttonClassName }: {
   value: string; onChange: (value: string) => void; isDark: boolean; buttonClassName: (on: boolean) => string;
 }) {
   const ui = useUiText();
@@ -100,17 +100,17 @@ function BookmarkSearch({ value, onChange, isDark, buttonClassName }: {
     <div ref={rootRef} className="shrink-0">
       <button ref={triggerRef} onClick={() => setOpen(current => !current)} aria-expanded={open} aria-label={ui('Search bookmarks')} title={ui('Search bookmarks')}
         className={`relative ${buttonClassName(open || Boolean(value))}`}>
-        {open ? <X size={18} /> : <Search size={18} />}
+        {open ? <X size={20} /> : <Search size={20} />}
         {value && !open && <span aria-hidden="true" className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[var(--brand,#2563eb)]" />}
       </button>
       {open && (
-        <div className={`absolute right-0 top-full z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border p-3 shadow-xl motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-top-2 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
-          <div className={`flex items-center gap-2 rounded-full border px-4 py-2.5 transition-all focus-within:ring-2 focus-within:ring-[var(--brand-ring,rgba(6,182,212,0.5))] ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-200 text-slate-900'}`}>
-            <Search size={16} className={isDark ? 'text-slate-500' : 'text-slate-400'} aria-hidden="true" />
+        <div className={`absolute right-0 top-full z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border p-3 shadow-xl motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-top-2 bg-white border-slate-100 dark:bg-slate-800 dark:border-slate-700`}>
+          <div className={`flex items-center gap-2 rounded-full border px-4 py-2.5 transition-all focus-within:ring-2 focus-within:ring-[var(--brand-ring,rgba(6,182,212,0.5))] bg-white border-slate-200 text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100`}>
+            <Search size={16} className="text-slate-400 dark:text-slate-500" aria-hidden="true" />
             <input type="search" autoFocus autoComplete="off" value={value} onChange={event => onChange(event.target.value)} placeholder={ui('Search bookmarks')} aria-label={ui('Search bookmarks')}
               className="min-w-0 flex-1 bg-transparent font-sans text-sm outline-none placeholder:text-slate-400 [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none" />
             {value && <button type="button" onClick={() => onChange('')} aria-label={ui('Clear search')}
-              className={`-my-1 -mr-2 grid h-8 w-8 place-items-center rounded-full ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}><X size={14} /></button>}
+              className={`-my-1 -mr-2 grid h-8 w-8 place-items-center rounded-full text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300`}><X size={14} /></button>}
           </div>
         </div>
       )}

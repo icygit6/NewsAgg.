@@ -4,7 +4,7 @@ import { NavLink, Link } from 'react-router';
 import { Home, MessageSquareQuote, Bookmark, Palette, Languages, BarChart2, ShieldCheck } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { POSTS_ENABLED } from '../../constants';
-import { useInterfaceLanguage } from '../ui/LanguageSwitcher';
+import { useInterfaceLanguage } from '../../hooks/useInterfaceLanguage';
 import { TranslateNewsToggle } from '../ui/TranslateNewsToggle';
 import { BrandLogo } from '../ui/BrandLogo';
 import { ThemePicker } from '../ui/ThemePicker';
@@ -69,20 +69,20 @@ export function NavRail() {
   ];
 
   const baseItem = `flex items-center gap-4 rounded-full px-3 py-3 xl:px-4 transition-[background-color,color,transform,box-shadow] duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 motion-reduce:transition-none
-    ${isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-200/70'}`;
+    hover:bg-slate-200/70 dark:hover:bg-slate-800`;
 
   return (
     <nav
       className={`hidden lg:flex h-full w-[68px] xl:w-[240px] shrink-0 flex-col
         items-center xl:items-stretch gap-1 px-2 xl:px-4 py-4 border-r overflow-y-auto
-        ${isDark ? 'border-slate-800' : 'border-slate-200'}`}
+        border-slate-200 dark:border-slate-800`}
       style={{ scrollbarWidth: 'none' }}
       aria-label={t.menu}
     >
       <Link to="/" className="mb-4 flex items-center gap-2 rounded-xl px-2 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500" aria-label={ui("NewsAgg home")}>
         <BrandLogo
-          markClassName="w-10 h-10"
-          wordmarkClassName="hidden xl:inline text-xl"
+          size="md"
+          wordmarkClassName="hidden xl:inline"
         />
       </Link>
 
@@ -95,14 +95,14 @@ export function NavRail() {
           aria-label={label}
           className={({ isActive }) =>
             `${baseItem} ${
-              isActive ? 'font-semibold text-white shadow-sm shadow-blue-500/20' : isDark ? 'text-slate-200' : 'text-slate-700'
+              isActive ? 'font-semibold text-white shadow-sm shadow-blue-500/20' : 'text-slate-700 dark:text-slate-200'
             }`
           }
           style={({ isActive }) => (isActive ? { background: 'var(--brand, #2563eb)' } : undefined)}
         >
           <span className="relative shrink-0">
             <Icon size={22} />
-            {badge ? <span className="absolute -top-1.5 -right-2 min-w-4 rounded-full bg-rose-500 px-1 text-center text-[11px] font-bold leading-4 text-white" aria-label={`${badge} ${ui('open reports')}`}>{badge}</span> : null}
+            {badge ? <span className="absolute -top-1.5 -right-2 min-w-4 rounded-full bg-red-500 px-1 text-center text-[11px] font-bold leading-4 text-white" aria-label={`${badge} ${ui('open reports')}`}>{badge}</span> : null}
           </span>
           <span className="hidden xl:inline text-[15px]">{label}</span>
         </NavLink>
@@ -117,7 +117,7 @@ export function NavRail() {
             }}
             title={ui('Theme')}
             aria-expanded={themeMenu !== null}
-            className={`${baseItem} w-full ${isDark ? 'text-slate-200' : 'text-slate-700'}`}
+            className={`${baseItem} w-full text-slate-700 dark:text-slate-200`}
           >
             <Palette size={22} className="shrink-0" />
             <span className="hidden xl:inline text-[15px]">{ui('Theme')}</span>
@@ -126,7 +126,7 @@ export function NavRail() {
             <div
               role="dialog"
               aria-label={ui('Theme')}
-              className={`fixed z-50 w-80 rounded-2xl border p-3 shadow-lg ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}
+              className={`fixed z-50 w-80 rounded-2xl border p-3 shadow-lg bg-white border-slate-200 dark:bg-slate-900 dark:border-slate-700`}
               style={{ left: themeMenu.left, bottom: themeMenu.bottom }}
             >
               <ThemePicker />
@@ -142,16 +142,14 @@ export function NavRail() {
             }}
             title={`${t.language}: ${reading.current.label}`}
             aria-expanded={langOpen}
-            className={`${baseItem} w-full ${isDark ? 'text-slate-200' : 'text-slate-700'}`}
+            className={`${baseItem} w-full text-slate-700 dark:text-slate-200`}
           >
             <Languages size={22} className="shrink-0" />
             <span className="hidden xl:inline text-[15px]">{currentLang}</span>
           </button>
           {langOpen && (
             <div
-              className={`fixed z-50 w-72 rounded-xl border p-1 shadow-lg ${
-                isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'
-              }`}
+              className={`fixed z-50 w-72 rounded-xl border p-1 shadow-lg bg-white border-slate-200 dark:bg-slate-900 dark:border-slate-700`}
               style={{ left: langMenu.left, bottom: langMenu.bottom }}
             >
               {reading.options.map(({ code, short, label }) => (
@@ -165,9 +163,7 @@ export function NavRail() {
                   className={`w-full text-left px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                     reading.choice === code
                       ? 'text-white'
-                      : isDark
-                        ? 'text-slate-200 hover:bg-slate-800'
-                        : 'text-slate-700 hover:bg-slate-100'
+                      : 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800'
                   }`}
                   style={
                     reading.choice === code ? { background: 'var(--brand)' } : undefined
@@ -176,7 +172,7 @@ export function NavRail() {
                   {short}
                 </button>
               ))}
-              <div className={`my-1 border-t ${isDark ? 'border-slate-700' : 'border-slate-200'}`} />
+              <div className={`my-1 border-t border-slate-200 dark:border-slate-700`} />
               <TranslateNewsToggle isDark={isDark} compact />
             </div>
           )}
@@ -185,7 +181,7 @@ export function NavRail() {
         <button
           onClick={() => setSidebarOpen(true)}
           title={t.profile}
-          className={`${baseItem} ${isDark ? 'text-slate-200' : 'text-slate-700'}`}
+          className={`${baseItem} text-slate-700 dark:text-slate-200`}
         >
           <img
             src={avatarSrc}

@@ -7,7 +7,7 @@ test('article category distribution precedes readability, which is hidden for Ya
     const article = (await response.json()).articles[0];
     expect(article).toBeTruthy();
     await page.goto(`/article/${article.id}`);
-    const category = page.getByText('Category Sentiment Distribution', { exact: true }).filter({ visible: true });
+    const category = page.getByText('Category sentiment distribution', { exact: true }).filter({ visible: true });
     await expect(category).toBeVisible();
     const readability = page.getByText('Readability', { exact: true });
     if (source === 'yahoo_tw') {

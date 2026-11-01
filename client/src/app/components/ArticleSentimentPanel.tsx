@@ -1,6 +1,7 @@
 import { useUiText } from '../i18n/uiText';
 import { useApp } from '../contexts/AppContext';
-import { SentimentMeter, SENTIMENT_TEXT } from './ui/SentimentMeter';
+import { SentimentMeter } from './ui/SentimentMeter';
+import { SENTIMENT_TEXT } from './ui/sentimentText';
 import { SENTIMENT_COLOR } from './ui/chartTheme';
 import { PanelHeading } from './ui/PanelHeading';
 import { panelBaseClass } from './sentiment/shared';
@@ -24,9 +25,9 @@ export function ArticleSentimentPanel({ article, isDark }: ArticleSentimentPanel
   const ui = useUiText();
     const { t } = useApp();
 
-    const panelBase = panelBaseClass(isDark);
+    const panelBase = panelBaseClass();
 
-    const mutedText = isDark ? 'text-slate-400' : 'text-gray-500';
+    const mutedText = 'text-slate-500 dark:text-slate-400';
     const comparative = clampSignedUnit(article.sentiment.comparative);
 
     const rawProbabilities = article.sentiment.probabilities;
@@ -61,13 +62,13 @@ export function ArticleSentimentPanel({ article, isDark }: ArticleSentimentPanel
 
             <SentimentMeter value={comparative} type={article.sentiment.type} label={t[article.sentiment.type]} />
 
-            <div className={`mt-5 border-t pt-4 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+            <div className={`mt-5 border-t pt-4 border-slate-100 dark:border-slate-800`}>
                 <h4 className="text-sm font-semibold">{ui('Why this sentiment?')} · {t[article.sentiment.type]}</h4>
                 <ArticleSentimentExplanation article={article} />
             </div>
 
-            <div className={`mt-4 border-t pt-4 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
-                <p className={`text-xs font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t.emotionBreakdown}</p>
+            <div className={`mt-4 border-t pt-4 border-slate-100 dark:border-slate-800`}>
+                <p className={`text-xs font-medium text-slate-600 dark:text-slate-300`}>{t.emotionBreakdown}</p>
                 <div className="bar-grow mt-2 flex h-2.5 gap-0.5 overflow-hidden rounded-full" aria-hidden="true">
                     {rows.map((row) => row.value > 0 && (
                         <div key={row.type} style={{ width: `${row.value * 100}%`, background: SENTIMENT_COLOR[row.type] }} />
@@ -77,7 +78,7 @@ export function ArticleSentimentPanel({ article, isDark }: ArticleSentimentPanel
                     {rows.map((row) => (
                         <li key={row.type} className="flex items-center gap-2 text-xs">
                             <span aria-hidden className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: SENTIMENT_COLOR[row.type] }} />
-                            <span className={`flex-1 ${row.type === article.sentiment.type ? `font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}` : mutedText}`}>{row.label}</span>
+                            <span className={`flex-1 ${row.type === article.sentiment.type ? `font-semibold text-slate-900 dark:text-slate-100` : mutedText}`}>{row.label}</span>
                             <span className={`font-semibold tabular-nums ${SENTIMENT_TEXT[row.type]}`}>
                                 <RollingNumber value={row.value * 100} format={percent(1)} />
                             </span>

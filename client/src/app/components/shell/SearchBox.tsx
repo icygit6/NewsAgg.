@@ -5,9 +5,9 @@ import { useApp } from '../../contexts/AppContext';
 
 /** Global search input (moved from the old Header into the right rail / top
  * bar). Typing filters the feed server-side via the debounced `q` param. */
-export function SearchBox() {
+export function SearchBox({ autoFocus = false }: { autoFocus?: boolean }) {
   const ui = useUiText();
-  const { t, isDark, searchQuery, setSearchQuery } = useApp();
+  const { t, searchQuery, setSearchQuery } = useApp();
   const navigate = useNavigate();
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -19,13 +19,17 @@ export function SearchBox() {
     <div
       className={`flex items-center gap-2 rounded-full px-4 py-2.5 border transition-all
         focus-within:ring-2 focus-within:ring-[var(--brand-ring,rgba(6,182,212,0.5))]
-        ${isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-200 text-slate-900'}`}
+        bg-white border-slate-200 text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100`}
     >
-      <Search size={16} className={isDark ? 'text-slate-500' : 'text-slate-400'} />
+      <Search size={16} className="text-slate-400 dark:text-slate-500" />
       <input
         type="search"
         name="search"
         autoComplete="off"
+        // Only the desktop pop-over asks for this: it opens because the reader
+        // clicked Search, so typing should go straight in. The always-visible
+        // mobile and top-bar boxes must not grab focus (or the phone keyboard).
+        autoFocus={autoFocus}
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
         onKeyDown={handleKeyDown}
@@ -39,7 +43,7 @@ export function SearchBox() {
         <button
           type="button"
           onClick={() => setSearchQuery('')}
-          className={`-my-1 -mr-2 grid h-8 w-8 place-items-center rounded-full ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}
+          className={`-my-1 -mr-2 grid h-8 w-8 place-items-center rounded-full text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300`}
           aria-label={ui("Clear search")}
         >
           <X size={14} />

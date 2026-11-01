@@ -3,7 +3,12 @@
 // successful rebuild. Run by the Claude Code Stop hook, and safe to run by hand:
 //   node ops/rebuild-live.mjs          rebuild what changed
 //   node ops/rebuild-live.mjs --force  rebuild everything
+//   node ops/rebuild-live.mjs --check  only report what is out of date
 // Never touches volumes: the database (pgdata) is left alone.
+//
+// The Stop hook runs --check. Several sessions share this working tree, so an
+// automatic rebuild at the end of one session's turn would also publish the
+// others' unfinished edits; deploying stays a deliberate step.
 import { createHash } from 'node:crypto';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -14,6 +19,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const stateFile = join(root, 'logs', 'rebuild-live', 'state.json');
 const lockFile = join(root, 'logs', 'rebuild-live', 'lock');
 const force = process.argv.includes('--force');
+const checkOnly = process.argv.includes('--check');
 
 // Each target lists the paths whose content decides whether it is stale and
 // the compose command that brings the live container up to date.
@@ -105,6 +111,14 @@ function tail(text, lines = 25) {
 }
 
 const input = readStdin();
+if (checkOnly) {
+  const known = existsSync(stateFile) ? JSON.parse(readFileSync(stateFile, 'utf8')) : {};
+  const behind = targets.filter((t) => known[t.name] !== fingerprint(t.paths)).map((t) => t.name);
+  if (behind.length) {
+    console.log(JSON.stringify({ systemMessage: `Live site is behind the working tree (${behind.join(', ')}). Nothing was deployed; run node ops/rebuild-live.mjs when the changes are ready.` }));
+  }
+  process.exit(0);
+}
 await acquireLock();
 const state = existsSync(stateFile) ? JSON.parse(readFileSync(stateFile, 'utf8')) : {};
 const saveState = () => {

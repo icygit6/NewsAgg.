@@ -12,7 +12,7 @@ const InsightsRail = lazy(() =>
 type RailTab = 'pulse' | 'insights';
 
 export function RightRail() {
-  const { t, isDark, selectedCategory } = useApp();
+  const { t, selectedCategory } = useApp();
   const [tab, setTab] = useState<RailTab>('insights');
   const scrollFade = useScrollFade<HTMLDivElement>();
 
@@ -28,9 +28,7 @@ export function RightRail() {
       className={`flex-1 py-2 text-sm font-semibold rounded-full transition-colors ${
         tab === key
           ? 'text-white'
-          : isDark
-            ? 'text-slate-400 hover:text-slate-200'
-            : 'text-slate-500 hover:text-slate-800'
+          : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
       }`}
       style={tab === key ? { background: 'var(--brand)' } : undefined}
     >
@@ -47,9 +45,7 @@ export function RightRail() {
         className="shrink-0 h-[88px] px-4 flex items-center"
       >
         <div
-          className={`flex gap-1 rounded-full border p-1 w-full ${
-            isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'
-          }`}
+          className={`flex gap-1 rounded-full border p-1 w-full bg-white border-slate-200 dark:bg-slate-900 dark:border-slate-800`}
           role="tablist"
           aria-label={`${t.insights} / ${t.pulse}`}
         >

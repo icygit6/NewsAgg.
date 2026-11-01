@@ -3,7 +3,8 @@ import { FolderCog, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useBookmarkActions, type BookmarkMeta } from '../../hooks/useBookmarks';
 import { useUiText } from '../../i18n/uiText';
 import { StyledSelect } from '../ui/StyledSelect';
-import { CollectionNameInput, collectionChoices, normalizeCollection, useCollectionLabel } from './CollectionPicker';
+import { CollectionNameInput } from './CollectionPicker';
+import { collectionChoices, normalizeCollection, useCollectionLabel } from './collections';
 
 // Postgres text cannot hold NUL, so this can never collide with a real name.
 const DELETE_BOOKMARKS = '\u0000delete';
@@ -24,8 +25,8 @@ export function ManageCollections({ meta, isDark, onRenamed, onDeleted, id, clas
   const [adding, setAdding] = useState(false);
   const names = collectionChoices(meta);
   const counts = meta?.collection_counts ?? {};
-  const row = `flex min-h-12 items-center gap-2 rounded-xl px-3 py-1.5 ${isDark ? 'bg-slate-800/60' : 'bg-slate-50'}`;
-  const iconButton = `rounded-lg p-2 transition-colors ${isDark ? 'text-slate-400 hover:bg-slate-700 hover:text-slate-100' : 'text-slate-500 hover:bg-white hover:text-blue-600'}`;
+  const row = `flex min-h-12 items-center gap-2 rounded-xl px-3 py-1.5 bg-slate-50 dark:bg-slate-800/60`;
+  const iconButton = `rounded-lg p-2 transition-colors text-slate-500 hover:bg-white hover:text-blue-600 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-100`;
 
   const startDelete = (name: string) => {
     setEditing(null);
@@ -34,7 +35,7 @@ export function ManageCollections({ meta, isDark, onRenamed, onDeleted, id, clas
   };
 
   return (
-    <section id={id} aria-label={ui('Manage collections')} className={`rounded-2xl border p-3 ${isDark ? 'border-slate-800' : 'border-slate-200'} ${className}`}>
+    <section id={id} aria-label={ui('Manage collections')} className={`rounded-2xl border p-3 border-slate-200 dark:border-slate-800 ${className}`}>
       <ul className="space-y-1.5">
         {names.map((name, index) => {
           const count = counts[name] ?? 0;
@@ -67,7 +68,7 @@ export function ManageCollections({ meta, isDark, onRenamed, onDeleted, id, clas
                   setDeleting(null);
                   const target = count > 0 && moveTo !== DELETE_BOOKMARKS ? moveTo : null;
                   deleteCollection.mutate({ name, moveTo: target }, { onSuccess: () => onDeleted(name) });
-                }} className="rounded-lg bg-rose-600 px-3 py-2 text-sm font-semibold text-white hover:bg-rose-700">{ui('Delete')}</button>
+                }} className="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700">{ui('Delete')}</button>
               </div>
             </li>
           );
@@ -75,9 +76,9 @@ export function ManageCollections({ meta, isDark, onRenamed, onDeleted, id, clas
             <li key={name} className={row}>
               <span className="min-w-0 flex-1 truncate text-sm font-medium">{labelFor(name)}</span>
               {index === 0 && <span className="shrink-0 rounded-full bg-[color-mix(in_srgb,var(--brand)_14%,transparent)] px-2 py-0.5 text-[11px] font-semibold text-[var(--brand)]">{ui('New bookmarks go here')}</span>}
-              <span className={`shrink-0 text-xs tabular-nums ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{count}</span>
-              <button title={ui('Rename collection')} aria-label={`${ui('Rename collection')}: ${labelFor(name)}`} onClick={() => { setDeleting(null); setEditing(name); }} className={iconButton}><Pencil size={15} /></button>
-              <button title={ui('Delete collection')} aria-label={`${ui('Delete collection')}: ${labelFor(name)}`} onClick={() => startDelete(name)} className={`${iconButton} hover:!text-rose-600`}><Trash2 size={15} /></button>
+              <span className={`shrink-0 text-xs tabular-nums text-slate-500 dark:text-slate-400`}>{count}</span>
+              <button title={ui('Rename collection')} aria-label={`${ui('Rename collection')}: ${labelFor(name)}`} onClick={() => { setDeleting(null); setEditing(name); }} className={iconButton}><Pencil size={16} /></button>
+              <button title={ui('Delete collection')} aria-label={`${ui('Delete collection')}: ${labelFor(name)}`} onClick={() => startDelete(name)} className={`${iconButton} hover:!text-red-600`}><Trash2 size={16} /></button>
             </li>
           );
         })}
@@ -91,7 +92,7 @@ export function ManageCollections({ meta, isDark, onRenamed, onDeleted, id, clas
           }} />
         ) : (
           <button onClick={() => setAdding(true)} className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-[var(--brand)] hover:bg-[color-mix(in_srgb,var(--brand)_10%,transparent)]">
-            <Plus size={15} aria-hidden="true" />{ui('Add collection')}
+            <Plus size={16} aria-hidden="true" />{ui('Add collection')}
           </button>
         )}
       </div>
@@ -133,7 +134,7 @@ export function ManageCollectionsMenu({ buttonClassName, ...props }: ManageProps
     <div ref={rootRef} className="shrink-0">
       <button ref={triggerRef} aria-expanded={open} aria-controls={panelId} onClick={() => setOpen(value => !value)} title={ui('Manage collections')}
         className={buttonClassName(open)}>
-        <FolderCog size={18} aria-hidden="true" /><span className="sr-only">{ui('Manage collections')}</span>
+        <FolderCog size={20} aria-hidden="true" /><span className="sr-only">{ui('Manage collections')}</span>
       </button>
       {open && (
         <ManageCollections {...props} id={panelId}

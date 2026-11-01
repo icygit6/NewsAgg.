@@ -26,18 +26,18 @@ export function TrendingKeywords() {
   if (isLoading) return <div role="status" aria-busy="true" aria-label={t.loading}><TrendingPanel /></div>;
 
   return (
-    <div className={`rounded-2xl border p-4 ${panelBaseClass(isDark)}`}>
+    <div className={`rounded-2xl border p-4 ${panelBaseClass()}`}>
       <div className="flex items-center gap-2 mb-3">
         <InsightMark kind="trending" />
         <h3
-          className={`font-poppins text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-gray-800'}`}
+          className={`font-poppins text-sm font-semibold text-slate-800 dark:text-slate-200`}
         >
           {t.trendingTopics}
         </h3>
       </div>
 
         {trendingKeywords.length === 0 ? (
-          <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{t.noResults}</p>
+          <p className={`text-sm text-slate-500 dark:text-slate-400`}>{t.noResults}</p>
         ) : (
           <AutoPages label={t.trendingTopics} scopeKey={selectedCategory}
             pageClassName="divide-y divide-slate-100 dark:divide-slate-800"
@@ -51,7 +51,7 @@ export function TrendingKeywords() {
               </span>
               <div className="w-20 shrink-0 text-right">
                 <span className="text-xs tabular-nums" style={{ color: mutedColor }}>{topic.count.toLocaleString()}</span>
-                <div className={`mt-1 h-1 overflow-hidden rounded-full ${isDark ? 'bg-slate-700' : 'bg-gray-100'}`}>
+                <div className={`mt-1 h-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700`}>
                   <div className="h-full origin-left rounded-full transition-transform duration-300 motion-reduce:transition-none" style={{ transform: `scaleX(${topic.count / maxKeywordCount})`, background: 'var(--brand)' }} />
                 </div>
               </div>

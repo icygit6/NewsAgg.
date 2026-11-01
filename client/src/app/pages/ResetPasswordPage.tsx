@@ -6,6 +6,7 @@ import { useApp } from '../contexts/AppContext';
 import { authService } from '../services/authService';
 import { AuthLayout } from '../components/auth/AuthLayout';
 import { LoadingIndicator } from '../components/ui/ContentSkeleton';
+import { errorBox } from '../components/ui/ErrorNote';
 
 export function ResetPasswordPage() {
   const ui = useUiText();
@@ -21,11 +22,7 @@ export function ResetPasswordPage() {
   const [error, setError] = useState('');
   const submitting = useRef(false);
 
-  const inputClass = `w-full px-4 py-3 rounded-xl border transition ${
-    isDark
-      ? 'bg-slate-800 border-slate-700 text-slate-100 placeholder-slate-500 focus:border-blue-500'
-      : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500'
-  } focus:outline-none`;
+  const inputClass = `w-full px-4 py-3 rounded-xl border transition bg-white border-slate-300 text-slate-900 placeholder-slate-400 focus:border-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-blue-500 focus:outline-none`;
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -64,7 +61,7 @@ export function ResetPasswordPage() {
   if (!token) {
     return (
       <AuthLayout title={ui("Reset password")} isDark={isDark}>
-        <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>{ui("This password reset link is missing or invalid. Request a new one from the sign-in screen.")} </p>
+        <p className={`text-sm text-slate-600 dark:text-slate-400`}>{ui("This password reset link is missing or invalid. Request a new one from the sign-in screen.")} </p>
         <Link
           to="/"
           className="mt-5 inline-block text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
@@ -96,7 +93,7 @@ export function ResetPasswordPage() {
             type="button"
             onClick={() => setShowPassword((p) => !p)}
             aria-label={showPassword ? ui("Hide password") : ui("Show password")}
-            className={`absolute right-3.5 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-gray-400 hover:text-gray-600'}`}
+            className={`absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200`}
           >
             {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
           </button>
@@ -117,7 +114,7 @@ export function ResetPasswordPage() {
       </div>
 
       {error && (
-        <div role="alert" className={`mt-4 p-3 rounded-lg text-sm ${isDark ? 'bg-red-900/30 text-red-300' : 'bg-red-50 text-red-700'}`}>
+        <div role="alert" className={`mt-4 ${errorBox}`}>
           {ui(error)}
         </div>
       )}
@@ -127,7 +124,7 @@ export function ResetPasswordPage() {
         disabled={loading}
         className="auth-submit mt-5 w-full flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {loading ? <LoadingIndicator label={ui('Resetting…')} /> : <><KeyRound size={18} />{ui('Reset password')}</>}
+        {loading ? <LoadingIndicator label={ui('Resetting…')} /> : <><KeyRound size={20} />{ui('Reset password')}</>}
       </button>
       </fieldset>
       </form>

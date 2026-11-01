@@ -136,7 +136,7 @@ postsRouter.get('/:id/comments', optionalAuth, async (req: any, res: Response) =
       LEFT JOIN users parent_user ON parent_user.id=parent.user_id
       WHERE t.id IN (SELECT id FROM visible) OR t.id=t.root_id
       ORDER BY ro.rn,(c.id=t.root_id) DESC,c.created_at,c.id`, params)
-    const comments = result.rows.filter(row => Number(row.rn) <= 30).map(({ rn, ...row }) => row)
+    const comments = result.rows.filter(row => Number(row.rn) <= 30).map(({ rn: _rn, ...row }) => row)
     res.json({ success: true, data: { comments, nextOffset: result.rows.some(row => Number(row.rn) > 30) ? offset + 30 : null } })
   } catch (err) {
     logger.error({ err }, 'Comments fetch error')

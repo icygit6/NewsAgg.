@@ -29,7 +29,7 @@ const UNBROKEN = 'https://news.example.com/2026/10/21/an-extremely-long-canonica
 
 it('has no visible scrollbar but stays scrollable and keyboard-reachable without trapping parent scroll', () => {
   view([...Array(8)].map((_, n) => article(n, LONG)));
-  const list = screen.getByRole('region', { name: 'Live View' });
+  const list = screen.getByRole('region', { name: 'Live view' });
   expect(list).toHaveClass('no-scrollbar', 'overflow-x-auto');
   expect(list).not.toHaveClass('overscroll-contain');
   expect(list).toHaveAttribute('tabindex', '0');

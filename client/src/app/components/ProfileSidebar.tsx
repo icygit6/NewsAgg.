@@ -13,7 +13,7 @@ import { maskEmail } from '../lib/maskEmail';
 import { FooterCompact } from './shell/Footer';
 import { useIsMobile } from './ui/use-mobile';
 import { BrandLogo } from './ui/BrandLogo';
-import { useInterfaceLanguage } from './ui/LanguageSwitcher';
+import { useInterfaceLanguage } from '../hooks/useInterfaceLanguage';
 import { TranslateNewsToggle } from './ui/TranslateNewsToggle';
 import { ThemePicker } from './ui/ThemePicker';
 import { SegmentedControl } from './ui/SegmentedControl';
@@ -80,13 +80,11 @@ export function ProfileSidebar() {
 
   const reading = useInterfaceLanguage();
 
-  const rowClass = `w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors ${
-    isDark ? 'text-slate-200 hover:bg-slate-800' : 'text-gray-700 hover:bg-gray-50'
-  }`;
+  const rowClass = `w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800`;
   // Settings groups: a hairline above each, labelled like the profile page's Preferences card.
-  const groupClass = `mt-5 pt-5 border-t ${isDark ? 'border-slate-800' : 'border-gray-100'}`;
-  const groupLabel = `mb-3 text-xs font-semibold ${isDark ? 'text-slate-500' : 'text-slate-400'}`;
-  const iconBox =`w-8 h-8 rounded-lg flex items-center justify-center ${isDark ? 'bg-slate-700' : 'bg-gray-100'}`;
+  const groupClass = `mt-5 pt-5 border-t border-slate-100 dark:border-slate-800`;
+  const groupLabel = `mb-3 text-xs font-semibold text-slate-400 dark:text-slate-500`;
+  const iconBox =`w-8 h-8 rounded-lg flex items-center justify-center bg-slate-100 dark:bg-slate-700`;
 
   return (
     <AnimatePresence>
@@ -113,26 +111,21 @@ export function ProfileSidebar() {
             transition={{ duration: reducedMotion ? 0 : 0.3, ease: [0.32, 0.72, 0, 1] }}
             className={`account-drawer fixed inset-y-0 z-[70] pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] w-[400px] max-w-[95vw] flex flex-col overflow-hidden shadow-2xl ${
               isMobile ? 'right-0 rounded-l-[28px]' : 'left-0 rounded-r-[28px]'
-            } ${
-              isDark
-                ? 'bg-slate-900'
-                : 'bg-white'
-            }`}
+            } bg-white dark:bg-slate-900`}
           >
             {/* Header */}
             <div className="flex shrink-0 items-center justify-between px-6 py-5">
               <div className="flex items-center gap-2">
                 <BrandLogo
-                  markClassName="w-8 h-8"
-                  wordmarkClassName="text-lg"
+                  size="sm"
                 />
               </div>
               <button
                 onClick={() => setSidebarOpen(false)}
                 aria-label={ui("Close account panel")}
-                className={`p-2 rounded-xl transition-colors ${isDark ? 'text-slate-400 hover:bg-slate-800' : 'text-gray-400 hover:bg-gray-100'}`}
+                className={`p-2 rounded-xl transition-colors text-slate-400 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800`}
               >
-                <X size={18} />
+                <X size={20} />
               </button>
             </div>
 
@@ -142,37 +135,35 @@ export function ProfileSidebar() {
                   {/* Identity card → /profile */}
                   <button
                     onClick={() => goTo('/profile')}
-                    className={`w-full flex items-center gap-3 p-3 mb-4 rounded-2xl text-left transition-colors ${
-                      isDark ? 'bg-slate-800/70 hover:bg-slate-800' : 'bg-gray-50 hover:bg-gray-100'
-                    }`}
+                    className={`w-full flex items-center gap-3 p-3 mb-4 rounded-2xl text-left transition-colors bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/70 dark:hover:bg-slate-800`}
                   >
                     <img src={avatarSrc} alt={user.username} className="w-12 h-12 rounded-full object-cover bg-slate-300" />
                     <div className="flex-1 min-w-0">
-                      <p className={`font-poppins font-bold leading-tight truncate ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>
+                      <p className={`font-poppins font-bold leading-tight truncate text-slate-900 dark:text-slate-100`}>
                         {user.username}
                       </p>
-                      <p className={`text-xs truncate ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{hideEmail ? maskEmail(user.email) : user.email}</p>
+                      <p className={`text-xs truncate text-slate-500 dark:text-slate-400`}>{hideEmail ? maskEmail(user.email) : user.email}</p>
                       <span className="text-xs font-medium text-blue-600 dark:text-blue-400">{t.viewProfile}</span>
                     </div>
-                    <ChevronRight size={16} className={isDark ? 'text-slate-500' : 'text-gray-400'} />
+                    <ChevronRight size={16} className="text-slate-400 dark:text-slate-500" />
                   </button>
 
                   {/* Quick rows */}
                   <nav className="space-y-1">
                     <button onClick={() => goTo('/bookmarks')} className={rowClass}>
-                      <div className={iconBox}><Bookmark size={16} className={isDark ? 'text-blue-400' : 'text-blue-600'} /></div>
+                      <div className={iconBox}><Bookmark size={16} className="text-blue-600 dark:text-blue-400" /></div>
                       <span className="font-medium flex-1">{t.bookmarks}</span>
-                      <span className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{bookmarks.length}</span>
+                      <span className={`text-xs font-semibold text-slate-500 dark:text-slate-400`}>{bookmarks.length}</span>
                     </button>
                     <button onClick={() => goTo('/settings')} className={rowClass}>
-                      <div className={iconBox}><Settings size={16} className={isDark ? 'text-blue-400' : 'text-blue-600'} /></div>
+                      <div className={iconBox}><Settings size={16} className="text-blue-600 dark:text-blue-400" /></div>
                       <span className="font-medium flex-1">{t.settings}</span>
                     </button>
                     {admin && (
                       <button onClick={() => goTo('/admin')} className={rowClass}>
-                        <div className={iconBox}><ShieldCheck size={16} className={isDark ? 'text-blue-400' : 'text-blue-600'} /></div>
+                        <div className={iconBox}><ShieldCheck size={16} className="text-blue-600 dark:text-blue-400" /></div>
                         <span className="font-medium flex-1">{ui('Admin')}</span>
-                        {openReports > 0 && <span className="rounded-full bg-rose-500 px-1.5 text-[11px] font-bold leading-5 text-white">{openReports}</span>}
+                        {openReports > 0 && <span className="rounded-full bg-red-500 px-1.5 text-[11px] font-bold leading-5 text-white">{openReports}</span>}
                       </button>
                     )}
                   </nav>
@@ -202,32 +193,26 @@ export function ProfileSidebar() {
               {/* Feedback, for guests and signed-in readers alike */}
               <button
                 onClick={() => { setSidebarOpen(false); openFeedback(); }}
-                className={`mt-6 flex w-full min-h-11 items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm transition-colors ${
-                  isDark ? 'bg-slate-800 text-slate-200 hover:bg-slate-700' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
-                }`}
+                className={`mt-6 flex w-full min-h-11 items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm transition-colors bg-slate-50 text-slate-700 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700`}
               >
                 <MessageSquarePlus size={16} className="shrink-0 text-slate-500 dark:text-slate-400" />
                 <span className="font-medium flex-1">{ui('Send feedback')}</span>
-                <ChevronRight size={16} className={isDark ? 'text-slate-500' : 'text-gray-400'} />
+                <ChevronRight size={16} className="text-slate-400 dark:text-slate-500" />
               </button>
 
-              <div className={`mt-6 pt-4 border-t ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
+              <div className={`mt-6 pt-4 border-t border-slate-100 dark:border-slate-700`}>
                 <FooterCompact brief />
               </div>
             </div>
 
             {/* Sign out */}
             {user && (
-              <div className={`p-4 border-t ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
+              <div className={`p-4 border-t border-slate-100 dark:border-slate-700`}>
                 <button
                   onClick={() => void handleLogout()}
-                  className={`w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl font-semibold transition-all ${
-                    isDark
-                      ? 'bg-red-900/30 text-red-300 border border-red-700/50 hover:bg-red-900/40'
-                      : 'bg-red-50 text-red-700 border border-red-200 hover:bg-red-100'
-                  }`}
+                  className={`w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl font-semibold transition-all bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-300 dark:border dark:border-red-700/50 dark:hover:bg-red-900/40`}
                 >
-                  <LogOut size={18} />
+                  <LogOut size={20} />
                   {t.signOut}
                 </button>
               </div>

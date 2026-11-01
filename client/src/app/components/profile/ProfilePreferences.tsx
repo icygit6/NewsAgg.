@@ -46,9 +46,9 @@ export function ProfilePreferences({ isDark }: { isDark: boolean }) {
     } else setMessage(result.error || 'Could not update email preferences.');
   };
 
-  const row = `flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${isDark ? 'text-slate-200 hover:bg-slate-800' : 'text-slate-700 hover:bg-slate-100'}`;
-  const hint = `block text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`;
-  const groupLabel = `px-3 pb-1 text-xs font-semibold ${isDark ? 'text-slate-500' : 'text-slate-400'}`;
+  const row = `flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800`;
+  const hint = `block text-xs text-slate-500 dark:text-slate-400`;
+  const groupLabel = `px-3 pb-1 text-xs font-semibold text-slate-400 dark:text-slate-500`;
 
   return (
     <div className="max-w-xl">
@@ -70,7 +70,7 @@ export function ProfilePreferences({ isDark }: { isDark: boolean }) {
           <SwitchTrack on={hideLastActive} isDark={isDark} />
         </button>
       </div>
-      <div className={`mt-4 border-t pt-4 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+      <div className={`mt-4 border-t pt-4 border-slate-100 dark:border-slate-800`}>
         <button type="button" onClick={() => void downloadData()} className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm font-medium hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"><Download size={14} />{ui("Download my data")}</button>
         {message && <p role="status" aria-live="polite" className="mt-2 text-xs text-blue-600 dark:text-blue-400">{ui(message)}</p>}
       </div>

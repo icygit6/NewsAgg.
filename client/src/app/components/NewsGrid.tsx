@@ -10,7 +10,8 @@ import { FeedSkeleton } from './ui/ContentSkeleton';
 import { InfiniteScrollFooter } from './ui/InfiniteScrollFooter';
 import { LeadStoryCard } from './LeadStoryCard';
 import { MoreInCategory } from './feed/MoreInCategory';
-import { FeedState, feedStateButton } from './feed/FeedState';
+import { FeedState } from './feed/FeedState';
+import { feedStateButton } from './feed/feedStateButton';
 import { withCategoryRunsByPage } from './feed/categoryRuns';
 
 export function NewsGrid() {

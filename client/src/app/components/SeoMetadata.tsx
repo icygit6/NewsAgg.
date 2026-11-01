@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import type { NewsArticle } from '../types/article';
+import { BRAND_ASSET_VERSION } from '../constants';
 
 export const DEFAULT_TITLE = 'NewsAgg: Automated News Aggregation, NLP-Based Sentiment and Topic Classification, and Topic Insights Dashboard';
 const DEFAULT_DESCRIPTION = 'English and Traditional Chinese news with sentiment, topic, and keyword insights.';
@@ -20,7 +21,7 @@ export function SeoMetadata({ article }: { article: NewsArticle | null }) {
 
     const pageUrl = `${window.location.origin}${window.location.pathname}`;
     const description = (article.description || article.aiSummary || DEFAULT_DESCRIPTION).slice(0, 200);
-    const image = article.urlToImage || article.images[0]?.url || `${window.location.origin}/og-image.png?v=brand-20261031`;
+    const image = article.urlToImage || article.images[0]?.url || `${window.location.origin}/og-image.png?v=${BRAND_ASSET_VERSION}`;
     document.title = `${article.title} | NewsAgg`;
 
     upsertMeta('meta[name="description"]', 'name', 'description', description);
@@ -54,7 +55,7 @@ export function SeoMetadata({ article }: { article: NewsArticle | null }) {
       datePublished: article.publishedAt,
       ...(article.modifiedAt ? { dateModified: article.modifiedAt } : {}),
       ...(article.author ? { author: { '@type': 'Person', name: article.author } } : {}),
-      publisher: { '@type': 'Organization', name: 'NewsAgg', logo: { '@type': 'ImageObject', url: `${window.location.origin}/logo-mark.png?v=brand-20261031` } },
+      publisher: { '@type': 'Organization', name: 'NewsAgg', logo: { '@type': 'ImageObject', url: `${window.location.origin}/logo-mark-512.png?v=${BRAND_ASSET_VERSION}` } },
       mainEntityOfPage: pageUrl,
       isBasedOn: article.url,
     });
@@ -66,10 +67,10 @@ export function SeoMetadata({ article }: { article: NewsArticle | null }) {
       upsertMeta('meta[property="og:type"]', 'property', 'og:type', 'website');
       upsertMeta('meta[property="og:title"]', 'property', 'og:title', DEFAULT_TITLE);
       upsertMeta('meta[property="og:description"]', 'property', 'og:description', DEFAULT_DESCRIPTION);
-      upsertMeta('meta[property="og:image"]', 'property', 'og:image', '/og-image.png?v=brand-20261031');
+      upsertMeta('meta[property="og:image"]', 'property', 'og:image', `/og-image.png?v=${BRAND_ASSET_VERSION}`);
       upsertMeta('meta[name="twitter:title"]', 'name', 'twitter:title', DEFAULT_TITLE);
       upsertMeta('meta[name="twitter:description"]', 'name', 'twitter:description', DEFAULT_DESCRIPTION);
-      upsertMeta('meta[name="twitter:image"]', 'name', 'twitter:image', '/og-image.png?v=brand-20261031');
+      upsertMeta('meta[name="twitter:image"]', 'name', 'twitter:image', `/og-image.png?v=${BRAND_ASSET_VERSION}`);
       document.head.querySelector('meta[property="og:url"]')?.remove();
       document.head.querySelector('meta[property="article:published_time"]')?.remove();
       document.head.querySelector('link[rel="canonical"]')?.remove();

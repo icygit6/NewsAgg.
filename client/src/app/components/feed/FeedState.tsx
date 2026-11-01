@@ -1,11 +1,10 @@
 import type { ReactNode } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { SENTIMENT_COLOR } from '../ui/chartTheme';
-import { button } from '../ui/styles';
 
 /** Preview (A5/D4): the empty / error / not-found states. A drawn scene in the brand colours
  * plus one clear action, instead of an emoji and a grey sentence. */
-export function FeedState({ tone = 'empty', title, body, action }: { tone?: 'empty' | 'error'; title: string; body: string; action?: ReactNode }) {
+export function FeedState({ tone = 'empty', title, body, action }: { tone?: 'empty' | 'error'; title: string; body?: string; action?: ReactNode }) {
   const { isDark } = useApp();
   const ink = isDark ? '#cbd5e1' : '#0b1f33';
   const paper = isDark ? '#1e293b' : '#ffffff';
@@ -20,11 +19,10 @@ export function FeedState({ tone = 'empty', title, body, action }: { tone?: 'emp
           ? <g><circle cx="128" cy="30" r="17" fill="currentColor" /><path d="M128 21v11M128 38v1" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" /></g>
           : <g><circle cx="126" cy="86" r="17" fill={paper} stroke="currentColor" strokeWidth="3" /><path d="m138 98 12 12" stroke="currentColor" strokeWidth="4" strokeLinecap="round" /></g>}
       </svg>
-      <p className={`text-lg font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{title}</p>
-      <p className={`mt-1 max-w-sm text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{body}</p>
+      <p className={`text-lg font-bold text-slate-900 dark:text-slate-100`}>{title}</p>
+      {body && <p className={`mt-1 max-w-sm text-sm text-slate-500 dark:text-slate-400`}>{body}</p>}
       {action && <div className="mt-5">{action}</div>}
     </div>
   );
 }
 
-export const feedStateButton = button.primary;

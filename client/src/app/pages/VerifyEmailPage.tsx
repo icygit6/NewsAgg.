@@ -52,7 +52,7 @@ export function VerifyEmailPage() {
         {status === 'verifying' && <LoadingIndicator label={ui('Verifying your email…')} />}
         {status === 'success' && <CheckCircle2 size={44} className="text-emerald-500" />}
         {status === 'error' && <XCircle size={44} className="text-red-500" />}
-        {status !== 'verifying' && <p role={status === 'error' ? 'alert' : 'status'} className={`text-sm ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>{ui(message)}</p>}
+        {status !== 'verifying' && <p role={status === 'error' ? 'alert' : 'status'} className={`text-sm text-slate-700 dark:text-slate-300`}>{ui(message)}</p>}
         {status !== 'verifying' && (
           <Link
             to="/"

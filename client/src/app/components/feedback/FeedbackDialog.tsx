@@ -8,6 +8,7 @@ import { Bug, CheckCircle2, Lightbulb, MessageSquare, X } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { useUiText } from '../../i18n/uiText';
 import { OPEN_FEEDBACK_EVENT, useSendFeedback, type FeedbackKind } from '../../hooks/useFeedback';
+import { errorBox } from '../ui/ErrorNote';
 
 const MAX_LENGTH = 2000;
 const MIN_LENGTH = 5;
@@ -22,7 +23,7 @@ const KINDS: Array<{ id: FeedbackKind; label: string; icon: typeof Bug }> = [
  * else go to /api/feedback; admins see them on the Admin page and get an email. */
 export function FeedbackDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const ui = useUiText();
-  const { isDark, user } = useApp();
+  const { user } = useApp();
   const location = useLocation();
   const send = useSendFeedback();
   const [kind, setKind] = useState<FeedbackKind>('bug');
@@ -68,10 +69,8 @@ export function FeedbackDialog({ open, onOpenChange }: { open: boolean; onOpenCh
     });
   };
 
-  const field = `w-full rounded-xl border px-3 py-2.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
-    isDark ? 'border-slate-700 bg-slate-800 text-slate-100 placeholder:text-slate-500' : 'border-gray-200 bg-white text-gray-900 placeholder:text-gray-400'
-  }`;
-  const muted = isDark ? 'text-slate-400' : 'text-gray-500';
+  const field = `w-full rounded-xl border px-3 py-2.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-blue-500 border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500`;
+  const muted = 'text-slate-500 dark:text-slate-400';
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -80,11 +79,9 @@ export function FeedbackDialog({ open, onOpenChange }: { open: boolean; onOpenCh
         <Dialog.Content
           className={`fixed z-[95] overflow-y-auto overscroll-contain border p-5 shadow-2xl ${sheet
             ? 'inset-x-0 bottom-0 max-h-[92dvh] rounded-t-3xl pb-[calc(env(safe-area-inset-bottom)+1.25rem)] outline-none'
-            : 'left-1/2 top-1/2 w-[min(28rem,calc(100vw-2rem))] max-h-[calc(100dvh-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-2xl'} ${
-            isDark ? 'border-slate-700 bg-slate-900 text-slate-100' : 'border-gray-100 bg-white text-gray-900'
-          }`}
+            : 'left-1/2 top-1/2 w-[min(28rem,calc(100vw-2rem))] max-h-[calc(100dvh-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-2xl'} border-slate-100 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100`}
         >
-          {sheet && <div aria-hidden className={`mx-auto -mt-1 mb-4 h-1.5 w-10 rounded-full ${isDark ? 'bg-slate-600' : 'bg-gray-300'}`} />}
+          {sheet && <div aria-hidden className={`mx-auto -mt-1 mb-4 h-1.5 w-10 rounded-full bg-slate-300 dark:bg-slate-600`} />}
           <div className="flex items-start justify-between gap-3">
             <div>
               <Dialog.Title className="font-poppins text-lg font-bold">{ui('Send feedback')}</Dialog.Title>
@@ -94,9 +91,9 @@ export function FeedbackDialog({ open, onOpenChange }: { open: boolean; onOpenCh
             </div>
             <Dialog.Close
               aria-label={ui('Close')}
-              className={`shrink-0 rounded-xl p-2 transition-colors ${isDark ? 'text-slate-400 hover:bg-slate-800' : 'text-gray-400 hover:bg-gray-100'}`}
+              className={`shrink-0 rounded-xl p-2 transition-colors text-slate-400 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800`}
             >
-              <X size={18} />
+              <X size={20} />
             </Dialog.Close>
           </div>
 
@@ -124,7 +121,7 @@ export function FeedbackDialog({ open, onOpenChange }: { open: boolean; onOpenCh
                         aria-checked={active}
                         onClick={() => setKind(id)}
                         className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2.5 text-sm font-medium transition-colors ${
-                          active ? 'bg-[var(--brand)] text-white' : isDark ? 'bg-slate-800 text-slate-200 hover:bg-slate-700' : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                          active ? 'bg-[var(--brand)] text-white' : 'bg-slate-50 text-slate-700 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
                         }`}
                       >
                         <Icon size={16} className="shrink-0" />
@@ -164,13 +161,13 @@ export function FeedbackDialog({ open, onOpenChange }: { open: boolean; onOpenCh
               <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" value={website} onChange={(event) => setWebsite(event.target.value)} className="absolute -left-[9999px] h-px w-px opacity-0" />
 
               {send.isError && (
-                <p role="alert" className="rounded-xl bg-rose-500/10 p-3 text-sm text-rose-600">
+                <p role="alert" className={errorBox}>
                   {send.error instanceof Error && !/^HTTP \d/.test(send.error.message) ? ui(send.error.message) : ui('Could not send feedback. Please try again.')}
                 </p>
               )}
 
               <div className="flex items-center justify-end gap-2">
-                <Dialog.Close type="button" className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-gray-600 hover:bg-gray-100'}`}>
+                <Dialog.Close type="button" className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800`}>
                   {ui('Cancel')}
                 </Dialog.Close>
                 <button type="submit" disabled={tooShort || send.isPending} className="rounded-xl bg-[var(--brand)] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[var(--brand-hover)] disabled:opacity-50">

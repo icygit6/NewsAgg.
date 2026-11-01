@@ -13,7 +13,7 @@ vi.mock('motion/react', async (original) => ({ ...(await original<typeof import(
 
 const rows = (count: number) => Array.from({ length: count }, (_, n) => <p key={n}>Row {n + 1}</p>);
 // The panel the list sits in: hovering or focusing anywhere in it counts as reading.
-const view = (count: number) => render(<section data-testid="panel"><h3>Live View</h3><AutoPages items={rows(count)} label="Live View" scopeKey="all" /></section>);
+const view = (count: number) => render(<section data-testid="panel"><h3>Live View</h3><AutoPages items={rows(count)} label="Live view" scopeKey="all" /></section>);
 const bar = () => screen.queryByTestId('auto-pages-progress') as HTMLElement | null;
 const playState = () => bar()?.style.animationPlayState;
 
@@ -31,7 +31,7 @@ it('shows one timer bar when there is more than one page, and none for a single 
 
 it('turns to the next page, wrapping at the end, when the bar finishes: the bar is the timer', () => {
   view(25);
-  const list = screen.getByRole('region', { name: 'Live View' });
+  const list = screen.getByRole('region', { name: 'Live view' });
   Object.defineProperty(list, 'clientWidth', { configurable: true, value: 300 });
   const scrollTo = vi.fn();
   list.scrollTo = scrollTo;
@@ -48,16 +48,16 @@ it('pauses the bar while a mouse hovers or focus is inside the panel, but not fo
   expect(playState()).toBe('running');
   fireEvent.pointerEnter(panel, { pointerType: 'touch' });
   expect(playState()).toBe('running');
-  fireEvent.focusIn(screen.getByRole('region', { name: 'Live View' }));
+  fireEvent.focusIn(screen.getByRole('region', { name: 'Live view' }));
   expect(playState()).toBe('paused');
-  fireEvent.focusOut(screen.getByRole('region', { name: 'Live View' }), { relatedTarget: document.body });
+  fireEvent.focusOut(screen.getByRole('region', { name: 'Live view' }), { relatedTarget: document.body });
   expect(playState()).toBe('running');
 });
 
 it('starts the bar over when the reader touches the list', () => {
   view(25);
   const before = bar();
-  fireEvent.pointerDown(screen.getByRole('region', { name: 'Live View' }));
+  fireEvent.pointerDown(screen.getByRole('region', { name: 'Live view' }));
   expect(bar()).not.toBe(before);
 });
 

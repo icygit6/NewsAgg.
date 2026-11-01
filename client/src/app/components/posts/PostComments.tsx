@@ -6,6 +6,10 @@ import { useUiText } from '../../i18n/uiText';
 import { useCommentMutations, usePostComments, type PostComment } from '../../hooks/usePosts';
 import { InfiniteScrollFooter } from '../ui/InfiniteScrollFooter';
 import { useDeletedContent } from '../../hooks/useAdmin';
+import { LoadError } from '../ui/ErrorNote';
+import { errorText } from '../ui/ErrorNote';
+import { LoadingIndicator } from '../ui/ContentSkeleton';
+import { emptyNote } from '../ui/styles';
 
 const MAX_COMMENT_LENGTH = 500;
 
@@ -24,7 +28,7 @@ function toThreads(comments: PostComment[]): Thread[] {
   return [...threads.values()];
 }
 
-function CommentRow({ comment, rootId, onReply, onDelete, isDark, own, deleting }: {
+function CommentRow({ comment, rootId, onReply, onDelete, own, deleting }: {
   comment: PostComment;
   rootId: number;
   onReply: (comment: PostComment) => void;
@@ -45,16 +49,16 @@ function CommentRow({ comment, rootId, onReply, onDelete, isDark, own, deleting 
         </div>
         {comment.parent_id && comment.parent_id !== rootId && comment.parent_username && <p className="mt-1 text-xs text-blue-600 dark:text-blue-400">{ui('Reply to')} @{comment.parent_username}</p>}
         <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-relaxed">{comment.content}</p>
-        <div className={`mt-1 flex items-center gap-3 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+        <div className={`mt-1 flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400`}>
           <button type="button" onClick={() => onReply(comment)} className="font-semibold hover:text-blue-600 dark:hover:text-blue-400">{ui('Reply')}</button>
-          {own && <button type="button" onClick={() => onDelete(comment.id)} disabled={deleting} className="inline-flex items-center gap-1 hover:text-rose-500 disabled:opacity-50"><Trash2 size={12} />{ui('Delete')}</button>}
+          {own && <button type="button" onClick={() => onDelete(comment.id)} disabled={deleting} className="inline-flex items-center gap-1 hover:text-red-500 disabled:opacity-50"><Trash2 size={14} />{ui('Delete')}</button>}
         </div>
       </div>
     </div>
   );
 }
 
-function Composer({ label, pending, isDark, autoFocus, onSubmit, onCancel }: {
+function Composer({ label, pending, autoFocus, onSubmit, onCancel }: {
   label: string;
   pending: boolean;
   isDark: boolean;
@@ -91,7 +95,7 @@ function Composer({ label, pending, isDark, autoFocus, onSubmit, onCancel }: {
           rows={2}
           aria-label={label}
           placeholder={label}
-          className={`min-w-0 flex-1 resize-y rounded-xl border bg-transparent px-3 py-2 text-sm outline-none focus:border-blue-500 ${isDark ? 'border-slate-700' : 'border-slate-200'}`}
+          className={`min-w-0 flex-1 resize-y rounded-xl border bg-transparent px-3 py-2 text-sm outline-none focus:border-blue-500 border-slate-200 dark:border-slate-700`}
         />
         <button type="button" onClick={() => void submit()} disabled={!content.trim() || pending} aria-label={ui('Send comment')} className="rounded-xl bg-[var(--brand)] p-2.5 text-white disabled:opacity-50">
           {pending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
@@ -101,7 +105,7 @@ function Composer({ label, pending, isDark, autoFocus, onSubmit, onCancel }: {
         {onCancel && <button type="button" onClick={onCancel} className="font-semibold opacity-70 hover:opacity-100">{ui('Cancel')}</button>}
         <span className="opacity-60">{content.length}/{MAX_COMMENT_LENGTH}</span>
       </div>
-      {error && <p role="alert" className="mt-1 text-xs text-rose-500">{error}</p>}
+      {error && <p role="alert" className={`mt-1 text-xs ${errorText}`}>{error}</p>}
     </div>
   );
 }
@@ -133,11 +137,11 @@ export function PostComments({ postId }: { postId: number }) {
   );
 
   return (
-    <section aria-label={ui('Comments')} className={`mt-3 border-t pt-3 ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
-      {isLoading && <p role="status" className="text-xs opacity-60">{ui('Loading comments…')}</p>}
-      {isError && <p role="alert" className="text-xs text-rose-500">{ui('Could not load comments.')} <button type="button" onClick={() => void refetch()} className="font-semibold hover:underline">{ui('Retry')}</button></p>}
-      {!isLoading && !isError && threads.length === 0 && <p className="text-xs opacity-60">{ui('No comments yet. Start the conversation.')}</p>}
-      <div className={`divide-y ${isDark ? 'divide-slate-800' : 'divide-slate-100'}`}>
+    <section aria-label={ui('Comments')} className={`mt-3 border-t pt-3 border-slate-200 dark:border-slate-700`}>
+      {isLoading && <LoadingIndicator label={ui('Loading comments…')} />}
+      {isError && <LoadError message={ui('Could not load comments.')} onRetry={() => void refetch()} />}
+      {!isLoading && !isError && threads.length === 0 && <p className={emptyNote}>{ui('No comments yet. Start the conversation.')}</p>}
+      <div className={`divide-y divide-slate-100 dark:divide-slate-800`}>
         {threads.map(({ root, replies }) => {
           const open = expanded.has(root.id);
           const replying = replyTo && (replyTo.root_id ?? replyTo.id) === root.id;
@@ -152,7 +156,7 @@ export function PostComments({ postId }: { postId: number }) {
               )}
               {(open && replies.length > 0 || replying) && (
                 <div className="mb-3 ml-5 border-l-2 border-blue-500/25 pl-3">
-                  {open && <div className={`divide-y ${isDark ? 'divide-slate-800' : 'divide-slate-100'}`}>{replies.map((reply) => row(reply, root.id))}</div>}
+                  {open && <div className={`divide-y divide-slate-100 dark:divide-slate-800`}>{replies.map((reply) => row(reply, root.id))}</div>}
                   {replying && (
                     <div className="pb-1">
                       <p className="mt-2 text-xs text-blue-600 dark:text-blue-400">{ui('Reply to')} @{replyTo.username}</p>
@@ -176,12 +180,12 @@ export function PostComments({ postId }: { postId: number }) {
       <InfiniteScrollFooter compact hasNextPage={hasNextPage} isFetchingNextPage={isFetchingNextPage} isError={isFetchNextPageError} fetchNextPage={fetchNextPage} />
       {user?.role === 'admin' && <details className="mt-3 text-sm" onToggle={event => { const open = event.currentTarget.open; setShowDeleted(open); if (open) void deleted.refetch(); }}>
         <summary className="cursor-pointer font-semibold">{ui('Deleted messages')} · {ui('Admin only')}</summary>
-        {deleted.isError && <p role="alert">{ui('Could not load deleted content.')}</p>}
+        {deleted.isError && <LoadError message={ui('Could not load deleted content.')} />}
         {deleted.data?.map(item => <div key={item.id} className="py-2 border-b border-slate-400/20"><p className="text-xs opacity-60">#{item.target_id} · @{item.author_username || '—'} · {new Date(item.deleted_at).toLocaleString()}</p><p className="whitespace-pre-wrap break-words">{item.content}</p></div>)}
-        {deleted.data?.length === 0 && <p>{ui('No deleted content.')}</p>}
+        {deleted.data?.length === 0 && <p className={emptyNote}>{ui('No deleted content.')}</p>}
       </details>}
       <Composer label={ui('Write a comment')} isDark={isDark} pending={create.isPending && !replyTo} onSubmit={(content) => create.mutateAsync({ content })} />
-      {error && <p role="alert" className="mt-1 text-xs text-rose-500">{error}</p>}
+      {error && <p role="alert" className={`mt-1 text-xs ${errorText}`}>{error}</p>}
     </section>
   );
 }

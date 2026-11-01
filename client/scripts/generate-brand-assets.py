@@ -63,6 +63,8 @@ save(icon(logo, 180, 0.82), "apple-touch-icon.png")
 save(icon(logo, 192, 0.82, 0.22), "icon-192.png")
 save(icon(logo, 512, 0.82, 0.22), "icon-512.png")
 save(icon(logo, 512, 0.64), "icon-maskable.png")
+# Structured-data publisher logo: the 1254px master is 780 KB; 512px is plenty (Google asks for 112+).
+save(fitted_mark(logo, 512, 1.0), "logo-mark-512.png")
 
 # Social-share card uses the same mark and existing editorial palette.
 og = Image.new("RGBA", (1200, 630), PAPER)

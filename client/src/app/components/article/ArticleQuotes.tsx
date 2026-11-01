@@ -7,6 +7,7 @@ import { PostCard } from '../posts/PostCard';
 import { ListSkeleton } from '../ui/ContentSkeleton';
 import { InfiniteScrollFooter } from '../ui/InfiniteScrollFooter';
 import { button } from '../ui/styles';
+import { LoadError } from '../ui/ErrorNote';
 
 /** Reader quotes are attached by article ID, independent of the feed's category. */
 export function ArticleQuotes({ articleId }: { articleId: string }) {
@@ -27,10 +28,7 @@ export function ArticleQuotes({ articleId }: { articleId: string }) {
         </Link>
       </div>
       {isPending && <ListSkeleton count={2} label={t.loading} />}
-      {isError && <p role="alert" className="text-sm text-rose-600 dark:text-rose-400">
-        {ui('Could not load quotes.')}{' '}
-        <button type="button" onClick={() => void refetch()} className="font-semibold hover:underline">{ui('Retry')}</button>
-      </p>}
+      {isError && <LoadError message={ui('Could not load quotes.')} onRetry={() => void refetch()} />}
       {!isPending && !isError && posts.length === 0 && (
         <p className="py-4 text-sm text-slate-600 dark:text-slate-300">{ui('No quotes for this article yet. Be the first to share your thoughts.')}</p>
       )}

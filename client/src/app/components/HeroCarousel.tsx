@@ -162,7 +162,7 @@ export function HeroCarousel() {
       {/* Trending badge */}
       <div className="absolute top-3 left-4 flex items-center gap-2 z-10">
         <div className="flex items-center gap-1.5 bg-[#173a63] text-white px-2.5 py-1 rounded-md text-xs font-semibold shadow-sm">
-          <TrendingUp size={10} />
+          <TrendingUp size={14} />
           {t.topHeadlines}
         </div>
       </div>
@@ -191,7 +191,7 @@ export function HeroCarousel() {
               <span className="truncate">{formatNewsDate(article.publishedAt, language)}</span>
               <span className="text-white/40">•</span>
               <span className="inline-flex items-center gap-0.5">
-                <Clock3 size={11} />
+                <Clock3 size={14} />
                 {article.readability.readingTimeMin > 0 ? `${article.readability.readingTimeMin}m` : 'Quick'}
               </span>
             </div>

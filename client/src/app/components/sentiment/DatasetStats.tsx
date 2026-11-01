@@ -41,11 +41,11 @@ export function DatasetStats({ articleCount, keywordCount, snapshot, categoryLab
   if (part === 'stats') {
     const stats: [string, number | string][] = [[ui('Articles'), articleCount], [ui('Keywords tracked'), keywordCount], [ui('Sources'), snapshot.sourceCount], [ui('NLP pipeline models'), modelCount || '—']];
     return (
-      <section aria-label={`${ui('Published dataset (')}${categoryLabel})`} className={`rounded-2xl border px-4 py-3 ${panelBaseClass(isDark)}`}>
-        <dl className={`grid grid-cols-2 gap-y-3 sm:grid-cols-4 sm:divide-x ${isDark ? 'divide-slate-700' : 'divide-slate-200'}`}>
+      <section aria-label={`${ui('Published dataset (')}${categoryLabel})`} className={`rounded-2xl border px-4 py-3 ${panelBaseClass()}`}>
+        <dl className={`grid grid-cols-2 gap-y-3 sm:grid-cols-4 sm:divide-x divide-slate-200 dark:divide-slate-700`}>
           {stats.map(([label, value]) => <div key={label} className="min-w-0 sm:px-4 sm:first:pl-0">
             <dt className="text-xs" style={{ color: mutedColor }}>{label}</dt>
-            <dd className={`mt-0.5 text-xl font-bold tabular-nums ${isDark ? 'text-slate-50' : 'text-slate-900'}`}><RollingNumberOrText value={value} /></dd>
+            <dd className={`mt-0.5 text-xl font-bold tabular-nums text-slate-900 dark:text-slate-50`}><RollingNumberOrText value={value} /></dd>
           </div>)}
         </dl>
         <p className="mt-2 text-xs" style={{ color: mutedColor }}>{ui('Published dataset (')}{categoryLabel}) · {ui('Last scraped:')} {lastScrapedLabel}</p>
@@ -54,12 +54,12 @@ export function DatasetStats({ articleCount, keywordCount, snapshot, categoryLab
   }
 
   if (part === 'models') return models.length > 0 ? (
-    <div className={`rounded-2xl border p-4 ${panelBaseClass(isDark)}`}>
-      <h3 className={`flex items-center gap-2 font-poppins text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-gray-800'}`}><Cpu size={18} className="text-[var(--brand)]" />{ui('Model details')}</h3>
+    <div className={`rounded-2xl border p-4 ${panelBaseClass()}`}>
+      <h3 className={`flex items-center gap-2 font-poppins text-sm font-semibold text-slate-800 dark:text-slate-200`}><Cpu size={20} className="text-[var(--brand)]" />{ui('Model details')}</h3>
       <p className="mt-1 text-xs leading-relaxed" style={{ color: mutedColor }}>{ui('Configured pipeline; models vary by article language and task.')}</p>
       {groups.map(({ title, items, Icon }) => <div key={title} className="mt-4">
         <h4 className="flex items-center gap-2 text-xs font-semibold"><Icon size={14} className="text-[var(--brand)]" />{title}</h4>
-        <ul className={`mt-1 divide-y ${isDark ? 'divide-slate-700/60' : 'divide-slate-200/70'}`}>
+        <ul className={`mt-1 divide-y divide-slate-200/70 dark:divide-slate-700/60`}>
           {items.map(model => <li key={`${model.role}-${model.id}`} className="min-w-0 py-2.5">
             <p className="text-xs font-semibold">{ui(model.role)}</p>
             <p className="mt-0.5 break-words text-xs leading-relaxed [overflow-wrap:anywhere]" style={{ color: mutedColor }}>{model.id}</p>
@@ -70,32 +70,32 @@ export function DatasetStats({ articleCount, keywordCount, snapshot, categoryLab
   ) : null;
 
   return (
-    <div className={`rounded-2xl border p-4 ${panelBaseClass(isDark)}`}>
+    <div className={`rounded-2xl border p-4 ${panelBaseClass()}`}>
       <div className="grid grid-cols-2 gap-3">
-        <div className={`rounded-xl p-3 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
+        <div className={`rounded-xl p-3 bg-slate-50 dark:bg-slate-800`}>
           <p className="text-xs" style={{ color: mutedColor }}>{ui("Articles")}</p>
-          <p className={`mt-0.5 text-xl font-bold ${isDark ? 'text-slate-50' : 'text-slate-900'}`}><RollingNumberOrText value={articleCount} /></p>
+          <p className={`mt-0.5 text-xl font-bold text-slate-900 dark:text-slate-50`}><RollingNumberOrText value={articleCount} /></p>
         </div>
-        <div className={`rounded-xl p-3 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
+        <div className={`rounded-xl p-3 bg-slate-50 dark:bg-slate-800`}>
           <p className="text-xs" style={{ color: mutedColor }}>{ui("Keywords tracked")}</p>
-          <p className={`mt-0.5 text-xl font-bold ${isDark ? 'text-slate-50' : 'text-slate-900'}`}><RollingNumberOrText value={keywordCount} /></p>
+          <p className={`mt-0.5 text-xl font-bold text-slate-900 dark:text-slate-50`}><RollingNumberOrText value={keywordCount} /></p>
         </div>
-        <div className={`rounded-xl p-3 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
+        <div className={`rounded-xl p-3 bg-slate-50 dark:bg-slate-800`}>
           <p className="text-xs" style={{ color: mutedColor }}>{ui("Sources")}</p>
-          <p className={`mt-0.5 text-xl font-bold ${isDark ? 'text-slate-50' : 'text-slate-900'}`}><RollingNumberOrText value={snapshot.sourceCount} /></p>
+          <p className={`mt-0.5 text-xl font-bold text-slate-900 dark:text-slate-50`}><RollingNumberOrText value={snapshot.sourceCount} /></p>
         </div>
-        <div className={`rounded-xl p-3 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
+        <div className={`rounded-xl p-3 bg-slate-50 dark:bg-slate-800`}>
           <p className="text-xs" style={{ color: mutedColor }}>{ui("NLP pipeline models")}</p>
-          <p className={`mt-0.5 text-xl font-bold ${isDark ? 'text-slate-50' : 'text-slate-900'}`}><RollingNumberOrText value={modelCount || '—'} /></p>
+          <p className={`mt-0.5 text-xl font-bold text-slate-900 dark:text-slate-50`}><RollingNumberOrText value={modelCount || '—'} /></p>
         </div>
       </div>
       <p className="text-xs mt-2" style={{ color: mutedColor }}>{ui("Published dataset (")}{categoryLabel})
       </p>
       {models.length > 0 && <section className="mt-4 overflow-hidden rounded-xl border border-[color-mix(in_srgb,var(--brand)_20%,transparent)]">
-        {expanded ? <h3 className="flex items-center gap-2 px-4 pt-4 text-sm font-semibold"><Cpu size={18} className="text-[var(--brand)]" />{ui("Model details")}</h3> :
+        {expanded ? <h3 className="flex items-center gap-2 px-4 pt-4 text-sm font-semibold"><Cpu size={20} className="text-[var(--brand)]" />{ui("Model details")}</h3> :
           <button type="button" aria-expanded={open} aria-controls={detailsId} onClick={() => setOpen(value => !value)}
             className="flex min-h-12 w-full items-center gap-2 px-4 py-3 text-left text-sm font-semibold transition-colors hover:bg-[color-mix(in_srgb,var(--brand)_8%,transparent)] focus-visible:outline-2 focus-visible:outline-[var(--brand)]">
-            <Cpu size={18} className="text-[var(--brand)]" /><span className="flex-1">{ui("Model details")}</span>
+            <Cpu size={20} className="text-[var(--brand)]" /><span className="flex-1">{ui("Model details")}</span>
             <span className="rounded-full bg-[color-mix(in_srgb,var(--brand)_10%,transparent)] px-2 py-0.5 text-xs text-[var(--brand)]">{modelCount}</span>
             <ChevronDown size={16} className={`transition-transform duration-200 motion-reduce:transition-none ${open ? 'rotate-180' : ''}`} />
           </button>}
@@ -106,7 +106,7 @@ export function DatasetStats({ articleCount, keywordCount, snapshot, categoryLab
               {groups.map(({title, items, Icon}) =>
                 <div key={title}>
                   <h4 className="mb-2 flex items-center gap-2 text-xs font-semibold"><Icon size={14} className="text-[var(--brand)]" />{title}</h4>
-                  <ul className={`divide-y rounded-xl px-3 ${isDark ? 'divide-slate-700/60 bg-slate-800/60' : 'divide-slate-200/60 bg-slate-50'}`}>
+                  <ul className={`divide-y rounded-xl px-3 divide-slate-200/60 bg-slate-50 dark:divide-slate-700/60 dark:bg-slate-800/60`}>
                     {items.map(model => <li key={`${model.role}-${model.id}`} className="min-w-0 py-3">
                       <p className="text-xs font-semibold">{ui(model.role)}</p>
                       <p className="mt-1 break-words text-xs leading-relaxed [overflow-wrap:anywhere]" style={{ color: mutedColor }}>{model.id}</p>

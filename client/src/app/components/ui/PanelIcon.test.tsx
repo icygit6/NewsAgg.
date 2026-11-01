@@ -3,13 +3,13 @@ import { Clock3 } from 'lucide-react';
 import { expect, it } from 'vitest';
 import { PanelIcon } from './PanelIcon';
 
-it('is the one theme-coloured tile every analytics panel shares, hidden from assistive technology', () => {
+it('is drawn like InsightMark: a theme-coloured line icon with no tile, hidden from assistive technology', () => {
   const { container } = render(<PanelIcon icon={Clock3} />);
-  const tile = container.firstElementChild as HTMLElement;
-  // Solid, in the colour theme's primary (no gradient).
-  expect(tile).toHaveClass('h-6', 'w-6', 'rounded-lg', 'bg-[var(--brand)]');
-  expect(tile).toHaveAttribute('aria-hidden', 'true');
-  expect(tile.querySelector('svg')).not.toBeNull();
+  const mark = container.firstElementChild as HTMLElement;
+  expect(mark).toHaveClass('h-8', 'w-8', 'text-[var(--brand)]');
+  expect(mark.className).not.toMatch(/\bbg-|rounded/);
+  expect(mark).toHaveAttribute('aria-hidden', 'true');
+  expect(mark.querySelector('svg')).not.toBeNull();
 });
 
 // Guard: Sentiment Distribution, Live View, Trending Topics, Live Engagement, Markets and the

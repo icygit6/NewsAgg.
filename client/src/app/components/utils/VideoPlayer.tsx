@@ -41,7 +41,7 @@ export function isExternalVideoUrl(url: string): boolean {
   return /(?:cnn\.com|bbc\.com)/.test(url);
 }
 
-export function VideoPlayer({ videoUrl, title, isDark }: VideoPlayerProps) {
+export function VideoPlayer({ videoUrl, title }: VideoPlayerProps) {
   const ui = useUiText();
   const [isLoading, setIsLoading] = useState(true);
 
@@ -55,18 +55,18 @@ export function VideoPlayer({ videoUrl, title, isDark }: VideoPlayerProps) {
   // If it's an external video page (CNN, BBC, etc.), show as external link
   if (isExternal) {
     return (
-      <div className={`rounded-2xl overflow-hidden border mb-6 flex items-center gap-4 p-4 ${isDark ? 'border-slate-700/50 bg-slate-800/60' : 'border-gray-100 bg-white/70'}`}>
-        <Play size={32} className={isDark ? 'text-slate-400' : 'text-gray-400'} />
+      <div className={`rounded-2xl overflow-hidden border mb-6 flex items-center gap-4 p-4 border-slate-100 bg-white/70 dark:border-slate-700/50 dark:bg-slate-800/60`}>
+        <Play size={32} className="text-slate-400 dark:text-slate-400" />
         <div className="flex-1 min-w-0">
-          <p className={`text-xs font-semibold mb-1 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>{ui("Featured Video")} </p>
-          <p className={`text-sm line-clamp-2 mb-3 ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>
+          <p className={`text-xs font-semibold mb-1 text-slate-700 dark:text-slate-300`}>{ui("Featured Video")} </p>
+          <p className={`text-sm line-clamp-2 mb-3 text-slate-600 dark:text-slate-400`}>
             {title}
           </p>
           <a
             href={videoUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${isDark ? 'bg-slate-700 text-slate-100 hover:bg-slate-600' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
+            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors bg-slate-200 text-slate-800 hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600`}
           >
             <ExternalLink size={14} />{ui("Watch on source")} </a>
         </div>
@@ -81,7 +81,7 @@ export function VideoPlayer({ videoUrl, title, isDark }: VideoPlayerProps) {
 
   return (
     <div
-      className={`rounded-2xl overflow-hidden border mb-6 ${isDark ? 'border-slate-700/50 bg-slate-800/60' : 'border-gray-100 bg-white/70'}`}
+      className={`rounded-2xl overflow-hidden border mb-6 border-slate-100 bg-white/70 dark:border-slate-700/50 dark:bg-slate-800/60`}
     >
       <div className="relative w-full bg-black">
         {/* Aspect ratio container */}
@@ -110,9 +110,9 @@ export function VideoPlayer({ videoUrl, title, isDark }: VideoPlayerProps) {
       </div>
 
       {/* Video info */}
-      <div className={`px-4 py-3 ${isDark ? 'bg-slate-800/40' : 'bg-white/50'}`}>
-        <p className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>{ui("Featured Video")} </p>
-        <p className={`text-sm line-clamp-2 ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>
+      <div className={`px-4 py-3 bg-white/50 dark:bg-slate-800/40`}>
+        <p className={`text-xs font-semibold text-slate-700 dark:text-slate-300`}>{ui("Featured Video")} </p>
+        <p className={`text-sm line-clamp-2 text-slate-600 dark:text-slate-400`}>
           {title}
         </p>
       </div>

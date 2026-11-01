@@ -31,6 +31,17 @@ Give the containers a few seconds to become healthy. This keeps the tunnel up.
 After source/configuration updates, use START-NEWSAGG.ps1 instead so Docker builds
 and applies the current files.
 
+PUBLISH CODE CHANGES TO THE LIVE SITE
+To rebuild only the parts that changed (server, client, local AI, scraper image):
+
+   node ops\rebuild-live.mjs           rebuild what changed
+   node ops\rebuild-live.mjs --check   only list what is out of date
+   node ops\rebuild-live.mjs --force   rebuild everything
+
+The database volume is never touched. Claude Code sessions only run --check when
+they finish a turn, because several sessions share this folder; publishing is
+always a deliberate step.
+
 IF THE LOCAL SITE WORKS BUT THE PUBLIC SITE DOES NOT
 First try reconnecting the fixed address to the current tunnel:
 

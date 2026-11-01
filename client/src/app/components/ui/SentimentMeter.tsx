@@ -2,14 +2,10 @@ import type { SentimentType } from '../../types/sentiment';
 import { useUiText } from '../../i18n/uiText';
 import { useApp } from '../../contexts/AppContext';
 import { SENTIMENT_COLOR } from './chartTheme';
+import { SENTIMENT_TEXT } from './sentimentText';
 
 const TICKS = [-1, -0.5, 0, 0.5, 1];
 
-export const SENTIMENT_TEXT: Record<SentimentType, string> = {
-  positive: 'text-emerald-600 dark:text-emerald-400',
-  neutral: 'text-amber-600 dark:text-amber-400',
-  negative: 'text-red-600 dark:text-red-400',
-};
 const SENTIMENT_PILL: Record<SentimentType, string> = {
   positive: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300',
   neutral: 'bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300',

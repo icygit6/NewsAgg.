@@ -10,15 +10,11 @@ import { usePosts } from '../../hooks/usePosts';
 import { PostCard } from '../posts/PostCard';
 import { BookmarkCollection } from './BookmarkCollection';
 
-interface ProfileTabsProps {
-  isDark: boolean;
-}
-
 type TabKey = 'posts' | 'bookmarks';
 
 /** [My Posts | Bookmarks] tabs on /profile. My Posts lights up with the F7
  * posts feature flag; until then Bookmarks is the only (default) tab. */
-export function ProfileTabs({ isDark }: ProfileTabsProps) {
+export function ProfileTabs() {
   const ui = useUiText();
   const { t } = useApp();
   const [tab, setTab] = useState<TabKey>(POSTS_ENABLED ? 'posts' : 'bookmarks');
@@ -40,7 +36,7 @@ export function ProfileTabs({ isDark }: ProfileTabsProps) {
   return (
     <div>
       <div
-        className={`mb-4 flex gap-6 border-b ${isDark ? 'border-slate-800' : 'border-slate-200'}`}
+        className={`mb-4 flex gap-6 border-b border-slate-200 dark:border-slate-800`}
         role="tablist"
       >
         {tabs.map(({ key, label }) => (
@@ -58,10 +54,8 @@ export function ProfileTabs({ isDark }: ProfileTabsProps) {
             }}
             className={`-mb-px border-b-2 px-1 pb-3 pt-1 text-sm font-semibold transition-colors ${
               tab === key
-                ? isDark ? 'text-slate-100' : 'text-slate-900'
-                : isDark
-                  ? 'border-transparent text-slate-400 hover:text-slate-200'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
+                ? 'text-slate-900 dark:text-slate-100'
+                : 'border-transparent text-slate-500 hover:text-slate-800 dark:border-transparent dark:text-slate-400 dark:hover:text-slate-200'
             }`}
             style={tab === key ? { borderColor: 'var(--brand)' } : undefined}
           >
@@ -77,7 +71,7 @@ export function ProfileTabs({ isDark }: ProfileTabsProps) {
           <ListSkeleton label={t.loading} />
         ) : myPosts.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-8 text-center">
-            <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{t.noPostsYet}</p>
+            <p className={`text-sm text-slate-500 dark:text-slate-400`}>{t.noPostsYet}</p>
             <Link to="/posts?compose=1" className="inline-flex items-center gap-2 rounded-xl bg-[var(--brand)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--brand-hover)]">
               <PenLine size={14} />{ui("Write a post")}
             </Link>

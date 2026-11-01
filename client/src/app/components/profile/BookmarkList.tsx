@@ -2,20 +2,23 @@ import { useUiText } from '../../i18n/uiText';
 import { useTitleTranslations } from '../../hooks/useTitleTranslations';
 import { useRef, useState } from 'react';
 import { Link } from 'react-router';
-import { AlertCircle, Archive, ArchiveRestore, Check, Clock3, ExternalLink, MessageSquareQuote, NotebookPen, RotateCcw, Trash2 } from 'lucide-react';
+import { Archive, ArchiveRestore, Check, Clock3, ExternalLink, MessageSquareQuote, NotebookPen, RotateCcw, Trash2 } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { ImageWithFallback } from '../utils/ImageWithFallback';
 import { InfiniteScrollFooter } from '../ui/InfiniteScrollFooter';
 import { useBookmarkActions, useBookmarkList, useBookmarkMeta } from '../../hooks/useBookmarks';
-import { CollectionNameInput, CollectionPicker, collectionChoices, normalizeCollection } from './CollectionPicker';
-import { FeedState, feedStateButton } from '../feed/FeedState';
+import { CollectionNameInput, CollectionPicker } from './CollectionPicker';
+import { collectionChoices, normalizeCollection } from './collections';
+import { FeedState } from '../feed/FeedState';
+import { feedStateButton } from '../feed/feedStateButton';
 import { SourceLogo } from '../ui/SourceLogo';
 import { CATEGORY_BADGE_CLASS, CATEGORY_GROUP_HOVER_TEXT, POSTS_ENABLED, TOPIC_TO_CATEGORY, categoryVars } from '../../constants';
 import { formatNewsDate } from '../../lib/formatDate';
 import type { SentimentType } from '../../types/sentiment';
+import { ListSkeleton } from '../ui/ContentSkeleton';
 
 export type BookmarkStatus = 'unread' | 'read' | 'archived';
-export const statusOf = (b: { is_read: boolean; archived: boolean }): BookmarkStatus => b.archived ? 'archived' : b.is_read ? 'read' : 'unread';
+const statusOf = (b: { is_read: boolean; archived: boolean }): BookmarkStatus => b.archived ? 'archived' : b.is_read ? 'read' : 'unread';
 const pillTone: Record<BookmarkStatus, string> = {
   unread: 'bg-[color-mix(in_srgb,var(--brand)_14%,transparent)] text-[var(--brand)]',
   read: 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-300',
@@ -32,11 +35,12 @@ export function StatusPill({ status }: { status: BookmarkStatus }) {
 
 export function BookmarkList({ filters={} }: { filters?:Record<string,string> }) {
   const ui = useUiText();
+  const { t } = useApp();
   const q=useBookmarkList(filters); const {remove,restore}=useBookmarkActions(); const meta=useBookmarkMeta();
   const [removed,setRemoved]=useState<number|null>(null); const items=q.data?.pages.flatMap((p:any)=>p.bookmarks)??[];
   const titles = useTitleTranslations(items.map((b:any) => ({ id: String(b.article_id), title: b.article_title || '', language: b.article_language })));
-  if(q.isLoading) return <p className="py-8 text-center">{ui("Loading bookmarks…")}</p>;
-  if(q.isError) return <div role="alert" className="p-4 rounded-xl border border-red-300 text-red-600 flex gap-2"><AlertCircle size={18}/>{ui("Could not load bookmarks.")} <button onClick={()=>q.refetch()} className="font-semibold hover:underline">{ui("Retry")}</button></div>;
+  if(q.isLoading) return <ListSkeleton label={ui("Loading bookmarks…")} />;
+  if(q.isError) return <FeedState tone="error" title={t.errorTitle} body={ui("Could not load bookmarks.")} action={<button type="button" onClick={()=>void q.refetch()} className={feedStateButton}>{ui("Try again")}</button>} />;
   if(!items.length) return <FeedState title={ui("No matching bookmarks")} body={ui("Save a story with the bookmark button and it waits for you here.")} action={<Link to="/" className={feedStateButton}>{ui("Explore articles")}</Link>} />;
   return <>
     {removed!==null&&<div role="status" className="mb-3 p-3 rounded-xl bg-blue-500/10 flex justify-between">{ui("Bookmark removed")}<button className="font-semibold text-blue-600 dark:text-blue-400" onClick={()=>restore.mutate(removed,{onSuccess:()=>setRemoved(null)})}><RotateCcw size={14} className="inline"/> {ui("Undo")}</button></div>}
@@ -96,12 +100,12 @@ function BookmarkCard({ b, title, choices, onRemove }: { b: any; title?: string;
         <div className="mb-2 flex min-w-0 items-center gap-2">
           <SourceLogo source={{ name: b.source_name || ui('Unknown') }} isDark={isDark} className="h-7 w-7 shrink-0 sm:h-8 sm:w-8" />
           <div className="min-w-0">
-            <p className={`truncate text-xs font-semibold sm:text-sm ${isDark ? 'text-slate-200' : 'text-gray-700'}`}>{b.source_name || ui('Unknown')}</p>
-            <p className={`hidden truncate text-xs sm:block ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{ui('Saved')} {formatNewsDate(b.created_at, language)}</p>
+            <p className={`truncate text-xs font-semibold sm:text-sm text-slate-700 dark:text-slate-200`}>{b.source_name || ui('Unknown')}</p>
+            <p className={`hidden truncate text-xs sm:block text-slate-500 dark:text-slate-400`}>{ui('Saved')} {formatNewsDate(b.created_at, language)}</p>
           </div>
         </div>
 
-        <Link to={`/article/${b.article_id}`} viewTransition title={headline} className={`news-headline mb-2 line-clamp-3 min-h-[4.2em] font-poppins text-sm font-semibold leading-[1.4] [overflow-wrap:anywhere] transition-colors sm:text-base ${CATEGORY_GROUP_HOVER_TEXT} ${b.is_read ? 'text-slate-500 dark:text-slate-400' : isDark ? 'text-slate-100' : 'text-[#0b1f33]'}`}>{headline}</Link>
+        <Link to={`/article/${b.article_id}`} viewTransition title={headline} className={`news-headline mb-2 line-clamp-3 min-h-[4.2em] font-poppins text-sm font-semibold leading-[1.4] [overflow-wrap:anywhere] transition-colors sm:text-base ${CATEGORY_GROUP_HOVER_TEXT} ${b.is_read ? 'text-slate-500 dark:text-slate-400' : 'text-[#0b1f33] dark:text-slate-100'}`}>{headline}</Link>
 
         {editingNote
           ? <textarea ref={noteRef} autoFocus aria-label={`${ui('Note')}: ${b.article_title}`} defaultValue={note} placeholder={ui('Add a private note…')} maxLength={1000} rows={3}
@@ -123,23 +127,23 @@ function BookmarkCard({ b, title, choices, onRemove }: { b: any; title?: string;
         }}/></div>}
 
         {/* The home feed card's footer; empty when cleanup removed the article. */}
-        {(b.reading_time_min != null || b.published_at) && <div className={`flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-t pt-2 text-xs ${isDark ? 'border-slate-700 text-slate-400' : 'border-gray-200 text-gray-500'}`}>
+        {(b.reading_time_min != null || b.published_at) && <div className={`flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-t pt-2 text-xs border-slate-200 text-slate-500 dark:border-slate-700 dark:text-slate-400`}>
           {b.reading_time_min != null && <div className="flex min-w-0 items-center gap-1.5">
-            <Clock3 size={13} className="flex-shrink-0 opacity-70" />
+            <Clock3 size={14} className="flex-shrink-0 opacity-70" />
             <span className="truncate font-medium">{ui(b.reading_time_min > 0 ? `${b.reading_time_min} min` : 'Quick read')}</span>
           </div>}
           {b.published_at && <span className="ml-auto flex-shrink-0 font-medium">{formatNewsDate(b.published_at, language)}</span>}
         </div>}
-        <div className={`mt-1 flex min-w-0 items-center text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+        <div className={`mt-1 flex min-w-0 items-center text-xs text-slate-500 dark:text-slate-400`}>
           <span className="truncate opacity-80">{b.source_domain || t.source}</span>
         </div>
 
-        <div className={`mt-2 flex items-center justify-between gap-1 border-t pt-2 ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
-          <button aria-pressed={b.is_read} title={ui(b.is_read?'Mark unread':'Mark read')} aria-label={`${ui(b.is_read?'Mark unread':'Mark read')}: ${b.article_title}`} onClick={()=>update.mutate({id:b.id,isRead:!b.is_read})} className={b.is_read?`${iconBase} bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25 dark:text-emerald-400`:iconButton}><Check size={15}/></button>
-          <button aria-pressed={b.archived} title={ui(b.archived?'Unarchive':'Archive')} aria-label={`${ui(b.archived?'Unarchive':'Archive')}: ${b.article_title}`} onClick={()=>archive(b)} className={b.archived?`${iconBase} bg-amber-500/15 text-amber-600 hover:bg-amber-500/25 dark:text-amber-400`:iconButton}>{b.archived?<ArchiveRestore size={15}/>:<Archive size={15}/>}</button>
-          <button aria-expanded={editingNote} title={ui(note?'Edit note':'Add note')} aria-label={`${ui(note?'Edit note':'Add note')}: ${b.article_title}`} onMouseDown={e=>{ if(editingNote) e.preventDefault(); }} onClick={()=>editingNote?saveNote(noteRef.current?.value??note):setEditingNote(true)} className={note?`${iconBase} text-[var(--brand)] hover:bg-[color-mix(in_srgb,var(--brand)_10%,transparent)]`:iconButton}><NotebookPen size={15}/></button>
-          {b.article_url&&<a href={b.article_url} target="_blank" rel="noopener noreferrer" title={ui('Open original article')} aria-label={`Open original article: ${b.article_title}`} className={iconButton}><ExternalLink size={15}/></a>}
-          <button title={ui('Remove bookmark')} aria-label={`Remove bookmark: ${b.article_title}`} onClick={onRemove} className={`${iconBase} text-rose-500 hover:bg-rose-500/10`}><Trash2 size={15}/></button>
+        <div className={`mt-2 flex items-center justify-between gap-1 border-t pt-2 border-slate-200 dark:border-slate-700`}>
+          <button aria-pressed={b.is_read} title={ui(b.is_read?'Mark unread':'Mark read')} aria-label={`${ui(b.is_read?'Mark unread':'Mark read')}: ${b.article_title}`} onClick={()=>update.mutate({id:b.id,isRead:!b.is_read})} className={b.is_read?`${iconBase} bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25 dark:text-emerald-400`:iconButton}><Check size={16}/></button>
+          <button aria-pressed={b.archived} title={ui(b.archived?'Unarchive':'Archive')} aria-label={`${ui(b.archived?'Unarchive':'Archive')}: ${b.article_title}`} onClick={()=>archive(b)} className={b.archived?`${iconBase} bg-amber-500/15 text-amber-600 hover:bg-amber-500/25 dark:text-amber-400`:iconButton}>{b.archived?<ArchiveRestore size={16}/>:<Archive size={16}/>}</button>
+          <button aria-expanded={editingNote} title={ui(note?'Edit note':'Add note')} aria-label={`${ui(note?'Edit note':'Add note')}: ${b.article_title}`} onMouseDown={e=>{ if(editingNote) e.preventDefault(); }} onClick={()=>editingNote?saveNote(noteRef.current?.value??note):setEditingNote(true)} className={note?`${iconBase} text-[var(--brand)] hover:bg-[color-mix(in_srgb,var(--brand)_10%,transparent)]`:iconButton}><NotebookPen size={16}/></button>
+          {b.article_url&&<a href={b.article_url} target="_blank" rel="noopener noreferrer" title={ui('Open original article')} aria-label={`Open original article: ${b.article_title}`} className={iconButton}><ExternalLink size={16}/></a>}
+          <button title={ui('Remove bookmark')} aria-label={`Remove bookmark: ${b.article_title}`} onClick={onRemove} className={`${iconBase} text-red-500 hover:bg-red-500/10`}><Trash2 size={16}/></button>
         </div>
       </div>
     </div>

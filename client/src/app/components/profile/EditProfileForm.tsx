@@ -5,7 +5,7 @@ import { useApp } from '../../contexts/AppContext';
 import { authService } from '../../services/authService';
 
 /** Display name, username and bio: the Profile section of /settings. */
-export function EditProfileForm({ isDark }: { isDark: boolean }) {
+export function EditProfileForm() {
   const ui = useUiText();
   const { t, user, setUser } = useApp();
   const [username, setUsername] = useState(user?.username ?? '');
@@ -41,12 +41,8 @@ export function EditProfileForm({ isDark }: { isDark: boolean }) {
     setMsg({ ok: true, text: t.profileUpdated });
   };
 
-  const inputClass = `w-full px-4 py-2.5 rounded-xl border text-sm transition ${
-    isDark
-      ? 'bg-slate-800 border-slate-700 text-slate-100 placeholder-slate-500 focus:border-blue-500'
-      : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500'
-  } focus:outline-none`;
-  const labelClass = `block text-xs font-medium mb-1.5 ${isDark ? 'text-slate-400' : 'text-gray-500'}`;
+  const inputClass = `w-full px-4 py-2.5 rounded-xl border text-sm transition bg-white border-slate-300 text-slate-900 placeholder-slate-400 focus:border-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-blue-500 focus:outline-none`;
+  const labelClass = `block text-xs font-medium mb-1.5 text-slate-500 dark:text-slate-400`;
 
   return (
     <form
@@ -60,7 +56,7 @@ export function EditProfileForm({ isDark }: { isDark: boolean }) {
       </div>
       <div className="mt-3"><label htmlFor="profile-bio" className={labelClass}>{ui("Public bio")}</label><textarea id="profile-bio" value={bio} onChange={e => setBio(e.target.value)} maxLength={240} rows={3} className={`${inputClass} resize-none`} /><p className="mt-1 text-right text-xs text-slate-400">{bio.length}/240</p></div>
       <div className="mt-3 flex items-center justify-end gap-3">
-        {msg && <p role={msg.ok ? 'status' : 'alert'} aria-live="polite" className={`text-xs ${msg.ok ? 'text-emerald-500' : 'text-rose-500'}`}>{ui(msg.text)}</p>}
+        {msg && <p role={msg.ok ? 'status' : 'alert'} aria-live="polite" className={`text-xs ${msg.ok ? 'text-emerald-500' : 'text-red-500'}`}>{ui(msg.text)}</p>}
         <button
           type="submit"
           disabled={saving || username.trim().length < 3}

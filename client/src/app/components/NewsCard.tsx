@@ -109,11 +109,11 @@ export function NewsCard({ article }: NewsCardProps) {
 
                 {article.videoUrl && (
                   <span title={ui('Video')} className="inline-flex items-center gap-1 rounded-full bg-black/60 px-2 py-1 text-[11px] font-medium text-white backdrop-blur-sm">
-                    <PlayCircle size={12} /><span className="hidden sm:inline">{ui("Video")}</span></span>
+                    <PlayCircle size={14} /><span className="hidden sm:inline">{ui("Video")}</span></span>
                 )}
                 {article.isPremium && (
                   <span title={ui('Premium')} className="inline-flex items-center gap-1 rounded-full bg-amber-500/90 px-2 py-1 text-[11px] font-medium text-white">
-                    <ShieldAlert size={12} /><span className="hidden sm:inline">{ui("Premium")}</span></span>
+                    <ShieldAlert size={14} /><span className="hidden sm:inline">{ui("Premium")}</span></span>
                 )}
               </div>
             </div>
@@ -133,16 +133,16 @@ export function NewsCard({ article }: NewsCardProps) {
               <SourceLogo source={article.source} isDark={isDark} className="h-7 w-7 shrink-0 sm:h-8 sm:w-8" />
 
               <div className="min-w-0">
-                <p className={`truncate text-xs font-semibold sm:text-sm ${isDark ? 'text-slate-200' : 'text-gray-700'}`}>
+                <p className={`truncate text-xs font-semibold sm:text-sm text-slate-700 dark:text-slate-200`}>
                   {article.source.name}
                 </p>
-                <p className={`hidden text-xs truncate sm:block ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                <p className={`hidden text-xs truncate sm:block text-slate-500 dark:text-slate-400`}>
                   {article.author || ui("Unknown")}
                 </p>
               </div>
             </div>
 
-            <h3 title={article.title} className={`news-headline mb-2 shrink-0 line-clamp-3 min-h-[4.2em] [overflow-wrap:anywhere] font-poppins text-sm font-semibold leading-[1.4] transition-colors sm:text-base ${CATEGORY_GROUP_HOVER_TEXT} ${isDark ? 'text-slate-100' : 'text-[#0b1f33]'}`} style={{ textWrap: 'wrap' }}>
+            <h3 title={article.title} className={`news-headline mb-2 shrink-0 line-clamp-3 min-h-[4.2em] [overflow-wrap:anywhere] font-poppins text-sm font-semibold leading-[1.4] transition-colors sm:text-base ${CATEGORY_GROUP_HOVER_TEXT} text-[#0b1f33] dark:text-slate-100`} style={{ textWrap: 'wrap' }}>
               {article.title}
             </h3>
 
@@ -155,16 +155,16 @@ export function NewsCard({ article }: NewsCardProps) {
                 <span
                   key={`${article.id}-${keyword}`}
                   title={`#${keyword}`}
-                  className={`inline-block min-w-0 max-w-[120px] truncate rounded-full px-2 py-1 text-[11px] ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-gray-100 text-gray-600'}`}
+                  className={`inline-block min-w-0 max-w-[120px] truncate rounded-full px-2 py-1 text-[11px] bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300`}
                 >
                   #{keyword}
                 </span>
               ))}
             </div>
 
-            <div className={`flex flex-wrap items-center justify-between gap-x-2 gap-y-1 pt-2 border-t text-xs ${isDark ? 'border-slate-700 text-slate-400' : 'border-gray-200 text-gray-500'}`}>
+            <div className={`flex flex-wrap items-center justify-between gap-x-2 gap-y-1 pt-2 border-t text-xs border-slate-200 text-slate-500 dark:border-slate-700 dark:text-slate-400`}>
               <div className="flex items-center gap-1.5 min-w-0">
-                <Clock3 size={13} className="flex-shrink-0 opacity-70" />
+                <Clock3 size={14} className="flex-shrink-0 opacity-70" />
                 <span className="truncate font-medium">
                   {ui(article.readability.readingTimeMin > 0 ? `${article.readability.readingTimeMin} min` : 'Quick read')}
                 </span>
@@ -173,7 +173,7 @@ export function NewsCard({ article }: NewsCardProps) {
               <span className="flex-shrink-0 font-medium">{formatNewsDate(article.publishedAt, language)}</span>
             </div>
 
-            <div className={`flex min-w-0 items-center justify-between gap-3 mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+            <div className={`flex min-w-0 items-center justify-between gap-3 mt-1 text-xs text-slate-500 dark:text-slate-400`}>
               <span className="truncate opacity-80">{article.source.domain || t.source}</span>
             </div>
           </div>

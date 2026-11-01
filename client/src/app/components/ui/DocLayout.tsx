@@ -1,3 +1,4 @@
+import { useUiText } from '../../i18n/uiText';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router';
 import { ArrowLeft, type LucideIcon } from 'lucide-react';
@@ -32,8 +33,9 @@ const LINKS = [
 export function DocLayout({ icon: Icon, title, intro, meta, children, back, extra }: {
   icon: LucideIcon; title: string; intro?: ReactNode; meta?: string; children: ReactNode; back: string; extra?: ReactNode;
 }) {
+  const ui = useUiText();
   const { language } = useApp();
-  const zh = language === 'zhTW' || language === 'zhCN';
+  const zh = language === 'zhTW';
   const { pathname } = useLocation();
   const body = useRef<HTMLDivElement>(null);
   const [contents, setContents] = useState<Array<{ id: string; title: string }>>([]);
@@ -52,7 +54,7 @@ export function DocLayout({ icon: Icon, title, intro, meta, children, back, extr
         <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-950 dark:text-white md:text-4xl">{title}</h1>
         {meta && <p className="mt-2 inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">{meta}</p>}
         {intro && <div className="mt-4 max-w-2xl text-[15px] leading-7 text-slate-600 dark:text-slate-300">{intro}</div>}
-        <nav aria-label={zh ? '政策與方法' : 'Policies and methodology'} className="mt-6 flex flex-wrap gap-2">
+        <nav aria-label={ui('Policies and methodology')} className="mt-6 flex flex-wrap gap-2">
           {LINKS.map((link) => {
             const active = pathname === link.to;
             return (
@@ -63,7 +65,7 @@ export function DocLayout({ icon: Icon, title, intro, meta, children, back, extr
             );
           })}
           <a href="/research-foundations.html" className="rounded-full bg-slate-100 px-3.5 py-1.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">
-            {zh ? '研究依據' : 'Research foundations'}
+            {ui('Research foundations')}
           </a>
         </nav>
       </header>
@@ -71,8 +73,8 @@ export function DocLayout({ icon: Icon, title, intro, meta, children, back, extr
       <div className="mt-6 grid gap-6 lg:grid-cols-[14rem_minmax(0,1fr)]">
         {contents.length > 2 && (
           <aside className="hidden lg:block">
-            <nav aria-label={zh ? '本頁內容' : 'On this page'} className="sticky top-6 rounded-2xl border border-slate-200 bg-white p-4 text-sm dark:border-slate-800 dark:bg-slate-900">
-              <p className="mb-2 text-xs font-semibold text-slate-500 dark:text-slate-400">{zh ? '本頁內容' : 'On this page'}</p>
+            <nav aria-label={ui('On this page')} className="sticky top-6 rounded-2xl border border-slate-200 bg-white p-4 text-sm dark:border-slate-800 dark:bg-slate-900">
+              <p className="mb-2 text-xs font-semibold text-slate-500 dark:text-slate-400">{ui('On this page')}</p>
               <ul className="space-y-1">
                 {contents.map((item) => (
                   <li key={item.id}><a href={`#${item.id}`} className="block rounded-lg px-2 py-1.5 leading-snug text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white">{item.title}</a></li>

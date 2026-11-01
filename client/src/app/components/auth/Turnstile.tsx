@@ -47,7 +47,7 @@ function turnstileEnabled(): boolean {
 export function Turnstile({ onToken, isDark }: TurnstileProps) {
   // The challenge text follows the interface language, like the rest of the form.
   const { language } = useApp();
-  const turnstileLanguage = language === 'zhTW' ? 'zh-tw' : language === 'zhCN' ? 'zh-cn' : language === 'id' ? 'id' : 'en';
+  const turnstileLanguage = language === 'zhTW' ? 'zh-tw' : 'en';
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetId = useRef<string | null>(null);
   // Keep the latest callback without re-rendering the widget on every change.

@@ -23,8 +23,8 @@ export function ArticleHeader({ article, isDark }: ArticleHeaderProps) {
   const { t, isAuthenticated, setSidebarOpen } = useApp();
   const { isBookmarked: isArticleBookmarked, bookmarkIdFor, add, remove } = useBookmarks();
   const navigate = useNavigate();
-  const mutedText = mutedTextClass(isDark);
-  const bodyText = bodyTextClass(isDark);
+  const mutedText = mutedTextClass();
+  const bodyText = bodyTextClass();
   const sentimentStyle = SENTIMENT_STYLE[article.sentiment.type];
   // Fallback guards legacy/unknown topics (e.g. pre-migration 'Travel').
   const topicBadgeClass = CATEGORY_BADGE_CLASS[TOPIC_TO_CATEGORY[article.topic]] ?? 'bg-slate-600 text-white';
@@ -60,7 +60,7 @@ export function ArticleHeader({ article, isDark }: ArticleHeaderProps) {
           <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${sentimentStyle.badge}`}>{t[article.sentiment.type]}</span>
           {article.videoUrl && (
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-black/35 text-white backdrop-blur-sm">
-              <PlayCircle size={12} />{ui("Video")} </span>
+              <PlayCircle size={14} />{ui("Video")} </span>
           )}
         </div>
       </div>
@@ -69,18 +69,18 @@ export function ArticleHeader({ article, isDark }: ArticleHeaderProps) {
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <SourceLogo source={article.source} isDark={isDark} className="w-10 h-10" />
         <div className="min-w-0">
-          <p className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>{article.source.name}</p>
+          <p className={`text-sm font-semibold text-slate-900 dark:text-slate-100`}>{article.source.name}</p>
           <p className={`text-xs ${mutedText}`}>{ui(CATEGORY_LABELS[TOPIC_TO_CATEGORY[article.topic]] ?? article.topic)} {ui("coverage")}</p>
         </div>
       </div>
 
-      <h1 className={`article-title font-poppins text-[2rem] font-bold leading-tight mb-4 ${isDark ? 'text-slate-50' : 'text-gray-900'}`}>
+      <h1 className={`article-title font-poppins text-[2rem] font-bold leading-tight mb-4 text-slate-900 dark:text-slate-50`}>
         {article.title}
       </h1>
       </div>
       </div>
 
-      <div className={`flex flex-wrap items-center gap-4 pb-4 mb-6 border-b text-sm ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
+      <div className={`flex flex-wrap items-center gap-4 pb-4 mb-6 border-b text-sm border-slate-100 dark:border-slate-700`}>
         <div className="flex items-center gap-1.5"><User size={14} className={mutedText} /><span className={bodyText}>{article.author || ui("Unknown")}</span></div>
         <div className="flex items-center gap-1.5"><Calendar size={14} className={mutedText} /><span className={bodyText}>{formatPublishedDate(article.publishedAt, locale)}</span></div>
         <div className="flex items-center gap-1.5"><Globe size={14} className={mutedText} /><span className={bodyText}>{article.source.name}</span></div>
@@ -94,9 +94,7 @@ export function ArticleHeader({ article, isDark }: ArticleHeaderProps) {
           className={`ml-auto inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors disabled:opacity-50 ${
             isBookmarked
               ? 'bg-amber-500 text-white'
-              : isDark
-                ? 'bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
+              : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 dark:border dark:border-slate-700'
           }`}
         >
           <Bookmark size={14} fill={isBookmarked ? 'currentColor' : 'none'} />
@@ -106,11 +104,7 @@ export function ArticleHeader({ article, isDark }: ArticleHeaderProps) {
           <button
             type="button"
             onClick={() => navigate(`/posts?compose=1&attach=${articleId}`)}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors ${
-              isDark
-                ? 'bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
-            }`}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 dark:border dark:border-slate-700`}
           >
             <MessageSquareQuote size={14} />
             {t.quoteThis}

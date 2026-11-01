@@ -8,8 +8,6 @@ export type ApiLang = 'en' | 'id' | 'zh-CN' | 'zh-TW';
 // Maps the client's Language union onto the backend's ApiLang codes.
 export const LANGUAGE_API_CODE: Record<Language, ApiLang> = {
   en: 'en',
-  id: 'id',
-  zhCN: 'zh-CN',
   zhTW: 'zh-TW',
 };
 

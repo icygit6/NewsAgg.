@@ -16,7 +16,7 @@ export function LocalizedGoogleLogin(props: GoogleLoginProps) {
   const { language } = useApp();
   const { googleClientId } = getRuntimeConfig();
   if (!googleClientId) return null;
-  const locale = language === 'zhTW' || language === 'zhCN' ? 'zh-TW' : 'en';
+  const locale = language === 'zhTW' ? 'zh-TW' : 'en';
   return (
     <GoogleOAuthProvider key={locale} clientId={googleClientId} locale={locale}>
       <GoogleLogin {...props} />

@@ -54,9 +54,7 @@ export function FeedHeader() {
         className={`shrink-0 inline-flex min-h-9 pointer-coarse:min-h-11 items-center gap-1.5 px-3.5 py-1.5 rounded-full border text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 ${
           active
             ? 'border-transparent font-semibold text-white'
-            : isDark
-              ? 'bg-slate-900 text-slate-300 hover:bg-slate-800 border-slate-800'
-              : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-200'
+            : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:border-slate-800'
         }`}
       >
         {key !== 'all' && (
@@ -69,9 +67,7 @@ export function FeedHeader() {
 
   // Sized up to a 44px target on touch screens; display is set per button so
   // the tablet-only theme toggle can keep its `hidden md:inline-flex`.
-  const iconBtn = `items-center justify-center p-2 pointer-coarse:min-h-11 pointer-coarse:min-w-11 rounded-full transition-colors ${
-    isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-100'
-  }`;
+  const iconBtn = `items-center justify-center p-2 pointer-coarse:min-h-11 pointer-coarse:min-w-11 rounded-full transition-colors text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800`;
 
   const filterBtn = (anchorRef: RefObject<HTMLDivElement>, align: 'left' | 'right' = 'left') => (
     <div ref={anchorRef} className="relative shrink-0">
@@ -81,9 +77,7 @@ export function FeedHeader() {
         className={`flex items-center justify-center gap-1.5 px-3 py-1.5 pointer-coarse:min-h-11 pointer-coarse:min-w-11 rounded-full text-sm font-medium transition-colors ${
           filterActiveCount > 0
             ? 'text-[var(--brand,#2563eb)]'
-            : isDark
-              ? 'text-slate-300 hover:bg-slate-800'
-              : 'text-slate-600 hover:bg-slate-100'
+            : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
         }`}
       >
         <SlidersHorizontal size={16} />
@@ -114,7 +108,7 @@ export function FeedHeader() {
         </div>
         {filterBtn(mobileFilterRef)}
         <button onClick={toggleTheme} aria-label={ui("Toggle theme")} className={`${iconBtn} inline-flex`}>
-          {isDark ? <Sun size={18} /> : <Moon size={18} />}
+          {isDark ? <Sun size={20} /> : <Moon size={20} />}
         </button>
       </div>
 
@@ -133,7 +127,7 @@ export function FeedHeader() {
                 aria-hidden={!canScrollLeft}
                 style={{ opacity: canScrollLeft ? 1 : 0, pointerEvents: canScrollLeft ? 'auto' : 'none' }}
                 aria-label={ui("Previous categories")}
-                className={`flex h-9 w-9 pointer-coarse:h-11 pointer-coarse:w-11 shrink-0 items-center justify-center rounded-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 ${isDark ? 'bg-slate-950 border-slate-700 text-slate-200 disabled:text-slate-600' : 'bg-white border-slate-200 text-slate-700 disabled:text-slate-400'}`}
+                className={`flex h-9 w-9 pointer-coarse:h-11 pointer-coarse:w-11 shrink-0 items-center justify-center rounded-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 bg-white border-slate-200 text-slate-700 disabled:text-slate-400 dark:bg-slate-950 dark:border-slate-700 dark:text-slate-200 dark:disabled:text-slate-600`}
               >
                 <ChevronLeft size={16} />
               </button>
@@ -145,7 +139,7 @@ export function FeedHeader() {
                 aria-hidden={!canScrollRight}
                 style={{ opacity: canScrollRight ? 1 : 0, pointerEvents: canScrollRight ? 'auto' : 'none' }}
                 aria-label={ui('Next categories')}
-                className={`flex h-9 w-9 pointer-coarse:h-11 pointer-coarse:w-11 shrink-0 items-center justify-center rounded-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 ${isDark ? 'bg-slate-950 border-slate-700 text-slate-200 disabled:text-slate-600' : 'bg-white border-slate-200 text-slate-700 disabled:text-slate-400'}`}
+                className={`flex h-9 w-9 pointer-coarse:h-11 pointer-coarse:w-11 shrink-0 items-center justify-center rounded-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 bg-white border-slate-200 text-slate-700 disabled:text-slate-400 dark:bg-slate-950 dark:border-slate-700 dark:text-slate-200 dark:disabled:text-slate-600`}
               >
                 <ChevronRight size={16} />
               </button>
@@ -172,7 +166,7 @@ export function FeedHeader() {
               aria-label={t.search}
               className={`${iconBtn} inline-flex ${searchOpen ? 'text-[var(--brand,#2563eb)]' : ''}`}
             >
-              {searchOpen ? <X size={18} /> : <Search size={18} />}
+              {searchOpen ? <X size={20} /> : <Search size={20} />}
             </button>
 
             <AnimatePresence>
@@ -182,12 +176,10 @@ export function FeedHeader() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
                   transition={{ duration: 0.15 }}
-                  className={`absolute right-0 top-full mt-2 w-80 rounded-2xl border shadow-xl overflow-hidden z-50 ${
-                    isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'
-                  }`}
+                  className={`absolute right-0 top-full mt-2 w-80 rounded-2xl border shadow-xl overflow-hidden z-50 bg-white border-slate-100 dark:bg-slate-800 dark:border-slate-700`}
                 >
                   <div className="p-3">
-                    <SearchBox />
+                    <SearchBox autoFocus />
                   </div>
                 </motion.div>
               )}
@@ -198,7 +190,7 @@ export function FeedHeader() {
             aria-label={ui("Toggle theme")}
             className={`${iconBtn} hidden shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 md:inline-flex lg:hidden`}
           >
-            {isDark ? <Sun size={18} /> : <Moon size={18} />}
+            {isDark ? <Sun size={20} /> : <Moon size={20} />}
           </button>
         </div>
       </div>

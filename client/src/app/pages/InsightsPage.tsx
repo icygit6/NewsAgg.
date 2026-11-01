@@ -15,24 +15,26 @@ import { PanelSkeleton } from '../components/ui/ContentSkeleton';
 import { EvaluationPanel } from '../components/insights/EvaluationPanel';
 import { SourcesPage } from './SourcesPage';
 import { segment } from '../components/ui/styles';
+import { FeedState } from '../components/feed/FeedState';
+import { feedStateButton } from '../components/feed/feedStateButton';
 
 export function InsightsPage() {
-  const { t, isDark, language } = useApp();
+  const ui = useUiText();
+  const { t } = useApp();
   const [params] = useSearchParams();
   const view = params.get('view') === 'sources' ? 'sources' : params.get('view') === 'research' ? 'research' : 'published';
-  const zh = language === 'zhTW' || language === 'zhCN';
   // Full width: this route has no right rail, and the former 72rem cap left
   // a wide empty band beside the panels on desktop screens.
   return <div className="w-full px-4 py-6 md:px-6 xl:px-10">
-    <h1 className={`font-poppins text-2xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{t.insights}</h1>
-    <p className={`mt-1 mb-5 max-w-3xl text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+    <h1 className={`font-poppins text-2xl font-bold text-slate-900 dark:text-slate-100`}>{t.insights}</h1>
+    <p className={`mt-1 mb-5 max-w-3xl text-sm leading-relaxed text-slate-500 dark:text-slate-400`}>
       {t.insightsNote}{' '}<Link to="/methodology" className="font-semibold text-blue-600 hover:underline">{t.methodologyTitle} →</Link>
     </p>
-    <nav className={`${segment.track} mb-5 flex-wrap`} aria-label={zh ? '洞察檢視' : 'Insights views'}>
+    <nav className={`${segment.track} mb-5 flex-wrap`} aria-label={ui('Insights views')}>
       {[
-        ['published', zh ? '新聞資料概覽' : 'Published news'],
-        ['research', zh ? '研究與測試' : 'Research & tests'],
-        ['sources', zh ? '採集來源' : 'Collection sources'],
+        ['published', ui('Published news')],
+        ['research', ui('Research & tests')],
+        ['sources', ui('Collection sources')],
       ].map(([key, title]) => <Link key={key} to={key === 'published' ? '/insights' : `/insights?view=${key}`} aria-current={view === key ? 'page' : undefined} className={`inline-flex min-h-10 items-center ${view === key ? segment.active : segment.item}`}>{title}</Link>)}
     </nav>
     {view === 'research' ? <EvaluationPanel /> : view === 'sources' ? <SourcesPage embedded /> : <LiveInsights />}
@@ -46,7 +48,7 @@ function LiveInsights() {
   const latestQuery = useLatestArticles({ limit: 30, category: selectedCategory });
   const { data: overview, isLoading: overviewLoading } = overviewQuery;
   const { data: latest, isLoading: latestLoading } = latestQuery;
-  if (overviewQuery.isError || latestQuery.isError) return <div role="alert" className="rounded-2xl border border-red-300 p-5"><p>{t.fetchFailed}</p><button type="button" className="mt-3 min-h-11 rounded-xl border px-4" onClick={() => { void overviewQuery.refetch(); void latestQuery.refetch(); }}>{ui('Try again')}</button></div>;
+  if (overviewQuery.isError || latestQuery.isError) return <FeedState tone="error" title={t.errorTitle} body={t.fetchFailed} action={<button type="button" className={feedStateButton} onClick={() => { void overviewQuery.refetch(); void latestQuery.refetch(); }}>{ui('Try again')}</button>} />;
 
   const categoryLabel =
     selectedCategories.length > 1 ? selectedCategories.map(category => ui(CATEGORY_LABELS[category])).join(' · ') : selectedCategory === 'all' ? t.allCategories : ui(CATEGORY_LABELS[selectedCategory]);

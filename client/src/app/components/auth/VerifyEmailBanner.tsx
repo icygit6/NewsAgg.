@@ -45,7 +45,7 @@ export function VerifyEmailBanner() {
           title={ui("Dismiss")}
           className="shrink-0 p-1 rounded hover:bg-white/20"
         >
-          <X size={15} />
+          <X size={16} />
         </button>
       </div>
     </div>

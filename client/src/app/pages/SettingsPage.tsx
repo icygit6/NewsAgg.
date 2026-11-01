@@ -48,10 +48,10 @@ export function SettingsPage() {
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
-      <Link to="/profile" className={`inline-flex items-center gap-1.5 text-sm font-medium ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-900'}`}>
-        <ArrowLeft size={15} />{ui("Back to profile")}
+      <Link to="/profile" className={`inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200`}>
+        <ArrowLeft size={16} />{ui("Back to profile")}
       </Link>
-      <h1 className={`mt-2 font-poppins text-2xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-950'}`}>{t.settings}</h1>
+      <h1 className={`mt-2 font-poppins text-2xl font-bold text-slate-950 dark:text-slate-100`}>{t.settings}</h1>
 
       <div className="mt-5 grid gap-5 md:grid-cols-[13rem_minmax(0,1fr)] md:items-start">
         <nav aria-label={ui("Settings sections")} className="-mx-4 overflow-x-auto px-4 md:mx-0 md:overflow-visible md:px-0" style={{ scrollbarWidth: 'none' }}>
@@ -69,8 +69,8 @@ export function SettingsPage() {
                       selected
                         ? isDark ? 'bg-slate-800 font-semibold text-slate-100' : 'bg-white font-semibold text-slate-900 shadow-sm'
                         : key === 'delete'
-                          ? 'text-rose-600 hover:bg-rose-500/10 dark:text-rose-400'
-                          : isDark ? 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100' : 'text-slate-600 hover:bg-white/70 hover:text-slate-900'
+                          ? 'text-red-600 hover:bg-red-500/10 dark:text-red-400'
+                          : 'text-slate-600 hover:bg-white/70 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/60 dark:hover:text-slate-100'
                     }`}
                   >
                     <Icon size={16} className="shrink-0 opacity-70" />{label}
@@ -83,12 +83,12 @@ export function SettingsPage() {
 
         <section
           aria-labelledby="settings-section-title"
-          className={`min-w-0 rounded-3xl border p-5 shadow-sm sm:p-7 ${isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white/95 border-slate-200'}`}
+          className={`min-w-0 rounded-3xl border p-5 shadow-sm sm:p-7 bg-white/95 border-slate-200 dark:bg-slate-900/80 dark:border-slate-800`}
         >
-          <h2 id="settings-section-title" className={`font-poppins text-lg font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{current.label}</h2>
-          {current.description && <p className={`mt-1 text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{current.description}</p>}
-          <div className={`mt-5 border-t pt-6 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
-            {active === 'profile' && <EditProfileForm isDark={isDark} />}
+          <h2 id="settings-section-title" className={`font-poppins text-lg font-bold text-slate-900 dark:text-slate-100`}>{current.label}</h2>
+          {current.description && <p className={`mt-1 text-sm text-slate-500 dark:text-slate-400`}>{current.description}</p>}
+          <div className={`mt-5 border-t pt-6 border-slate-100 dark:border-slate-800`}>
+            {active === 'profile' && <EditProfileForm />}
             {active === 'preferences' && <ProfilePreferences isDark={isDark} />}
             {(active === 'security' || active === 'connections' || active === 'delete') && <AccountSettings isDark={isDark} section={active} />}
           </div>

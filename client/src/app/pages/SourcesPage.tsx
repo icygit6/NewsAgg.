@@ -1,3 +1,4 @@
+import { useUiText } from '../i18n/uiText';
 import { ChevronDown, ExternalLink, Rss } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { DocLayout } from '../components/ui/DocLayout';
@@ -20,13 +21,12 @@ function discoveryUrl(entry: Entry, now: Date) {
 
 
 export function SourcesPage({ embedded = false }: { embedded?: boolean }) {
+  const ui = useUiText();
   const { language, isDark } = useApp();
-  const zh = language === 'zhTW' || language === 'zhCN';
+  const zh = language === 'zhTW';
   const now = new Date();
-  const title = zh ? '採集來源' : 'Collection sources';
-  const intro = zh
-    ? '四家媒體的分類頁、RSS 與網站地圖。以下為採集設定，並非每次執行的造訪紀錄；文章須通過審查才會發布。日期連結隨 UTC 日曆更新。'
-    : 'Section pages, RSS feeds and sitemaps from four publishers. These are configured discovery links, not a visit log; articles must pass publication checks. Dated links follow the UTC calendar.';
+  const title = ui('Collection sources');
+  const intro = ui('Section pages, RSS feeds and sitemaps from four publishers. These are configured discovery links, not a visit log; articles must pass publication checks. Dated links follow the UTC calendar.');
   const content = <div className="divide-y divide-slate-200 dark:divide-slate-700">
     {catalog.map(source => {
       const known = SOURCES.find(item => item.id === source.id);
@@ -35,10 +35,10 @@ export function SourcesPage({ embedded = false }: { embedded?: boolean }) {
           <SourceLogo source={{ ...source, domain: known?.domain }} isDark={isDark} className="h-10 w-10" />
           <div className="min-w-0 flex-1">
             <h3 className="text-sm font-semibold">{source.name}</h3>
-            <p className="text-xs text-slate-600 dark:text-slate-400">{known?.domain} · {source.language === 'en' ? (zh ? '英文' : 'English') : (zh ? '繁體中文' : 'Traditional Chinese')}</p>
+            <p className="text-xs text-slate-600 dark:text-slate-400">{known?.domain} · {source.language === 'en' ? (ui('English')) : (ui('Traditional Chinese'))}</p>
           </div>
-          <span className="shrink-0 text-xs tabular-nums text-slate-600 dark:text-slate-400">{source.entries.length} {zh ? '連結' : 'links'}</span>
-        <ChevronDown size={18} aria-hidden="true" className="shrink-0 text-slate-500 transition-transform group-open/source:rotate-180" /></summary>
+          <span className="shrink-0 text-xs tabular-nums text-slate-600 dark:text-slate-400">{source.entries.length} {ui('links')}</span>
+        <ChevronDown size={20} aria-hidden="true" className="shrink-0 text-slate-500 transition-transform group-open/source:rotate-180" /></summary>
         {kinds.map((kind, index) => {
           const group = source.entries.filter(entry => entry.kind === kind);
           if (!group.length) return null;
@@ -53,7 +53,7 @@ export function SourcesPage({ embedded = false }: { embedded?: boolean }) {
                       <span className="block break-all font-medium text-[var(--brand)] group-hover:underline">{url}</span>
                       <span className="mt-0.5 block text-xs leading-5 text-slate-600 dark:text-slate-400">{entry.categories.map(value => zh ? zhCategories[value] ?? value : value).join(' · ')}</span>
                     </span>
-                    <ExternalLink size={13} className="mt-1 shrink-0 text-slate-400" aria-hidden="true" />
+                    <ExternalLink size={14} className="mt-1 shrink-0 text-slate-400" aria-hidden="true" />
                   </a>
                 </li>;
               })}
@@ -63,7 +63,7 @@ export function SourcesPage({ embedded = false }: { embedded?: boolean }) {
       </details>;
     })}
   </div>;
-  if (!embedded) return <DocLayout icon={Rss} title={title} intro={intro} back={zh ? '返回首頁' : 'Back to home'}>{content}</DocLayout>;
+  if (!embedded) return <DocLayout icon={Rss} title={title} intro={intro} back={ui('Back to home')}>{content}</DocLayout>;
   return <section id="collection-sources" className="min-w-0 scroll-mt-6 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
     <h2 className="text-lg font-bold">{title}</h2>
     <p className="mb-5 mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{intro}</p>

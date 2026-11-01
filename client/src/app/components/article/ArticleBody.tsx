@@ -22,9 +22,9 @@ function imageIdentity(url: string) {
 
 export function ArticleBody({ article, isDark }: ArticleBodyProps) {
   const ui = useUiText();
-  const panelBase = panelBaseClass(isDark);
-  const mutedText = mutedTextClass(isDark);
-  const bodyText = bodyTextClass(isDark);
+  const panelBase = panelBaseClass();
+  const mutedText = mutedTextClass();
+  const bodyText = bodyTextClass();
   const seenImages = new Set([imageIdentity(article.urlToImage || '')]);
   const galleryImages = article.images.filter((image) => {
     const identity = imageIdentity(image.url);
@@ -49,8 +49,8 @@ export function ArticleBody({ article, isDark }: ArticleBodyProps) {
       {article.aiSummary && (
         <div className={`rounded-2xl border p-5 mb-6 ${panelBase}`}>
           <div className="flex items-center gap-2 mb-2">
-            <Sparkles size={15} className="text-blue-600 dark:text-blue-400" />
-            <h2 className={`text-lg font-semibold ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>{ui("Extractive summary")}</h2>
+            <Sparkles size={16} className="text-blue-600 dark:text-blue-400" />
+            <h2 className={`text-lg font-semibold text-slate-900 dark:text-slate-100`}>{ui("Extractive summary")}</h2>
           </div>
           <div className={`space-y-2 leading-relaxed ${bodyText}`}>{article.aiSummary.split('\n').filter(Boolean).map((line, i) => <p key={i}>{line}</p>)}</div>
           {article.summaryMethod?.startsWith('extractive') && <p className={`mt-3 text-xs ${mutedText}`}>{ui("Key passages selected from the article.")}</p>}
@@ -60,7 +60,7 @@ export function ArticleBody({ article, isDark }: ArticleBodyProps) {
       {galleryImages.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
           {galleryImages.map((image) => (
-            <a key={image.url} href={image.url} target="_blank" rel="noopener noreferrer" className={`rounded-2xl overflow-hidden border block ${isDark ? 'border-slate-700/50 bg-slate-800/60' : 'border-gray-100 bg-white/70'}`}>
+            <a key={image.url} href={image.url} target="_blank" rel="noopener noreferrer" className={`rounded-2xl overflow-hidden border block border-slate-100 bg-white/70 dark:border-slate-700/50 dark:bg-slate-800/60`}>
               <div className="aspect-[4/3] overflow-hidden">
                 <ImageWithFallback src={image.url} alt={image.alt || article.title} className="w-full h-full object-cover" />
               </div>

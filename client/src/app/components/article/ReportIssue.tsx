@@ -3,8 +3,8 @@ import { Flag, Loader2 } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { StyledSelect } from '../ui/StyledSelect';
 import { button, fieldInput } from '../ui/styles';
+import { authFetch } from '../../lib/apiFetch';
 
-const API_BASE = import.meta.env.VITE_API_URL || '';
 const REASONS = ['sentiment', 'topic', 'summary', 'translation', 'content', 'other'] as const;
 
 /**
@@ -21,9 +21,8 @@ export function ReportIssue({ articleId, isDark }: { articleId: string; isDark: 
   const submit = async () => {
     setState('sending');
     try {
-      const response = await fetch(`${API_BASE}/api/articles/${articleId}/report`, {
+      const response = await authFetch(`/api/articles/${articleId}/report`, {
         method: 'POST',
-        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reason, message: message.trim() }),
       });
@@ -34,7 +33,7 @@ export function ReportIssue({ articleId, isDark }: { articleId: string; isDark: 
     }
   };
 
-  const muted = isDark ? 'text-slate-400' : 'text-gray-500';
+  const muted = 'text-slate-500 dark:text-slate-400';
   const field = `${fieldInput} resize-y`;
 
   if (!open) {
@@ -45,14 +44,14 @@ export function ReportIssue({ articleId, isDark }: { articleId: string; isDark: 
         onClick={() => { if (!isAuthenticated) { setSidebarOpen(true); return; } setOpen(true); setState('idle'); }}
         className={button.secondary}
       >
-        <Flag size={15} />{t.reportIssue}
+        <Flag size={16} />{t.reportIssue}
       </button>
     );
   }
 
   return (
-    <div className={`basis-full rounded-xl border p-4 ${isDark ? 'border-slate-700 bg-slate-900/40' : 'border-gray-200 bg-gray-50'}`}>
-      <p className={`text-sm font-semibold ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>{t.reportIssueTitle}</p>
+    <div className={`basis-full rounded-2xl border p-4 border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/40`}>
+      <p className={`text-sm font-semibold text-slate-900 dark:text-slate-100`}>{t.reportIssueTitle}</p>
       <p className={`mt-1 text-xs leading-relaxed ${muted}`}>{t.reportIssueHint}</p>
       {state === 'sent' ? (
         <p className="mt-3 text-sm font-medium text-emerald-600">{t.reportSent}</p>

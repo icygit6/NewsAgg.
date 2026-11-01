@@ -20,6 +20,14 @@ export class ApiError extends Error {
  * revoked). AppContext listens and clears the in-memory user. */
 export const AUTH_UNAUTHORIZED_EVENT = 'auth:unauthorized';
 
+/** fetch for signed-in requests: the API base, the session cookie, and the same global sign-out
+ * signal as apiFetch on a 401. Returns the raw Response, so callers keep their own parsing. */
+export async function authFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  const res = await fetch(`${API_BASE_URL}${path}`, { ...init, credentials: 'include' });
+  if (res.status === 401) window.dispatchEvent(new Event(AUTH_UNAUTHORIZED_EVENT));
+  return res;
+}
+
 export async function apiFetch<T = unknown>(path: string, init: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',

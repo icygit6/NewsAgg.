@@ -20,11 +20,11 @@ test('article columns scroll independently and keep coverage reachable', async (
   expect(await reading.evaluate(el => el.scrollTop)).toBe(0);
   await reading.getByRole('link', { name: 'Read on BBC', exact: true }).scrollIntoViewIfNeeded();
   await expect(reading.getByRole('link', { name: 'Read on BBC', exact: true })).toBeInViewport();
-  const source = rail.getByText('Source and Access', { exact: true });
+  const source = rail.getByText('Source and access', { exact: true });
   await source.scrollIntoViewIfNeeded();
   await expect(rail.getByText('United Kingdom', { exact: true })).toBeVisible();
   await expect(rail.getByText('English', { exact: true })).toBeVisible();
-  const trending = rail.getByRole('region', { name: 'Trending Topics', exact: true });
+  const trending = rail.getByRole('region', { name: 'Trending topics', exact: true });
   await trending.scrollIntoViewIfNeeded();
   await expect.poll(() => trending.locator(':scope > div').count()).toBeGreaterThan(8);
   await trending.evaluate(el => { el.scrollTop = el.scrollHeight; });

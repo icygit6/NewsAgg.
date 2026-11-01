@@ -27,7 +27,7 @@ export function Root() {
 
   return (
     <div
-      className={`h-dvh flex flex-col overflow-hidden font-sans ${isDark ? 'text-slate-100' : 'text-slate-900'}`}
+      className={`h-dvh flex flex-col overflow-hidden font-sans text-slate-900 dark:text-slate-100`}
       style={{
         // Quiet canvas from the active colour theme; local components provide the hierarchy.
         background: 'var(--page-bg)',

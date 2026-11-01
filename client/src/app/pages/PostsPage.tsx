@@ -9,6 +9,8 @@ import { usePosts } from '../hooks/usePosts';
 import { PostComposer } from '../components/posts/PostComposer';
 import { PostCard } from '../components/posts/PostCard';
 import { PostCategoryPicker } from '../components/posts/PostCategoryPicker';
+import { FeedState } from '../components/feed/FeedState';
+import { feedStateButton } from '../components/feed/feedStateButton';
 
 /** Full posts feed (/posts): composer on top for signed-in users, infinite
  * list below. Supports ?compose=1&attach=<articleId> from "Quote this". */
@@ -30,14 +32,14 @@ export function PostsPage() {
   return (
     <div className="px-4 md:px-6 py-6 space-y-4">
       <h1
-        className={`font-poppins text-2xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}
+        className={`font-poppins text-2xl font-bold text-slate-900 dark:text-slate-100`}
       >
         {t.posts}
       </h1>
       <div className="space-y-3">
         <div className="flex items-center gap-3">
-          <div role="group" aria-label={ui('Sort posts')} className={`inline-flex min-w-0 overflow-x-auto rounded-xl border p-1 ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-slate-100'}`}>
-            {(['latest', 'oldest', 'popular'] as const).map(option => <button key={option} type="button" aria-pressed={sort === option} onClick={() => setSort(option)} className={`whitespace-nowrap rounded-lg px-2.5 sm:px-3 py-1.5 text-[13px] font-semibold transition-colors ${sort === option ? isDark ? 'bg-slate-700 text-white shadow-sm' : 'bg-white text-slate-900 shadow-sm' : isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}><span className="hidden sm:inline">{ui(option === 'latest' ? 'Newest first' : option === 'oldest' ? 'Oldest first' : 'Most popular')}</span><span className="sm:hidden">{ui(option === 'latest' ? 'Newest' : option === 'oldest' ? 'Oldest' : 'Popular')}</span></button>)}
+          <div role="group" aria-label={ui('Sort posts')} className={`inline-flex min-w-0 overflow-x-auto rounded-xl border p-1 border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-900`}>
+            {(['latest', 'oldest', 'popular'] as const).map(option => <button key={option} type="button" aria-pressed={sort === option} onClick={() => setSort(option)} className={`whitespace-nowrap rounded-lg px-2.5 sm:px-3 py-1.5 text-[13px] font-semibold transition-colors ${sort === option ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white dark:shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'}`}><span className="hidden sm:inline">{ui(option === 'latest' ? 'Newest first' : option === 'oldest' ? 'Oldest first' : 'Most popular')}</span><span className="sm:hidden">{ui(option === 'latest' ? 'Newest' : option === 'oldest' ? 'Oldest' : 'Popular')}</span></button>)}
           </div>
         </div>
         <PostCategoryPicker value={category === 'all' ? '' : category} onChange={value => setCategory(value || 'all')} allLabel={ui('All categories')} isDark={isDark} ariaLabel={ui('Filter posts by category')} />
@@ -48,11 +50,7 @@ export function PostsPage() {
       ) : (
         <button
           onClick={() => setSidebarOpen(true)}
-          className={`w-full flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm text-left transition-colors ${
-            isDark
-              ? 'bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-600'
-              : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
-          }`}
+          className={`w-full flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm text-left transition-colors bg-white border-slate-200 text-slate-500 hover:border-slate-300 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-400 dark:hover:border-slate-600`}
         >
           <MessageSquareQuote size={16} className="shrink-0 text-[var(--brand,#2563eb)]" />
           {t.signInToPost}
@@ -61,16 +59,9 @@ export function PostsPage() {
 
       {isLoading && <ListSkeleton label={t.loading} />}
 
-      {isError && <div role="alert" className="rounded-xl border border-rose-300 p-4 text-rose-500">{ui("Could not load posts.")} <button onClick={()=>refetch()} className="font-semibold hover:underline">{ui("Retry")}</button></div>}
+      {isError && <FeedState tone="error" title={t.errorTitle} body={ui("Could not load posts.")} action={<button type="button" onClick={() => void refetch()} className={feedStateButton}>{ui("Try again")}</button>} />}
 
-      {!isLoading && !isError && posts.length === 0 && (
-        <div
-          className={`text-center py-16 rounded-2xl border ${isDark ? 'border-slate-800 text-slate-400' : 'border-slate-200 text-slate-500'}`}
-        >
-          <MessageSquareQuote size={40} className="mx-auto mb-3 opacity-50" />
-          <p className="text-sm">{t.noPostsYet}</p>
-        </div>
-      )}
+      {!isLoading && !isError && posts.length === 0 && <FeedState title={t.noPostsYet} />}
 
       <div className="space-y-3">
         {posts.map((post) => (

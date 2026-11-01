@@ -14,7 +14,7 @@ export function MoreInCategory({ articles }: { articles: NewsArticle[] }) {
   const ui = useUiText();
   const listRef = useRef<HTMLOListElement>(null);
   const [visibleCount, setVisibleCount] = useState(2);
-  const { isDark, language, selectedCategory, setSelectedCategory } = useApp();
+  const { language, selectedCategory, setSelectedCategory } = useApp();
   useLayoutEffect(() => {
     const list = listRef.current;
     if (!list) return;
@@ -45,7 +45,7 @@ export function MoreInCategory({ articles }: { articles: NewsArticle[] }) {
       data-testid="more-in-category"
       aria-label={`${ui('More in')} ${ui(CATEGORY_LABELS[category])}`}
       style={categoryVars(category)}
-      className={`flex min-w-0 flex-col rounded-2xl p-3 [contain:size] @min-[64rem]:p-5 ${isDark ? 'bg-slate-900' : 'bg-slate-100'}`}
+      className={`flex min-w-0 flex-col rounded-2xl p-3 [contain:size] @min-[64rem]:p-5 bg-slate-100 dark:bg-slate-900`}
     >
       <h2 className="flex items-center gap-2 text-sm font-bold sm:text-lg">
         <span aria-hidden className="h-3 w-3 shrink-0 rounded-full" style={{ background: accent }} />
@@ -54,15 +54,15 @@ export function MoreInCategory({ articles }: { articles: NewsArticle[] }) {
       <ol ref={listRef} className="relative mt-2 flex min-h-0 flex-1 flex-col gap-1 overflow-hidden">
         {articles.map((article, index) => (
           <li key={article.id} aria-hidden={index >= visibleCount || undefined} className={index >= visibleCount ? 'invisible absolute top-0 left-0 w-full pointer-events-none' : 'shrink-0'}>
-            <Link tabIndex={index >= visibleCount ? -1 : undefined} to={`/article/${getArticleId(article)}`} className={`group block rounded-xl px-1 py-1 text-xs transition-colors sm:px-1 sm:py-1 sm:text-sm @min-[64rem]:text-base ${isDark ? 'hover:bg-slate-800' : 'hover:bg-white'}`}>
-              <span className={`news-headline line-clamp-2 font-semibold leading-snug transition-colors ${CATEGORY_GROUP_HOVER_TEXT} ${isDark ? 'text-slate-100' : 'text-[#0b1f33]'}`}>{article.title}</span>
-              <span className={`mt-1 block text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{article.source.name} · {formatNewsDate(article.publishedAt, language)}</span>
+            <Link tabIndex={index >= visibleCount ? -1 : undefined} to={`/article/${getArticleId(article)}`} className={`group block rounded-xl px-1 py-1 text-xs transition-colors sm:px-1 sm:py-1 sm:text-sm @min-[64rem]:text-base hover:bg-white dark:hover:bg-slate-800`}>
+              <span className={`news-headline line-clamp-2 font-semibold leading-snug transition-colors ${CATEGORY_GROUP_HOVER_TEXT} text-[#0b1f33] dark:text-slate-100`}>{article.title}</span>
+              <span className={`mt-1 block text-xs text-slate-500 dark:text-slate-400`}>{article.source.name} · {formatNewsDate(article.publishedAt, language)}</span>
             </Link>
           </li>
         ))}
       </ol>
       {selectedCategory !== category && <button type="button" onClick={() => setSelectedCategory(category)} className={`mt-3 inline-flex shrink-0 min-h-11 items-center gap-1.5 self-start rounded-lg text-sm font-semibold hover:underline ${CATEGORY_TEXT}`}>
-        {ui('See all')} <ArrowRight size={15} />
+        {ui('See all')} <ArrowRight size={16} />
       </button>}
     </section>
   );

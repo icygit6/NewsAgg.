@@ -10,7 +10,7 @@ vi.mock('../../contexts/AppContext', () => ({
 vi.mock('../../services/authService', () => ({
   authService: { updatePreferences: vi.fn(), exportData: vi.fn(), setUser: vi.fn() },
 }));
-vi.mock('../ui/LanguageSwitcher', () => ({
+vi.mock('../../hooks/useInterfaceLanguage', () => ({
   useInterfaceLanguage: () => ({ choice: 'en', choose: vi.fn(), options: [{ code: 'en', short: 'EN', label: 'English' }], current: { short: 'EN', label: 'English' } }),
 }));
 vi.mock('../ui/TranslateNewsToggle', () => ({ TranslateNewsToggle: () => <div /> }));

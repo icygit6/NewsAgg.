@@ -83,12 +83,12 @@ it('shows the spinner, or the caller\'s own placeholder, while loading', () => {
   expect(screen.getByText('placeholder rows')).toBeInTheDocument();
 });
 
-it('stops retrying after a failed page and offers Retry, the only button it ever shows', () => {
+it('stops retrying after a failed page and offers Try again, the only button it ever shows', () => {
   const fetchNextPage = vi.fn();
   render(<InfiniteScrollFooter hasNextPage isFetchingNextPage={false} isError fetchNextPage={fetchNextPage} />);
   expect(live()).toHaveLength(0);
   expect(screen.getByRole('alert')).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
   expect(fetchNextPage).toHaveBeenCalledTimes(1);
 });
 

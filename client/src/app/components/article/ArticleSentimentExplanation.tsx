@@ -8,7 +8,7 @@ import type { NewsArticle } from '../../types/article';
 interface Explanation { summary: string; reasons: { reason: string; quote: string }[]; model: string; partial: boolean }
 export function ArticleSentimentExplanation({ article, compact = false, showNote = true }: { article: Pick<NewsArticle, 'id'>; compact?: boolean; showNote?: boolean }) {
   const ui = useUiText();
-  const { language, isDark } = useApp();
+  const { language } = useApp();
   const lang = language === 'zhTW' ? 'zh-TW' : 'en';
   const { data, isPending, isError, refetch } = useQuery({
     queryKey: ['article-explanation', article.id, lang],
@@ -26,14 +26,14 @@ export function ArticleSentimentExplanation({ article, compact = false, showNote
     {isPending ? <ExplanationSkeleton /> : isError ? <div role="status"><p>{ui('The AI explanation is temporarily unavailable. Please try again.')}</p><button type="button" onClick={() => void refetch()} className="mt-2 min-h-11 rounded-lg border px-3">{ui('Try again')}</button></div> : data && <>
       <p>{data.summary}</p>
       {!compact && <details className="mt-2">
-        <summary className={`cursor-pointer py-3 text-xs font-semibold ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>{ui('Reasons and supporting excerpts')}</summary>
+        <summary className={`cursor-pointer py-3 text-xs font-semibold text-blue-700 dark:text-blue-300`}>{ui('Reasons and supporting excerpts')}</summary>
         <ol className="space-y-4">{data.reasons.map((reason, index) => <li key={index}>
           <p>{reason.reason}</p>
-          <blockquote className={`mt-2 rounded-lg p-3 text-xs ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-50 text-slate-700'}`}>“{reason.quote}”</blockquote>
+          <blockquote className={`mt-2 rounded-lg p-3 text-xs bg-slate-50 text-slate-700 dark:bg-slate-800 dark:text-slate-300`}>“{reason.quote}”</blockquote>
         </li>)}</ol>
         <p className="mt-3 text-xs">{ui('Explanation model')}: {data.model}</p>
       </details>}
-      {(showNote || data.partial) && <p className={`mt-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{showNote && ui('AI interpretation of the article’s content; not the original classifier’s internal reasoning.')}{data.partial && <>{showNote && ' '}{ui('Based on excerpts from the beginning, middle and end of the stored article.')}</>}</p>}
+      {(showNote || data.partial) && <p className={`mt-2 text-xs text-slate-600 dark:text-slate-400`}>{showNote && ui('AI interpretation of the article’s content; not the original classifier’s internal reasoning.')}{data.partial && <>{showNote && ' '}{ui('Based on excerpts from the beginning, middle and end of the stored article.')}</>}</p>}
     </>}
   </div>;
 }

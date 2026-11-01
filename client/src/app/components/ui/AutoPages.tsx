@@ -10,7 +10,7 @@ export function AutoPages({ items, label, scopeKey, pageClassName = '' }: {
   const root = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
   const { language } = useApp();
-  const zh = language === 'zhTW' || language === 'zhCN';
+  const zh = language === 'zhTW';
   const count = Math.ceil(items.length / 10);
   const [page, setPage] = useState(0);
   const pageRef = useRef(0);

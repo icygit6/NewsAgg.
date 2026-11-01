@@ -110,12 +110,16 @@ app.get('/health', async (req, res) => {
     financePrimary: Boolean(process.env.TWELVE_DATA_API_KEY),
     publicUrl: /^https:\/\//i.test(process.env.PUBLIC_CLIENT_URL || ''),
   }
+  // Which services are configured is for local checks only. The public site
+  // proxies /health (nginx adds X-Forwarded-For), and the daily run and web
+  // recovery read just ok/db from it, so proxied callers get no inventory.
+  const details = req.headers['x-forwarded-for'] ? {} : { integrations }
   if (req.query.db !== '1') {
-    return res.json({ ok: true, db: 'unchecked', integrations })
+    return res.json({ ok: true, db: 'unchecked', ...details })
   }
   try {
     await pool.query('SELECT 1')
-    res.json({ ok: true, db: 'up', integrations })
+    res.json({ ok: true, db: 'up', ...details })
   } catch (err) {
     logger.error({ err }, 'health check: database unreachable')
     res.status(503).json({ ok: false, db: 'down' })

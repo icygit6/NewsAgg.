@@ -8,20 +8,18 @@ import { useProfilePrivacy } from '../../hooks/useProfilePrivacy';
 import { AvatarEditor } from './AvatarEditor';
 import { PROFILE_BACKGROUNDS as BANNERS } from '../../lib/profileBackgrounds';
 import { prepareBackground } from '../../lib/prepareBackground';
+import { formatNewsDate } from '../../lib/formatDate';
+import type { Language } from '../../i18n/translations';
 
-interface ProfileHeaderProps {
-  isDark: boolean;
-}
-
-const formatDate = (value?: string) => {
-  if (!value) return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date.toLocaleDateString();
+// Interface-language dates (13 Oct 2026 / 2026/10/13), like the rest of the site.
+const formatDate = (value: string | undefined, language: Language) => {
+  if (!value || Number.isNaN(new Date(value).getTime())) return null;
+  return formatNewsDate(value, language);
 };
 
-export function ProfileHeader({ isDark }: ProfileHeaderProps) {
+export function ProfileHeader() {
   const ui = useUiText();
-  const { t, user, setUser } = useApp();
+  const { t, user, setUser, language } = useApp();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -50,15 +48,13 @@ export function ProfileHeader({ isDark }: ProfileHeaderProps) {
     catch (error) { setMessage(error instanceof Error ? error.message : 'Could not upload image'); }
     finally { setSaving(false); }
   };
-  const actionBtn = `inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition-colors ${
-    isDark ? 'border-slate-700 text-slate-200 hover:bg-slate-800' : 'border-slate-300 text-slate-700 hover:bg-slate-50'
-  }`;
-  const joined = formatDate(user.created_at);
-  const lastLogin = formatDate(user.last_login);
+  const actionBtn = `inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition-colors border-slate-300 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800`;
+  const joined = formatDate(user.created_at, language);
+  const lastLogin = formatDate(user.last_login, language);
 
   return (
     <div
-      className={`rounded-3xl border shadow-sm ${isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white/95 border-slate-200'}`}
+      className={`rounded-3xl border shadow-sm bg-white/95 border-slate-200 dark:bg-slate-900/80 dark:border-slate-800`}
     >
       {/* Only the banner clips, so the avatar menu can overflow the card. */}
       <div className="h-28 sm:h-40 relative overflow-hidden rounded-t-3xl" style={{ background: banner }}>
@@ -69,19 +65,19 @@ export function ProfileHeader({ isDark }: ProfileHeaderProps) {
       </div>
       <div className="px-5 pb-5 sm:px-6 sm:pb-6">
         <div className="-mt-12 flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-5">
-          <AvatarEditor isDark={isDark} />
+          <AvatarEditor />
           {/* The avatar overlaps the banner by 3rem; start the name just below it. */}
           <div className="min-w-0 pb-1 sm:pt-14">
-            <h1 className={`font-poppins text-2xl font-bold leading-tight ${isDark ? 'text-slate-100' : 'text-slate-950'}`}>
+            <h1 className={`font-poppins text-2xl font-bold leading-tight text-slate-950 dark:text-slate-100`}>
               {user.displayName || user.username}
             </h1>
-            <p className={`mt-0.5 text-sm font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>@{user.username}</p>
+            <p className={`mt-0.5 text-sm font-medium text-slate-600 dark:text-slate-400`}>@{user.username}</p>
           </div>
           {/* One way out to /settings, which opens on the Profile section. */}
-          <Link to="/settings" className={`${actionBtn} shrink-0 self-start sm:ml-auto sm:mt-14`}><Settings size={15} />{t.settings}</Link>
+          <Link to="/settings" className={`${actionBtn} shrink-0 self-start sm:ml-auto sm:mt-14`}><Settings size={16} />{t.settings}</Link>
         </div>
-        {user.bio && <p className={`mt-4 max-w-2xl text-sm leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{user.bio}</p>}
-        {editing && <div className={`mt-5 rounded-2xl border p-4 ${isDark ? 'border-slate-700 bg-slate-950/40' : 'border-slate-200 bg-slate-50'}`} aria-label={ui("Background colours")}>
+        {user.bio && <p className={`mt-4 max-w-2xl text-sm leading-relaxed text-slate-700 dark:text-slate-300`}>{user.bio}</p>}
+        {editing && <div className={`mt-5 rounded-2xl border p-4 border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/40`} aria-label={ui("Background colours")}>
           <div className="w-full flex flex-wrap items-center gap-3">
             <button type="button" disabled={saving} onClick={() => fileInput.current?.click()} className="rounded-lg bg-blue-600 text-white px-3 py-2 text-xs disabled:opacity-50">{saving ? ui("Saving…") : ui("Upload image")}</button>
             {user.profileBackgroundImage && <button type="button" disabled={saving} onClick={() => void saveBackground(user.profileBackground ?? 0)} className="text-xs font-semibold hover:underline">{ui("Remove image")}</button>}
@@ -95,16 +91,16 @@ export function ProfileHeader({ isDark }: ProfileHeaderProps) {
         </div>}
         <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp" aria-label={ui("Upload profile background")} className="hidden" onChange={event => { const file = event.target.files?.[0]; event.target.value = ''; void uploadBackground(file); }} />
         {message && <p role="status" className="mt-3 text-xs">{ui(message)}</p>}
-        <div className={`mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t pt-4 text-xs ${isDark ? 'border-slate-800 text-slate-400' : 'border-slate-100 text-slate-500'}`}>
+        <div className={`mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t pt-4 text-xs border-slate-100 text-slate-500 dark:border-slate-800 dark:text-slate-400`}>
             {joined && (
               <span className="inline-flex items-center gap-1.5">
-                <CalendarDays size={13} />
+                <CalendarDays size={14} />
                 {t.memberSince} {joined}
               </span>
             )}
             {lastLogin && (
               <span className="inline-flex items-center gap-1.5">
-                <Clock3 size={13} />
+                <Clock3 size={14} />
                 {t.lastActive} {hideLastActive ? '••••' : lastLogin}
               </span>
             )}

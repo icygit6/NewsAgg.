@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { API_BASE_URL } from '../lib/apiFetch';
+import { authFetch } from '../lib/apiFetch';
 
 export type FeedbackKind = 'bug' | 'suggestion' | 'other';
 export interface FeedbackInput {
@@ -18,9 +18,8 @@ export function openFeedback() {
 }
 
 export async function sendFeedback(input: FeedbackInput): Promise<{ id?: number }> {
-  const response = await fetch(`${API_BASE_URL}/api/feedback`, {
+  const response = await authFetch('/api/feedback', {
     method: 'POST',
-    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(input),
   });

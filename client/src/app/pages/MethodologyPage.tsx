@@ -1,3 +1,4 @@
+import { useUiText } from '../i18n/uiText';
 import { Link } from 'react-router';
 import { useApp } from '../contexts/AppContext';
 import { FlaskConical } from 'lucide-react';
@@ -21,7 +22,7 @@ const CONTENT: Record<'en' | 'zhTW', { intro: string; sections: Section[]; back:
       {
         title: 'Sources and coverage',
         points: [
-          'Four publishers: BBC, CNN and Al Jazeera in English, and Yahoo News Taiwan in Traditional Chinese.',
+          'Four publishers: BBC, CNN and Al Jazeera in English, and Yahoo Taiwan in Traditional Chinese.',
           'Eight topics: Sport, Health, Business, World, Politics, Lifestyle, Science (including technology) and Climate. Not every publisher is collected for every topic: Yahoo Taiwan has no Health or Climate feed. The Collection sources page lists the configured discovery links.',
           'Collection runs daily at 17:00 Taipei time, up to 20 articles per publisher and topic, from stories published in the previous 48 hours. Stories without a publisher photo are not published. The public feed keeps 30 days; older stories are removed by the weekly cleanup.',
           'Publisher shares change with eligible article supply. The dataset is not balanced by publisher; overall charts can be dominated by the largest source.',
@@ -103,7 +104,7 @@ const CONTENT: Record<'en' | 'zhTW', { intro: string; sections: Section[]; back:
       {
         title: '來源與涵蓋範圍',
         points: [
-          '四家媒體：英文的 BBC、CNN、Al Jazeera，以及繁體中文的 Yahoo 奇摩新聞臺灣。',
+          '四家媒體：英文的 BBC、CNN、Al Jazeera，以及繁體中文的 Yahoo 臺灣。',
           '八個主題：體育、健康、商業、國際、政治、生活、科學（含科技）與氣候。並非每家媒體都擷取所有主題：本站未擷取 Yahoo 臺灣的健康與氣候。「採集來源」頁面列出設定中的採集連結。',
           '每日臺北時間 17:00 擷取，每家媒體每個主題最多 20 篇，只收過去 48 小時內發布的新聞；沒有出版者照片的新聞不發布。公開列表保留 30 天，較舊的新聞由每週清理移除。',
           '各媒體占比會隨合格文章供應而改變，資料集並非依媒體平衡抽樣；整體圖表可能由篇數最多的來源主導。',
@@ -181,14 +182,15 @@ const CONTENT: Record<'en' | 'zhTW', { intro: string; sections: Section[]; back:
 };
 
 export function MethodologyPage() {
+  const ui = useUiText();
   const { t, language } = useApp();
-  const zh = language === 'zhTW' || language === 'zhCN';
+  const zh = language === 'zhTW';
   const content = CONTENT[zh ? 'zhTW' : 'en'];
   return (
     <DocLayout
       icon={FlaskConical}
       title={t.methodologyTitle}
-      intro={<><p>{content.intro}</p><p className="mt-3"><Link className="font-semibold text-blue-600 hover:underline dark:text-blue-400" to="/insights?view=research">{zh ? '查看完整評估、Macro F1、混淆矩陣與測試紀錄 →' : 'Explore full evaluation, macro F1, confusion matrices and test evidence →'}</Link></p></>}
+      intro={<><p>{content.intro}</p><p className="mt-3"><Link className="font-semibold text-blue-600 hover:underline dark:text-blue-400" to="/insights?view=research">{ui('Explore full evaluation, macro F1, confusion matrices and test evidence →')}</Link></p></>}
       back={content.back}
     >
       {content.sections.map((section) => (

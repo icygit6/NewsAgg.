@@ -23,7 +23,7 @@ export function LeadStoryCard({ article }: { article: NewsArticle }) {
       <Link to={`/article/${articleId}`} viewTransition className="block h-full">
         <div
           style={categoryVars(category) as React.CSSProperties}
-          className={`news-card-frame flex h-full flex-col overflow-hidden rounded-2xl border sm:grid sm:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}
+          className={`news-card-frame flex h-full flex-col overflow-hidden rounded-2xl border sm:grid sm:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] bg-white border-slate-200 dark:bg-slate-900 dark:border-slate-800`}
         >
           <div className="relative aspect-[16/10] overflow-hidden sm:aspect-auto sm:min-h-[18rem] lg:min-h-[22rem]">
             <ImageWithFallback
@@ -40,16 +40,16 @@ export function LeadStoryCard({ article }: { article: NewsArticle }) {
             <span className={`self-start rounded-full px-2.5 py-1 text-xs font-semibold ${CATEGORY_BADGE_CLASS[category] ?? 'bg-slate-600 text-white'}`}>
               {ui(article.topic)}
             </span>
-            <h2 className={`news-headline mt-2 line-clamp-3 break-words font-poppins text-xl font-bold leading-tight transition-colors lg:mt-4 md:text-2xl lg:line-clamp-4 lg:text-3xl ${CATEGORY_GROUP_HOVER_TEXT} ${isDark ? 'text-slate-50' : 'text-[#0b1f33]'}`}>
+            <h2 className={`news-headline mt-2 line-clamp-3 break-words font-poppins text-xl font-bold leading-tight transition-colors lg:mt-4 md:text-2xl lg:line-clamp-4 lg:text-3xl ${CATEGORY_GROUP_HOVER_TEXT} text-[#0b1f33] dark:text-slate-50`}>
               {article.title}
             </h2>
             {summary && (
-              <p className={`mt-3 line-clamp-2 text-sm leading-relaxed lg:line-clamp-3 lg:text-[15px] ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{summary}</p>
+              <p className={`mt-3 line-clamp-2 text-sm leading-relaxed lg:line-clamp-3 lg:text-[15px] text-slate-600 dark:text-slate-300`}>{summary}</p>
             )}
             <div className="flex-1" />
-            <div className={`mt-3 flex flex-wrap items-center gap-2 text-xs lg:mt-6 lg:gap-3 lg:text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            <div className={`mt-3 flex flex-wrap items-center gap-2 text-xs lg:mt-6 lg:gap-3 lg:text-sm text-slate-500 dark:text-slate-400`}>
               <SourceLogo source={article.source} isDark={isDark} className="h-7 w-7 lg:h-9 lg:w-9" />
-              <span className={`min-w-0 truncate font-semibold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{article.source.name}</span>
+              <span className={`min-w-0 truncate font-semibold text-slate-700 dark:text-slate-200`}>{article.source.name}</span>
               <span className="ml-auto inline-flex shrink-0 items-center gap-1.5"><Clock3 size={14} />{formatNewsDate(article.publishedAt, language)}</span>
             </div>
           </div>

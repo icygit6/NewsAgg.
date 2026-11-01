@@ -33,14 +33,12 @@ export const sentimentPillClass: Record<SentimentType, string> = {
 };
 
 // ── Theme helpers (centralized so every sub-component stays consistent) ────────
-export const panelBaseClass = (isDark: boolean): string =>
-  isDark
-    ? 'bg-slate-800/80 border-slate-700/50 backdrop-blur-md'
-    : 'bg-white/85 border-white/60 backdrop-blur-md';
+export const panelBaseClass = (): string =>
+  'bg-white/85 border-white/60 backdrop-blur-md dark:bg-slate-800/80 dark:border-slate-700/50 dark:backdrop-blur-md';
 
-export const mutedTextClass = (isDark: boolean): string => (isDark ? 'text-slate-400' : 'text-gray-500');
+export const mutedTextClass = (): string => ('text-slate-500 dark:text-slate-400');
 
-export const bodyTextClass = (isDark: boolean): string => (isDark ? 'text-slate-200' : 'text-gray-700');
+export const bodyTextClass = (): string => ('text-slate-700 dark:text-slate-200');
 
 // ── Formatters ────────────────────────────────────────────────────────────────
 export const formatPublishedDate = (value: string, locale?: string): string => {

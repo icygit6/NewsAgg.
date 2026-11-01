@@ -49,7 +49,7 @@ def source_meta(url: str) -> dict:
     if is_alj(url):
         return {"id": "aljazeera", "name": "Al Jazeera", "domain": "aljazeera.com", "country": "QA", "language": "en", "logo": "https://www.aljazeera.com/favicon.ico"}
     if is_yahoo_tw(url):
-        return {"id": "yahoo_tw", "name": "Yahoo TW", "domain": "tw.news.yahoo.com", "country": "TW", "language": "zh-TW", "logo": "https://tw.news.yahoo.com/favicon.ico"}
+        return {"id": "yahoo_tw", "name": "Yahoo Taiwan", "domain": "tw.news.yahoo.com", "country": "TW", "language": "zh-TW", "logo": "https://tw.news.yahoo.com/favicon.ico"}
     return {"id": d, "name": d, "domain": d, "country": None, "language": "en", "logo": None}
 
 

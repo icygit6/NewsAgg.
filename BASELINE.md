@@ -38,7 +38,7 @@ TryCloudflare adalah Quick Tunnel untuk pengembangan: alamat acak dapat berganti
 ## Asal kategori
 
 - AI category: artikel memiliki skor label model; skor topik bukan ukuran kebenaran berita.
-- Publisher category: kategori dipetakan dari rubrik/feed penerbit. Yahoo TW menggunakan skip_zero_shot=True.
+- Publisher category: kategori dipetakan dari rubrik/feed penerbit. Yahoo Taiwan menggunakan skip_zero_shot=True.
 - Skor hanya ditampilkan di detail artikel bila tersedia; jangan mengubah skor yang tidak tersedia menjadi 100%.
 - Perubahan kategori tidak menampilkan sementara artikel dari kategori sebelumnya.
 

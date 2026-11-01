@@ -2,35 +2,12 @@ import { useState } from 'react';
 import { Check, X } from 'lucide-react';
 import { useUiText } from '../../i18n/uiText';
 import { StyledSelect } from '../ui/StyledSelect';
-
-/** The collections every reader starts with (the server holds each reader's
- * edited list). Stored in English and translated on display, so a preset
- * reads the same in either language. */
-const DEFAULT_COLLECTIONS: readonly string[] = ['Read later', 'Research', 'Follow this story', 'Share', 'Reference'];
-
-export function useCollectionLabel() {
-  const ui = useUiText();
-  return (name: string) => DEFAULT_COLLECTIONS.includes(name) ? ui(name) : name;
-}
-
-/** The reader's own list in its order, then any other collection still in use. */
-export function collectionChoices(meta?: { presets?: string[]; collections?: string[] }) {
-  const listed = meta?.presets ?? [...DEFAULT_COLLECTIONS];
-  const seen = new Set(listed.map(name => name.toLowerCase()));
-  return [...listed, ...(meta?.collections ?? []).filter(name => name && !seen.has(name.toLowerCase()))];
-}
-
-/** Trim and collapse spaces, then reuse the spelling of a matching existing
- * or preset collection, so "research " lands in "Research". */
-export function normalizeCollection(raw: string, known: string[]) {
-  const name = raw.replace(/\s+/g, ' ').trim().slice(0, 60);
-  return known.find(k => k.toLowerCase() === name.toLowerCase()) ?? name;
-}
+import { normalizeCollection, useCollectionLabel } from './collections';
 
 // Postgres text cannot hold NUL, so this can never collide with a real name.
 const NEW = '\u0000new';
 
-export function CollectionNameInput({ initial = '', label, onSubmit, onCancel, isDark }: {
+export function CollectionNameInput({ initial = '', label, onSubmit, onCancel }: {
   initial?: string; label: string; isDark: boolean;
   onSubmit: (name: string) => void; onCancel: () => void;
 }) {
@@ -43,7 +20,7 @@ export function CollectionNameInput({ initial = '', label, onSubmit, onCancel, i
         autoFocus aria-label={label} placeholder={ui('Collection name')} value={draft} maxLength={60}
         onChange={event => setDraft(event.target.value)}
         onKeyDown={event => { if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); onCancel(); } }}
-        className={`min-h-11 min-w-0 flex-1 rounded-xl border px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-ring)] ${isDark ? 'border-slate-700 bg-slate-900 text-slate-100' : 'border-slate-200 bg-white text-slate-800'}`}
+        className={`min-h-11 min-w-0 flex-1 rounded-xl border px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-ring)] border-slate-200 bg-white text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100`}
       />
       <button type="submit" aria-label={ui('Save')} className="rounded-lg p-2 text-[var(--brand)] hover:bg-[color-mix(in_srgb,var(--brand)_10%,transparent)]"><Check size={16} /></button>
       <button type="button" aria-label={ui('Cancel')} onClick={onCancel} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"><X size={16} /></button>

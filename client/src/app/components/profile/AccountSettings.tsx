@@ -6,6 +6,8 @@ import { LocalizedGoogleLogin } from '../auth/LocalizedGoogleLogin';
 import { useApp } from '../../contexts/AppContext';
 import { authService } from '../../services/authService';
 import { getRuntimeConfig } from '../../lib/runtimeConfig';
+import { errorText } from '../ui/ErrorNote';
+import { LoadingIndicator } from '../ui/ContentSkeleton';
 
 export type AccountSection = 'security' | 'connections' | 'delete';
 
@@ -16,7 +18,7 @@ interface AccountSettingsProps {
 
 /** One /settings section: password and sessions, Google sign-in, or account
  * deletion. The settings page supplies the card and the section title. */
-export function AccountSettings({ isDark, section }: AccountSettingsProps) {
+export function AccountSettings({ section }: AccountSettingsProps) {
   const ui = useUiText();
   const { t, user, setUser } = useApp();
   const navigate = useNavigate();
@@ -140,26 +142,22 @@ export function AccountSettings({ isDark, section }: AccountSettingsProps) {
   };
 
   const panel = 'py-6 first:pt-0 last:pb-0';
-  const heading = `text-sm font-semibold mb-4 flex items-center gap-2 ${isDark ? 'text-slate-200' : 'text-gray-800'}`;
-  const headingIcon = isDark ? 'text-slate-500' : 'text-slate-400';
-  const inputClass = `w-full px-4 py-2.5 rounded-xl border text-sm transition ${
-    isDark
-      ? 'bg-slate-800 border-slate-700 text-slate-100 placeholder-slate-500 focus:border-blue-500'
-      : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500'
-  } focus:outline-none`;
-  const labelClass = `block text-xs font-medium mb-1.5 ${isDark ? 'text-slate-400' : 'text-gray-500'}`;
+  const heading = `text-sm font-semibold mb-4 flex items-center gap-2 text-slate-800 dark:text-slate-200`;
+  const headingIcon = 'text-slate-400 dark:text-slate-500';
+  const inputClass = `w-full px-4 py-2.5 rounded-xl border text-sm transition bg-white border-slate-300 text-slate-900 placeholder-slate-400 focus:border-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-blue-500 focus:outline-none`;
+  const labelClass = `block text-xs font-medium mb-1.5 text-slate-500 dark:text-slate-400`;
   const primaryBtn =
     'inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--brand)] text-white text-sm font-semibold hover:bg-[var(--brand-hover)] transition-all disabled:opacity-50';
-  const msgClass = (ok: boolean) => `mt-2 text-xs ${ok ? 'text-emerald-500' : 'text-rose-500'}`;
+  const msgClass = (ok: boolean) => `mt-2 text-xs ${ok ? 'text-emerald-500' : 'text-red-500'}`;
 
   return (
     <div className="min-w-0">
       {/* Password */}
-      {section === 'security' && <div className={`divide-y ${isDark ? 'divide-slate-800' : 'divide-slate-100'}`}>
+      {section === 'security' && <div className={`divide-y divide-slate-100 dark:divide-slate-800`}>
       <div className={panel}>
         <h3 className={heading}><KeyRound size={14} className={headingIcon} />{t.changePassword}</h3>
         {user?.hasPassword === false ? <div className="space-y-3">
-          <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{ui("You sign in with Google, so this account has no NewsAgg password yet. To add one, we email a single-use link to your address; opening it proves the inbox is yours.")}</p>
+          <p className={`text-sm text-slate-600 dark:text-slate-300`}>{ui("You sign in with Google, so this account has no NewsAgg password yet. To add one, we email a single-use link to your address; opening it proves the inbox is yours.")}</p>
           <button onClick={() => void sendPasswordLink()} disabled={sendingLink} className={primaryBtn}>
             {sendingLink && <Loader2 size={14} className="animate-spin" />}
             {ui("Email me a link to set a password")}
@@ -195,9 +193,9 @@ export function AccountSettings({ isDark, section }: AccountSettingsProps) {
                 onClick={() => setShowPasswords((p) => !p)}
                 aria-label={showPasswords ? t.hidePassword : t.showPassword}
                 title={showPasswords ? t.hidePassword : t.showPassword}
-                className={`absolute right-3 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-gray-400 hover:text-gray-600'}`}
+                className={`absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200`}
               >
-                {showPasswords ? <EyeOff size={15} /> : <Eye size={15} />}
+                {showPasswords ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
           </div>
@@ -215,7 +213,7 @@ export function AccountSettings({ isDark, section }: AccountSettingsProps) {
               aria-describedby="confirm-new-password-hint"
             />
             {confirmPassword !== '' && confirmPassword !== newPassword && (
-              <p id="confirm-new-password-hint" role="alert" className="mt-1 text-xs text-rose-500">{ui("The new passwords do not match.")}</p>
+              <p id="confirm-new-password-hint" role="alert" className={`mt-1 text-xs ${errorText}`}>{ui("The new passwords do not match.")}</p>
             )}
           </div>
           <button
@@ -226,21 +224,21 @@ export function AccountSettings({ isDark, section }: AccountSettingsProps) {
             {savingPassword && <Loader2 size={14} className="animate-spin" />}
             {t.changePassword}
           </button>
-          <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>{ui("Enter your current password first. Use at least 8 characters, different from the current one. Changing it signs out every other session.")}</p>
+          <p className={`text-xs text-slate-500 dark:text-slate-500`}>{ui("Enter your current password first. Use at least 8 characters, different from the current one. Changing it signs out every other session.")}</p>
           {passwordMsg && <p role="status" aria-live="polite" className={msgClass(passwordMsg.ok)}>{ui(passwordMsg.text)}</p>}
         </div>}
       </div>
 
       <div className={panel}>
         <h3 className={heading}><ShieldCheck size={14} className={headingIcon} />{ui("Security sessions")}</h3>
-        {loadingSessions ? <p className={labelClass}>{ui("Loading sessions…")}</p> : (
+        {loadingSessions ? <LoadingIndicator label={ui("Loading sessions…")} /> : (
           <div className="space-y-2">
             {(sessions ?? []).map((session, index) => (
-              <div key={`${session.createdAt}-${index}`} className={`flex items-start gap-3 rounded-xl border p-3 ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+              <div key={`${session.createdAt}-${index}`} className={`flex items-start gap-3 rounded-xl border p-3 border-slate-200 dark:border-slate-700`}>
                 <MonitorSmartphone size={16} className="mt-0.5 shrink-0 text-slate-400" />
                 <div className="min-w-0 flex-1">
-                  <p className={`truncate text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{ui(session.current ? 'This device' : 'Signed-in device')}</p>
-                  <p className={`truncate text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>{session.userAgent || ui('Unknown browser')} · {session.ipAddress || ui('Unknown IP')}</p>
+                  <p className={`truncate text-sm font-medium text-slate-800 dark:text-slate-200`}>{ui(session.current ? 'This device' : 'Signed-in device')}</p>
+                  <p className={`truncate text-xs text-slate-500 dark:text-slate-500`}>{session.userAgent || ui('Unknown browser')} · {session.ipAddress || ui('Unknown IP')}</p>
                 </div>
               </div>
             ))}
@@ -254,22 +252,18 @@ export function AccountSettings({ isDark, section }: AccountSettingsProps) {
 
       {/* Delete account: plain section, the red is kept for the buttons. */}
       {section === 'delete' && <div className="max-w-md">
-        <p className={`mb-4 flex gap-2 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}><TriangleAlert size={16} className="mt-0.5 shrink-0 text-rose-500" />{t.deleteAccountWarning}</p>
+        <p className={`mb-4 flex gap-2 text-sm text-slate-600 dark:text-slate-300`}><TriangleAlert size={16} className="mt-0.5 shrink-0 text-red-500" />{t.deleteAccountWarning}</p>
         {!confirmingDelete ? (
           <button
             onClick={() => setConfirmingDelete(true)}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${
-              isDark
-                ? 'text-red-300 border-red-700/60 hover:bg-red-900/30'
-                : 'text-red-700 border-red-300 hover:bg-red-100'
-            }`}
+            className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-colors text-red-700 border-red-300 hover:bg-red-100 dark:text-red-300 dark:border-red-700/60 dark:hover:bg-red-900/30`}
           >
             {t.deleteAccount}
           </button>
         ) : (
           <div role="alertdialog" aria-labelledby="delete-account-title" aria-describedby="delete-account-description" className="space-y-3">
-            <p id="delete-account-title" className={`text-sm font-semibold ${isDark ? 'text-red-200' : 'text-red-800'}`}>{ui("Confirm permanent deletion")}</p>
-            <p id="delete-account-description" className={`text-xs ${isDark ? 'text-red-300/80' : 'text-red-700'}`}>{ui(user?.hasPassword ? 'Type DELETE and enter your current password to continue.' : 'Set a NewsAgg password above before deleting this account.')}</p>
+            <p id="delete-account-title" className={`text-sm font-semibold text-red-800 dark:text-red-200`}>{ui("Confirm permanent deletion")}</p>
+            <p id="delete-account-description" className={`text-xs text-red-700 dark:text-red-300/80`}>{ui(user?.hasPassword ? 'Type DELETE and enter your current password to continue.' : 'Set a NewsAgg password above before deleting this account.')}</p>
             <label htmlFor="delete-confirmation" className={labelClass}>{ui("Confirmation")}</label>
             <input id="delete-confirmation" value={deleteConfirmation} onChange={(event) => setDeleteConfirmation(event.target.value)} placeholder="DELETE" autoComplete="off" className={inputClass} />
             {user?.hasPassword && <>
@@ -280,7 +274,7 @@ export function AccountSettings({ isDark, section }: AccountSettingsProps) {
             <button
               onClick={deleteAccount}
               disabled={deleting || !user?.hasPassword || deleteConfirmation !== 'DELETE' || !deletePassword}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-rose-600 text-white hover:bg-rose-700 transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50"
             >
               {deleting && <Loader2 size={14} className="animate-spin" />}
               {t.confirmDelete}
@@ -288,14 +282,14 @@ export function AccountSettings({ isDark, section }: AccountSettingsProps) {
             <button
               onClick={() => setConfirmingDelete(false)}
               disabled={deleting}
-              className={`px-4 py-2 rounded-xl text-sm font-medium ${isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-gray-600 hover:bg-gray-100'}`}
+              className={`px-4 py-2 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800`}
             >
               {t.cancel}
             </button>
             </div>
           </div>
         )}
-        {deleteError && <p role="alert" className="mt-2 text-xs text-rose-500">{ui(deleteError)}</p>}
+        {deleteError && <p role="alert" className={`mt-2 text-xs ${errorText}`}>{ui(deleteError)}</p>}
       </div>}
 
       {/* Google sign-in connection (authentication only; no Gmail access). */}
@@ -303,10 +297,10 @@ export function AccountSettings({ isDark, section }: AccountSettingsProps) {
         <h3 className={heading}><Link2 size={14} className={headingIcon} />{t.googleAccount}</h3>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className={`text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+            <p className={`text-sm font-medium text-slate-800 dark:text-slate-200`}>
               {user?.googleLinked ? t.googleLinked : t.googleNotLinked}
             </p>
-            <p className={`mt-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui("Authentication only. NewsAgg cannot read your Gmail messages or contacts.")} </p>
+            <p className={`mt-1 text-xs text-slate-500 dark:text-slate-400`}>{ui("Authentication only. NewsAgg cannot read your Gmail messages or contacts.")} </p>
           </div>
           {!user?.googleLinked && getRuntimeConfig().googleClientId && (
             <div aria-label={t.linkGoogle}>
@@ -324,16 +318,14 @@ export function AccountSettings({ isDark, section }: AccountSettingsProps) {
           <button
             type="button"
             onClick={() => setConfirmingGoogleDisconnect(true)}
-            className={`mt-3 inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-colors ${
-              isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-300 text-slate-700 hover:bg-slate-50'
-            }`}
+            className={`mt-3 inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-colors border-slate-300 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800`}
           >
             <Unlink size={14} />{t.disconnectGoogle}
           </button>
         )}
         {user?.googleLinked && confirmingGoogleDisconnect && (
           <div className="mt-3">
-            <p className={`mb-2 text-xs ${isDark ? 'text-amber-300' : 'text-amber-700'}`}>
+            <p className={`mb-2 text-xs text-amber-700 dark:text-amber-300`}>
               {user.hasPassword ? t.googleDisconnectWarning : ui('Set a NewsAgg password above before disconnecting Google.')}
             </p>
             <div className="flex gap-2">
@@ -347,12 +339,12 @@ export function AccountSettings({ isDark, section }: AccountSettingsProps) {
                 type="button"
                 onClick={disconnectGoogle}
                 disabled={disconnectingGoogle || !user.hasPassword || !disconnectPassword}
-                className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
               >
                 {disconnectingGoogle && <Loader2 size={14} className="animate-spin" />}
                 {t.disconnectGoogle}
               </button>
-              <button type="button" onClick={() => setConfirmingGoogleDisconnect(false)} className={`px-3 py-2 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+              <button type="button" onClick={() => setConfirmingGoogleDisconnect(false)} className={`px-3 py-2 text-sm text-slate-600 dark:text-slate-300`}>
                 {t.cancel}
               </button>
             </div>

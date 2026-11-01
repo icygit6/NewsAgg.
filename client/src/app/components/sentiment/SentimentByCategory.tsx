@@ -13,6 +13,7 @@ import { panelBaseClass, chartTextColor, chartMutedColor } from './shared';
 import { LoadingIndicator } from '../ui/ContentSkeleton';
 import { RollingNumber } from '../ui/RollingNumber';
 import { SENTIMENT_COLOR } from '../ui/chartTheme';
+import { LoadError } from '../ui/ErrorNote';
 
 const TYPES: SentimentType[] = ['positive', 'neutral', 'negative'];
 
@@ -57,18 +58,18 @@ export function SentimentByCategory({ part }: { part?: 'overview' | 'ranking' })
   const mutedColor = chartMutedColor(isDark);
   // Stacked in one card the sections need their own tinted boxes; as
   // separate cards (Insights) the card itself is the box.
-  const box = part ? '' : `rounded-xl p-3 ${isDark ? 'bg-slate-800/60' : 'bg-slate-50'}`;
-  const scopeChip = <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${selectedRow ? CATEGORY_BADGE_CLASS[selectedRow.category] : isDark ? 'bg-slate-700 text-slate-300' : 'bg-gray-100 text-gray-700'}`}>{scopeLabel}</span>;
+  const box = part ? '' : `rounded-xl p-3 bg-slate-50 dark:bg-slate-800/60`;
+  const scopeChip = <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${selectedRow ? CATEGORY_BADGE_CLASS[selectedRow.category] : 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300'}`}>{scopeLabel}</span>;
   const loading = <div className="grid min-h-44 place-items-center"><LoadingIndicator label={t.loading} /></div>;
-  const failed = <p role="alert" className="text-sm" style={{ color: mutedColor }}>{t.fetchFailed}</p>;
+  const failed = <LoadError message={t.fetchFailed} />;
   const scopeRow = selectedRow ? data?.byCategory?.find(row => row.topic === CATEGORY_LABELS[selectedRow.category]) : undefined;
   const evidence = selectedRow ? scopeRow?.evidence : data?.evidence;
 
   const card = (mark: 'sentiment' | 'categories', title: string, children: ReactNode, aside?: ReactNode) => (
-    <div className={`rounded-2xl border p-4 ${panelBaseClass(isDark)}`}>
+    <div className={`rounded-2xl border p-4 ${panelBaseClass()}`}>
       <div className="flex items-center gap-2 mb-3">
         <InsightMark kind={mark} />
-        <h3 className={`font-poppins text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>
+        <h3 className={`font-poppins text-sm font-semibold text-slate-800 dark:text-slate-200`}>
           {title}
         </h3>
         {aside && <span className="ml-auto">{aside}</span>}
@@ -80,7 +81,7 @@ export function SentimentByCategory({ part }: { part?: 'overview' | 'ranking' })
   const overview = (
         <section className={box} aria-label={`${t.sentimentDistribution}: ${scopeLabel}`}>
           {!part && <div className="flex items-center justify-between gap-2 text-xs mb-2">
-            <span className={`font-semibold ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>{selectedRow ? ui('Selected category') : ui('Overall')}</span>
+            <span className={`font-semibold text-slate-700 dark:text-slate-300`}>{selectedRow ? ui('Selected category') : ui('Overall')}</span>
             {scopeChip}
           </div>}
           {isPending ? loading : isError ? failed : <>
@@ -96,17 +97,17 @@ export function SentimentByCategory({ part }: { part?: 'overview' | 'ranking' })
 
   const ranking = selectedCategory === 'all' && <section className={box} aria-label={ui('All categories ranked')}>
           {!part && <div className="flex items-center justify-between gap-2 mb-1">
-            <span className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>{ui('All categories ranked')}</span>
+            <span className={`text-xs font-semibold text-slate-700 dark:text-slate-300`}>{ui('All categories ranked')}</span>
             <span className="text-xs" style={{ color: mutedColor }}>{ui('by article count')}</span>
           </div>}
           {isPending ? loading : isError ? failed : <>
             {(mostPositive || mostNegative) && (
               <div className="mb-2 flex flex-wrap gap-1.5 text-xs">
-                {mostPositive && <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold ${isDark ? 'bg-emerald-900/40 text-emerald-300' : 'bg-emerald-50 text-emerald-700'}`}>
-                  <TrendingUp size={12} />{ui('Most positive')}{p.colon}{ui(CATEGORY_LABELS[mostPositive.category])} {share(mostPositive.sentiments.positive, mostPositive.total)}%
+                {mostPositive && <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300`}>
+                  <TrendingUp size={14} />{ui('Most positive')}{p.colon}{ui(CATEGORY_LABELS[mostPositive.category])} {share(mostPositive.sentiments.positive, mostPositive.total)}%
                 </span>}
-                {mostNegative && <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold ${isDark ? 'bg-red-900/40 text-red-300' : 'bg-red-50 text-red-700'}`}>
-                  <TrendingDown size={12} />{ui('Most negative')}{p.colon}{ui(CATEGORY_LABELS[mostNegative.category])} {share(mostNegative.sentiments.negative, mostNegative.total)}%
+                {mostNegative && <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold bg-red-50 text-red-700 dark:bg-red-900/40 dark:text-red-300`}>
+                  <TrendingDown size={14} />{ui('Most negative')}{p.colon}{ui(CATEGORY_LABELS[mostNegative.category])} {share(mostNegative.sentiments.negative, mostNegative.total)}%
                 </span>}
               </div>
             )}
@@ -129,7 +130,7 @@ export function SentimentByCategory({ part }: { part?: 'overview' | 'ranking' })
                       aria-pressed={active}
                       onClick={() => setSelectedCategory(active ? 'all' : row.category)}
                       title={ui(active ? 'Show all categories' : 'Filter by this category')}
-                      className={`w-full rounded-lg px-2 py-2 text-left transition-colors ${active ? isDark ? 'bg-blue-500/15 ring-1 ring-blue-500/40' : 'bg-blue-50 ring-1 ring-blue-200' : isDark ? 'hover:bg-slate-800' : 'hover:bg-white'}`}
+                      className={`w-full rounded-lg px-2 py-2 text-left transition-colors ${active ? 'bg-blue-50 ring-1 ring-blue-200 dark:bg-blue-500/15 dark:ring-1 dark:ring-blue-500/40' : 'hover:bg-white dark:hover:bg-slate-800'}`}
                     >
                       <div className="flex items-center gap-2 text-xs">
                         <span className="w-4 text-right tabular-nums" style={{ color: mutedColor }}>{index + 1}</span>

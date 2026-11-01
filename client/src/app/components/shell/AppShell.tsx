@@ -31,12 +31,14 @@ export function AppShell({ children }: { children: ReactNode }) {
     if (isArticle) return;
     document.title = pageTitle ? `${pageTitle[language === 'zhTW' ? 1 : 0]} · NewsAgg` : DEFAULT_TITLE;
   }, [isArticle, pageTitle, language]);
+  const scrollFade = useScrollFade<HTMLElement>(pathname);
+  // The ref object is stable; listing it only satisfies the hooks rule.
+  const fadeRef = scrollFade.ref;
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const animation = scrollFade.ref.current?.animate?.([{ opacity: 0.7 }, { opacity: 1 }], { duration: 180, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' });
+    const animation = fadeRef.current?.animate?.([{ opacity: 0.7 }, { opacity: 1 }], { duration: 180, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' });
     return () => animation?.cancel();
-  }, [pathname, selectedCategory]);
-  const scrollFade = useScrollFade<HTMLElement>(pathname);
+  }, [pathname, selectedCategory, fadeRef]);
   const isHome = pathname === '/';
   const handle = matches.reduce<RouteHandle>((acc, m) => {
     const h = (m.handle ?? {}) as RouteHandle;

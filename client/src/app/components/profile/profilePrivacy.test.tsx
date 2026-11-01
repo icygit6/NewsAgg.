@@ -25,13 +25,13 @@ vi.mock('../../services/authService', () => ({
   authService: { updateBackground: vi.fn(), updatePreferences: vi.fn(), exportData: vi.fn() },
 }));
 vi.mock('./AvatarEditor', () => ({ AvatarEditor: () => <div /> }));
-vi.mock('../ui/LanguageSwitcher', () => ({
+vi.mock('../../hooks/useInterfaceLanguage', () => ({
   useInterfaceLanguage: () => ({ choice: 'en', choose: vi.fn(), options: [{ code: 'en', short: 'EN', label: 'English' }], current: { short: 'EN', label: 'English' } }),
 }));
 vi.mock('../ui/TranslateNewsToggle', () => ({ TranslateNewsToggle: () => <div /> }));
 
 const page = () => <MemoryRouter>
-  <ProfileHeader isDark={false} />
+  <ProfileHeader />
   <ProfilePreferences isDark={false} />
 </MemoryRouter>;
 

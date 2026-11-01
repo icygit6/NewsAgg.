@@ -12,7 +12,7 @@ import { ListSkeleton } from '../components/ui/ContentSkeleton';
  * signed-out visitors are bounced home with the auth drawer opened. */
 export function ProfilePage() {
   const ui = useUiText();
-  const { isDark, user, setUser, setSidebarOpen, authInitialized } = useApp();
+  const { user, setUser, setSidebarOpen, authInitialized } = useApp();
   const navigate = useNavigate();
 
   // Guard + token validation: /me on mount refreshes the profile from the
@@ -40,9 +40,9 @@ export function ProfilePage() {
 
   return (
     <div className="mx-auto w-full max-w-4xl space-y-5 px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
-      <ProfileHeader isDark={isDark} />
-      <section aria-label={ui("Your content")} className={`rounded-3xl border p-4 shadow-sm sm:p-6 ${isDark ? 'border-slate-800 bg-slate-900/80' : 'border-slate-200 bg-white/95'}`}>
-        <ProfileTabs isDark={isDark} />
+      <ProfileHeader />
+      <section aria-label={ui("Your content")} className={`rounded-3xl border p-4 shadow-sm sm:p-6 border-slate-200 bg-white/95 dark:border-slate-800 dark:bg-slate-900/80`}>
+        <ProfileTabs />
       </section>
     </div>
   );

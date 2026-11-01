@@ -13,6 +13,7 @@ import { panelBaseClass, chartTextColor, chartMutedColor } from './shared';
 import { LoadingIndicator } from '../ui/ContentSkeleton';
 import { RollingNumber } from '../ui/RollingNumber';
 import { SENTIMENT_COLOR } from '../ui/chartTheme';
+import { LoadError } from '../ui/ErrorNote';
 
 const toDistribution = (overview: StatsOverview | undefined): SentimentDistributionItem[] =>
   (['positive', 'neutral', 'negative'] as const).map((type) => ({
@@ -90,11 +91,11 @@ export function SentimentChart() {
   const sentimentCategoryBadgeClass = CATEGORY_BADGE_CLASS[rotatingSentimentCategory];
 
   return (
-    <div className={`rounded-2xl border p-4 ${panelBaseClass(isDark)}`}>
+    <div className={`rounded-2xl border p-4 ${panelBaseClass()}`}>
       <div className="flex items-center gap-2 mb-3">
         <div className="flex items-center gap-2">
           <InsightMark kind="sentiment" />
-          <h3 className={`font-poppins text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>
+          <h3 className={`font-poppins text-sm font-semibold text-slate-800 dark:text-slate-200`}>
             {t.sentimentDistribution}
           </h3>
         </div>
@@ -102,28 +103,28 @@ export function SentimentChart() {
 
       <div className="space-y-3">
         {selectedSources.length > 0 && <p className="text-xs opacity-70 break-words">{selectedSources.map(source => ({ bbc: 'BBC', cnn: 'CNN', aljazeera: 'Al Jazeera', yahoo_tw: 'Yahoo Taiwan' }[source] || source)).join(' · ')}</p>}
-        <div className={`rounded-xl p-3 ${isDark ? 'bg-slate-800/60' : 'bg-slate-50'}`}>
+        <div className={`rounded-xl p-3 bg-slate-50 dark:bg-slate-800/60`}>
           <div className="flex items-center justify-between text-xs mb-2">
-            <span className={`font-semibold ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>{selectedCategory === 'all' ? ui("Overall") : ui(CATEGORY_LABELS[selectedCategory])}</span>
-            <span className={`px-2 py-0.5 rounded-full ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-gray-100 text-gray-700'}`}>
+            <span className={`font-semibold text-slate-700 dark:text-slate-300`}>{selectedCategory === 'all' ? ui("Overall") : ui(CATEGORY_LABELS[selectedCategory])}</span>
+            <span className={`px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300`}>
               {selectedCategories.length > 1 ? selectedCategories.map(cat => ui(CATEGORY_LABELS[cat])).join(' · ') : selectedCategory === 'all' ? t.allCategories : ui(CATEGORY_LABELS[selectedCategory])}
             </span>
           </div>
 
-          {overallLoading ? <div className="grid min-h-44 place-items-center"><LoadingIndicator label={t.loading} /></div> : overallError ? <p role="alert">{t.fetchFailed}</p> : <>
+          {overallLoading ? <div className="grid min-h-44 place-items-center"><LoadingIndicator label={t.loading} /></div> : overallError ? <LoadError message={t.fetchFailed} /> : <>
           <SentimentExplorer counts={overallOverview?.sentiments ?? {positive:0,neutral:0,negative:0}} sources={overallOverview?.bySource} scopeKey={selectedCategory} />
           <div className="flex items-center justify-between text-xs pt-2">
-            <span style={{ color: mutedColor }}>{selectedCategory === 'all' ? ui("Total analyzed (Overall)") : `${ui("Total analyzed (")}${ui(CATEGORY_LABELS[selectedCategory])})`}</span>
+            <span style={{ color: mutedColor }}>{selectedCategory === 'all' ? ui("Articles analysed") : `${ui("Articles analysed (")}${ui(CATEGORY_LABELS[selectedCategory])})`}</span>
             <span className="font-semibold" style={{ color: textColor }}><RollingNumber value={overallTotal} /></span>
           </div>
           <SentimentReasons evidence={overallOverview?.evidence} />
           </>}
         </div>
 
-        {selectedCategory === 'all' && <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} onFocusCapture={() => setFocused(true)} onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false); }} className={`rounded-xl p-3 ${isDark ? 'bg-slate-800/60' : 'bg-slate-50'}`}>
+        {selectedCategory === 'all' && <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} onFocusCapture={() => setFocused(true)} onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false); }} className={`rounded-xl p-3 bg-slate-50 dark:bg-slate-800/60`}>
           <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
             <div className="flex min-w-0 flex-wrap items-center gap-2">
-              <span className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>{ui("Per Category")}</span>
+              <span className={`text-xs font-semibold text-slate-700 dark:text-slate-300`}>{ui("Per Category")}</span>
               <span className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${sentimentCategoryBadgeClass}`}>
                 {sentimentCategoryLabel}
               </span>
@@ -134,17 +135,17 @@ export function SentimentChart() {
                 type="button"
                 onPointerDown={event => { if (event.pointerType === 'mouse') event.preventDefault(); }}
                 onClick={handleNextSentimentCategory}
-                className={`text-xs px-3 py-1.5 rounded-full font-semibold transition-colors ${isDark ? 'bg-blue-500/20 text-blue-300 hover:bg-blue-500/30' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'}`}
+                className={`text-xs px-3 py-1.5 rounded-full font-semibold transition-colors bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/30`}
               >
                 {t.next}
               </button>
             )}
           </div>
 
-          {categoryLoading ? <div className="grid min-h-44 place-items-center"><LoadingIndicator label={t.loading} /></div> : categoryError ? <p role="alert">{t.fetchFailed}</p> : <>
+          {categoryLoading ? <div className="grid min-h-44 place-items-center"><LoadingIndicator label={t.loading} /></div> : categoryError ? <LoadError message={t.fetchFailed} /> : <>
           <SentimentExplorer counts={categoryOverview?.sentiments ?? {positive:0,neutral:0,negative:0}} sources={categoryOverview?.bySource} scopeKey={rotatingSentimentCategory} />
           <div className="flex items-center justify-between text-xs pt-2">
-            <span style={{ color: mutedColor }}>{ui("Total analyzed (")}{sentimentCategoryLabel})</span>
+            <span style={{ color: mutedColor }}>{ui("Articles analysed (")}{sentimentCategoryLabel})</span>
             <span className="font-semibold" style={{ color: textColor }}><RollingNumber value={categoryTotal} /></span>
           </div>
           <SentimentReasons key={rotatingSentimentCategory} evidence={categoryOverview?.evidence} onOpenChange={setReasonsOpen} />
@@ -165,7 +166,7 @@ export function SentimentChart() {
               shrink the panel and push the pointer back out of it. */}
           {selectedCategory === 'all' && !reducedMotion && (
             <div className="mt-2" aria-hidden={paused || undefined}>
-              <div className={`h-1 rounded-full overflow-hidden transition-opacity duration-150 ${paused ? 'opacity-0' : ''} ${isDark ? 'bg-slate-800' : 'bg-gray-100'}`}>
+              <div className={`h-1 rounded-full overflow-hidden transition-opacity duration-150 ${paused ? 'opacity-0' : ''} bg-slate-100 dark:bg-slate-800`}>
                 {!paused && <motion.div
                   key={sentimentCategoryLabel}
                   initial={{ scaleX: 0 }}

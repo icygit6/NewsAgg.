@@ -12,25 +12,21 @@ interface AuthLayoutProps {
 
 /** Centered branded card used by the standalone /reset-password and
  *  /verify-email pages (rendered outside the main app shell). */
-export function AuthLayout({ title, isDark, children }: AuthLayoutProps) {
+export function AuthLayout({ title, children }: AuthLayoutProps) {
   const ui = useUiText();
   return (
     <div
-      className={`auth-page min-h-screen flex flex-col items-center justify-center px-4 font-sans ${isDark ? 'text-slate-100' : 'text-slate-900'}`}
+      className={`auth-page min-h-screen flex flex-col items-center justify-center px-4 font-sans text-slate-900 dark:text-slate-100`}
       style={{
         background: 'var(--page-bg)',
       }}
     >
       <Link to="/" className="mb-6 flex items-center gap-2.5" aria-label={ui("NewsAgg home")}>
-        <BrandLogo markClassName="w-10 h-10" wordmarkClassName="text-2xl" />
+        <BrandLogo size="md" />
       </Link>
 
       <div
-        className={`w-full max-w-sm rounded-2xl border shadow-xl p-6 ${
-          isDark
-            ? 'bg-slate-900 border-slate-800'
-            : 'bg-white border-slate-200'
-        }`}
+        className={`w-full max-w-sm rounded-2xl border shadow-xl p-6 bg-white border-slate-200 dark:bg-slate-900 dark:border-slate-800`}
       >
         <h1 className="font-poppins font-bold text-2xl mb-5 tracking-tight">{title}</h1>
         {children}

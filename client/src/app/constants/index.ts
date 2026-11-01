@@ -123,6 +123,11 @@ export interface SourceOption {
   matchers: string[];
 }
 
+/** Cache key for every generated brand image (icons, logo, social card). Bump it whenever
+ * scripts/generate-brand-assets.py runs; brandAssets.test.ts checks index.html, the manifest,
+ * the research page and the daily email use the same one. */
+export const BRAND_ASSET_VERSION = 'brand-20261031';
+
 export const SOURCES: SourceOption[] = [
   {
     id: 'aljazeera',
@@ -132,7 +137,7 @@ export const SOURCES: SourceOption[] = [
   },
   { id: 'bbc', name: 'BBC', domain: 'bbc.com', matchers: ['bbc'] },
   { id: 'cnn', name: 'CNN', domain: 'edition.cnn.com', matchers: ['cnn'] },
-  { id: 'yahoo_tw', name: 'Yahoo TW', domain: 'tw.news.yahoo.com', matchers: ['yahoo'] },
+  { id: 'yahoo_tw', name: 'Yahoo Taiwan', domain: 'tw.news.yahoo.com', matchers: ['yahoo'] },
 ];
 
 /** Favicon-based logo for a source domain (Google's public favicon service). */

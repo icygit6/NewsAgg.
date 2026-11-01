@@ -135,15 +135,11 @@ export function FilterSheet({ open, onClose, anchorRef, control, align = 'left' 
     <div className="flex flex-col flex-1 min-h-0">
       {/* Header row */}
       <div
-        className={`flex items-center justify-between px-4 py-3 border-b ${
-          isDark ? 'border-slate-700' : 'border-gray-100'
-        }`}
+        className={`flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-700`}
       >
         <div className="flex items-center gap-2">
           <span
-            className={`font-poppins text-sm font-semibold ${
-              isDark ? 'text-slate-100' : 'text-gray-900'
-            }`}
+            className={`font-poppins text-sm font-semibold text-slate-900 dark:text-slate-100`}
           >
             {t.filters}
           </span>
@@ -157,11 +153,7 @@ export function FilterSheet({ open, onClose, anchorRef, control, align = 'left' 
           {activeCount > 0 && (
             <button
               onClick={clearAll}
-              className={`text-xs font-medium px-2 py-1 rounded-md transition-colors ${
-                isDark
-                  ? 'text-slate-400 hover:text-slate-100 hover:bg-slate-700'
-                  : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
-              }`}
+              className={`text-xs font-medium px-2 py-1 rounded-md transition-colors text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-700`}
             >
               {t.clearFilters}
             </button>
@@ -169,11 +161,7 @@ export function FilterSheet({ open, onClose, anchorRef, control, align = 'left' 
           <button
             onClick={onClose}
             aria-label={ui("Close filters")}
-            className={`p-1.5 rounded-md transition-colors ${
-              isDark
-                ? 'text-slate-400 hover:text-slate-100 hover:bg-slate-700'
-                : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
-            }`}
+            className={`p-1.5 rounded-md transition-colors text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-700`}
           >
             <X size={16} />
           </button>
@@ -181,7 +169,7 @@ export function FilterSheet({ open, onClose, anchorRef, control, align = 'left' 
       </div>
 
       {/* Tabs */}
-      <div className={`flex gap-1 p-2 border-b ${isDark ? 'border-slate-700' : 'border-gray-100'}`}>
+      <div className={`flex gap-1 p-2 border-b border-slate-100 dark:border-slate-700`}>
         {(
           [
             { key: 'category', label: t.byCategory, icon: LayoutGrid },
@@ -198,12 +186,10 @@ export function FilterSheet({ open, onClose, anchorRef, control, align = 'left' 
               className={`flex-1 min-w-0 flex flex-col items-center justify-center gap-1.5 px-1 py-2 rounded-lg text-center text-xs leading-tight sm:text-sm font-medium transition-colors ${
                 active
                   ? 'bg-[var(--brand)] text-white'
-                  : isDark
-                    ? 'text-slate-300 hover:bg-slate-700'
-                    : 'text-gray-600 hover:bg-gray-100'
+                  : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700'
               }`}
             >
-              <Icon size={15} className="shrink-0" />
+              <Icon size={16} className="shrink-0" />
               <span>{label}</span>
             </button>
           );
@@ -297,9 +283,7 @@ export function FilterSheet({ open, onClose, anchorRef, control, align = 'left' 
             animate={{ opacity: 1, transform: 'translateY(0px)' }}
             exit={{ opacity: 0, transform: 'translateY(-8px)' }}
             transition={{ duration: reducedMotion ? 0 : 0.16, ease: [0.23, 1, 0.32, 1] }}
-            className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} top-full mt-2 w-[420px] max-w-[calc(100vw-2rem)] rounded-2xl border shadow-xl overflow-hidden z-50 flex flex-col max-h-[calc(100vh-80px)] ${
-              isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'
-            }`}
+            className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} top-full mt-2 w-[420px] max-w-[calc(100vw-2rem)] rounded-2xl border shadow-xl overflow-hidden z-50 flex flex-col max-h-[calc(100vh-80px)] bg-white border-slate-100 dark:bg-slate-800 dark:border-slate-700`}
           >
             {body}
           </motion.div>
@@ -319,9 +303,7 @@ export function FilterSheet({ open, onClose, anchorRef, control, align = 'left' 
               animate={{ opacity: 1, transform: 'translateY(0px)' }}
               exit={{ opacity: 0, transform: 'translateY(-8px)' }}
               transition={{ duration: reducedMotion ? 0 : 0.2, ease: [0.23, 1, 0.32, 1] }}
-              className={`fixed left-2 right-2 z-50 flex flex-col overflow-hidden rounded-2xl border shadow-2xl ${
-                isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-100'
-              }`}
+              className={`fixed left-2 right-2 z-50 flex flex-col overflow-hidden rounded-2xl border shadow-2xl bg-white border-slate-100 dark:bg-slate-900 dark:border-slate-700`}
               style={{ top: anchorBottom, maxHeight: `calc(100vh - ${anchorBottom}px - 16px)` }}
             >
               {body}
@@ -339,7 +321,7 @@ interface SortOptionProps {
   onClick: () => void;
 }
 
-function SortOption({ label, selected, isDark, onClick }: SortOptionProps) {
+function SortOption({ label, selected, onClick }: SortOptionProps) {
   return (
     <button
       type="button"
@@ -347,13 +329,11 @@ function SortOption({ label, selected, isDark, onClick }: SortOptionProps) {
       className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors ${
         selected
           ? 'bg-[var(--brand)] text-white'
-          : isDark
-            ? 'bg-slate-700/60 text-slate-200 hover:bg-slate-700'
-            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-700/60 dark:text-slate-200 dark:hover:bg-slate-700'
       }`}
     >
       {label}
-      {selected && <Check size={15} />}
+      {selected && <Check size={16} />}
     </button>
   );
 }
@@ -372,10 +352,10 @@ interface CategoryChipProps {
 const TONE_ACTIVE_CLASS: Record<SentimentType, string> = {
   positive: 'bg-emerald-500 text-white',
   neutral: 'bg-amber-500 text-amber-950',
-  negative: 'bg-rose-500 text-white',
+  negative: 'bg-red-500 text-white',
 };
 
-function CategoryChip({ label, active, isDark, onClick, tone, accent }: CategoryChipProps) {
+function CategoryChip({ label, active, onClick, tone, accent }: CategoryChipProps) {
   const activeClass = tone ? TONE_ACTIVE_CLASS[tone] : accent ? 'text-white' : 'bg-[var(--brand)] text-white';
   return (
     <button
@@ -386,9 +366,7 @@ function CategoryChip({ label, active, isDark, onClick, tone, accent }: Category
       className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
         active
           ? activeClass
-          : isDark
-            ? 'bg-slate-700/60 text-slate-200 hover:bg-slate-700'
-            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-700/60 dark:text-slate-200 dark:hover:bg-slate-700'
       }`}
     >
       {accent && !active && <span aria-hidden className="h-2 w-2 rounded-full" style={{ background: accent }} />}
@@ -405,48 +383,40 @@ interface SourceRowProps {
   onClick: () => void;
 }
 
-function SourceRow({ name, logo, selected, isDark, onClick }: SourceRowProps) {
+function SourceRow({ name, logo, selected, onClick }: SourceRowProps) {
   return (
     <button
       onClick={onClick}
       className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-left transition-colors ${
         selected
           ? 'bg-blue-500/10 ring-1 ring-blue-500/40'
-          : isDark
-            ? 'hover:bg-slate-700/60'
-            : 'hover:bg-gray-100'
+          : 'hover:bg-slate-100 dark:hover:bg-slate-700/60'
       }`}
     >
       {logo ? (
         <ImageWithFallback
           src={logo}
           alt={name}
-          className={`w-7 h-7 rounded-md object-contain flex-shrink-0 ${
-            isDark ? 'bg-slate-700' : 'bg-gray-100'
-          }`}
+          className={`w-7 h-7 rounded-md object-contain flex-shrink-0 bg-slate-100 dark:bg-slate-700`}
         />
       ) : (
         <span
-          className={`w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 ${
-            isDark ? 'bg-slate-700' : 'bg-gray-100'
-          }`}
+          className={`w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 bg-slate-100 dark:bg-slate-700`}
         >
-          <Newspaper size={14} className={isDark ? 'text-slate-300' : 'text-gray-500'} />
+          <Newspaper size={14} className="text-slate-500 dark:text-slate-300" />
         </span>
       )}
-      <span className={`flex-1 text-sm font-medium ${isDark ? 'text-slate-100' : 'text-gray-800'}`}>
+      <span className={`flex-1 text-sm font-medium text-slate-800 dark:text-slate-100`}>
         {name}
       </span>
       <span
         className={`w-5 h-5 rounded-md flex items-center justify-center border transition-colors ${
           selected
             ? 'bg-[var(--brand)] border-blue-500 text-white'
-            : isDark
-              ? 'border-slate-600'
-              : 'border-gray-300'
+            : 'border-slate-300 dark:border-slate-600'
         }`}
       >
-        {selected && <Check size={13} />}
+        {selected && <Check size={14} />}
       </span>
     </button>
   );

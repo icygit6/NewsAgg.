@@ -15,7 +15,7 @@ interface TabItem {
 /** Small/medium-screen bottom navigation (hidden ≥lg, where NavRail takes over). */
 export function BottomTabBar() {
   const ui = useUiText();
-  const { t, isDark, avatarSrc, sidebarOpen, setSidebarOpen } = useApp();
+  const { t, avatarSrc, sidebarOpen, setSidebarOpen } = useApp();
   // Admins get the same entry point the desktop rail gives them.
   const admin = useIsAdmin();
   const adminOverview = useAdminOverview();
@@ -40,13 +40,11 @@ export function BottomTabBar() {
     } ${
       isActive
         ? 'text-[var(--brand,#2563eb)]'
-        : isDark
-          ? 'text-slate-400 hover:bg-white/5 hover:text-slate-100'
-          : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
+        : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-slate-100'
     }`;
   const iconClass = (isActive: boolean) =>
     `flex h-8 w-12 items-center justify-center rounded-xl transition-colors duration-200 motion-reduce:transition-none ${
-      isActive ? (isDark ? 'bg-blue-400/15' : 'bg-blue-500/10') : ''
+      isActive ? ('bg-blue-500/10 dark:bg-blue-400/15') : ''
     }`;
   const profileContent = (isActive: boolean) => (
     <>
@@ -66,9 +64,7 @@ export function BottomTabBar() {
   return (
     <nav
       className={`fixed inset-x-0 bottom-0 z-40 border-t bg-[var(--page-bg)] before:pointer-events-none before:absolute before:inset-x-0 before:bottom-full before:h-2 before:bg-gradient-to-t before:from-[var(--page-bg)] before:to-transparent lg:hidden
-        ${isDark
-          ? 'border-slate-800'
-          : 'border-slate-200'}`}
+        border-slate-200 dark:border-slate-800`}
       aria-label={t.menu}
     >
       <div
@@ -87,10 +83,10 @@ export function BottomTabBar() {
             {({ isActive }) => (
               <>
                 <span className={`relative ${iconClass(isActive)}`}>
-                  <Icon size={21} strokeWidth={isActive ? 2.4 : 1.9} aria-hidden="true" />
+                  <Icon size={22} strokeWidth={isActive ? 2.4 : 1.9} aria-hidden="true" />
                   {badge ? (
                     <span
-                      className="absolute right-1 top-0 min-w-4 rounded-full bg-rose-500 px-1 text-center text-[11px] font-bold leading-4 text-white"
+                      className="absolute right-1 top-0 min-w-4 rounded-full bg-red-500 px-1 text-center text-[11px] font-bold leading-4 text-white"
                       aria-label={`${badge} ${ui('open reports')}`}
                     >
                       {badge}

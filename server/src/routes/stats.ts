@@ -91,7 +91,11 @@ const KEYWORD_STOPLIST = new Set([
   // ("記者XXX／台北報導", "綜合報導", "表示", "指出").
   '記者', '報導', '綜合', '編輯', '新聞', '中心', '表示', '指出', '今天', '今年', '目前',
   // Function words the keyword extractor sometimes keeps.
-  'like', 'also', 'just', 'one', 'two', 'first', 'last', 'could', 'would',
+  'like', 'also', 'just', 'one', 'two', 'three', 'four', 'first', 'last', 'could', 'would',
+  'published', 'against', 'back', 'across', 'after', 'before', 'over', 'more', 'still',
+  // Outlet names and photo credits that ride along in Yahoo Taiwan syndication
+  // ("FTNN新聞網", "翻攝自…"), and filler like "網友" (netizens), "認為" (thinks), "現場" (on site).
+  'ftnn', '新聞網', '翻攝', '網友', '認為', '現場',
   '我們', '他們', '你們', '一個', '這個', '那個', '可以', '沒有', '已經', '因為', '如果', '還是', '不是', '就是', '自己', '這樣',
 ])
 

@@ -14,7 +14,7 @@ export function TopBar() {
   return (
     <div
       className={`sticky top-0 z-40 flex items-center gap-3 border-b bg-[var(--page-bg)] px-4 py-2.5 lg:hidden
-        ${isDark ? 'border-slate-800' : 'border-slate-200'}`}
+        border-slate-200 dark:border-slate-800`}
     >
       <Link to="/" className="shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500" aria-label={ui("NewsAgg home")}>
         <BrandLogo showWordmark={false} markClassName="w-9 h-9" />
@@ -24,10 +24,10 @@ export function TopBar() {
       </div>
       <button
         onClick={toggleTheme}
-        className={`shrink-0 rounded-full p-2 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-100'}`}
+        className={`shrink-0 rounded-full p-2 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800`}
         aria-label={ui("Toggle theme")}
       >
-        {isDark ? <Sun size={18} /> : <Moon size={18} />}
+        {isDark ? <Sun size={20} /> : <Moon size={20} />}
       </button>
     </div>
   );

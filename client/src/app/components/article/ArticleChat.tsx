@@ -5,18 +5,16 @@ import { useApp } from '../../contexts/AppContext';
 import { getArticleId } from '../../services/newsAPI';
 import { getRuntimeConfig } from '../../lib/runtimeConfig';
 import { useUiText } from '../../i18n/uiText';
-import { scrollMainToTop, useMainScrolledPast } from '../ScrollToTop';
+import { scrollMainToTop, useMainScrolledPast } from '../../hooks/useMainScroll';
 import type { Language } from '../../i18n/translations';
 import type { NewsArticle } from '../../types/article';
+import { authFetch } from '../../lib/apiFetch';
 
 // Backend proxy keeps GROQ_API_KEY server-side (see CLAUDE.md: POST /api/chat).
-const API_BASE = import.meta.env.VITE_API_URL || '';
 
 // App language codes → human-language codes the model should answer in.
 const LANG_CODE: Record<Language, string> = {
   en: 'en',
-  id: 'id',
-  zhCN: 'zh-CN',
   zhTW: 'zh-TW',
 };
 
@@ -116,9 +114,8 @@ function ArticleChatSession({ article, isDark }: ArticleChatProps) {
 
     try {
       if (!isAuthenticated) throw new Error('Please sign in to use AI chat.');
-      const response = await fetch(`${API_BASE}/api/chat`, {
+      const response = await authFetch('/api/chat', {
         method: 'POST',
-        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: trimmed,
@@ -179,9 +176,9 @@ function ArticleChatSession({ article, isDark }: ArticleChatProps) {
                 onClick={() => scrollMainToTop(true)}
                 aria-label={ui('Scroll to top')}
                 title={ui('Scroll to top')}
-                className={`grid place-items-center w-11 h-11 rounded-full shadow-lg ring-1 transition-colors ${isDark ? 'bg-slate-800 text-slate-100 ring-slate-700 hover:bg-slate-700' : 'bg-white text-slate-700 ring-slate-200 hover:bg-slate-50'}`}
+                className={`grid place-items-center w-11 h-11 rounded-full shadow-lg ring-1 transition-colors bg-white text-slate-700 ring-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-700 dark:hover:bg-slate-700`}
               >
-                <ArrowUp size={18} />
+                <ArrowUp size={20} />
               </motion.button>
             )}
           </AnimatePresence>
@@ -217,9 +214,9 @@ function ArticleChatSession({ article, isDark }: ArticleChatProps) {
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: 380, opacity: 0.5 }}
               transition={{ type: 'spring', stiffness: 320, damping: 34 }}
-              className={`fixed top-0 right-0 z-[60] h-dvh w-full max-w-sm flex flex-col overflow-hidden border-l shadow-2xl lg:rounded-l-3xl ${isDark ? 'bg-slate-900 border-slate-700/60' : 'bg-white border-gray-100'}`}
+              className={`fixed top-0 right-0 z-[60] h-dvh w-full max-w-sm flex flex-col overflow-hidden border-l shadow-2xl lg:rounded-l-3xl bg-white border-slate-100 dark:bg-slate-900 dark:border-slate-700/60`}
             >
-              <div className={`relative shrink-0 px-4 py-3 border-b ${isDark ? 'border-slate-700/60' : 'border-gray-100'}`}>
+              <div className={`relative shrink-0 px-4 py-3 border-b border-slate-100 dark:border-slate-700/60`}>
                 {/* Gradient hairline, echoing the floating trigger. */}
                 <div className="absolute inset-x-0 top-0 h-0.5 bg-[var(--brand)]" />
                 <div className="flex items-start justify-between gap-2">
@@ -229,16 +226,16 @@ function ArticleChatSession({ article, isDark }: ArticleChatProps) {
                     </span>
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <p className={`text-sm font-semibold truncate ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>{t.askAI}</p>
+                        <p className={`text-sm font-semibold truncate text-slate-900 dark:text-slate-100`}>{t.askAI}</p>
                         {modelLabel && (
                           <span
-                            className={`shrink-0 px-1.5 py-0.5 rounded-md text-xs font-medium ${isDark ? 'bg-slate-800 text-blue-300 ring-1 ring-slate-700' : 'bg-blue-50 text-blue-700 ring-1 ring-blue-100'}`}
+                            className={`shrink-0 px-1.5 py-0.5 rounded-md text-xs font-medium bg-blue-50 text-blue-700 ring-1 ring-blue-100 dark:bg-slate-800 dark:text-blue-300 dark:ring-1 dark:ring-slate-700`}
                           >
                             {modelLabel}
                           </span>
                         )}
                       </div>
-                      <p className={`text-xs truncate ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{t.chatAbout} {article.title}</p>
+                      <p className={`text-xs truncate text-slate-500 dark:text-slate-400`}>{t.chatAbout} {article.title}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-0.5 shrink-0">
@@ -248,7 +245,7 @@ function ArticleChatSession({ article, isDark }: ArticleChatProps) {
                         onClick={clearChat}
                         aria-label={t.clearChat}
                         title={t.clearChat}
-                        className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-gray-100 text-gray-500'}`}
+                        className={`p-1.5 rounded-lg transition-colors hover:bg-slate-100 text-slate-500 dark:hover:bg-slate-800 dark:text-slate-400`}
                       >
                         <Eraser size={16} />
                       </button>
@@ -258,9 +255,9 @@ function ArticleChatSession({ article, isDark }: ArticleChatProps) {
                       aria-label={t.chatClose}
                       title={t.chatClose}
                       onClick={() => setOpen(false)}
-                      className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-gray-100 text-gray-600'}`}
+                      className={`p-1.5 rounded-lg transition-colors hover:bg-slate-100 text-slate-600 dark:hover:bg-slate-800 dark:text-slate-300`}
                     >
-                      <X size={18} />
+                      <X size={20} />
                     </button>
                   </div>
                 </div>
@@ -272,8 +269,8 @@ function ArticleChatSession({ article, isDark }: ArticleChatProps) {
                     <span className={`inline-grid place-items-center w-12 h-12 rounded-2xl ${isDark ? 'bg-slate-800 text-blue-300' : 'bg-blue-50 text-blue-600 dark:text-blue-400'}`}>
                       <Sparkles size={20} />
                     </span>
-                    <p className={`mt-3 text-sm leading-relaxed ${isDark ? 'text-slate-300' : 'text-gray-600'}`}>{t.chatWelcome}</p>
-                    <p className={`mt-1 text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>{t.chatGrounded}</p>
+                    <p className={`mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300`}>{t.chatWelcome}</p>
+                    <p className={`mt-1 text-xs text-slate-400 dark:text-slate-500`}>{t.chatGrounded}</p>
                     {/* Starter questions: one tap sends, so an empty panel is
                         never a blank prompt the reader has to fill in. */}
                     <div className="mt-4 flex flex-wrap justify-center gap-2">
@@ -282,7 +279,7 @@ function ArticleChatSession({ article, isDark }: ArticleChatProps) {
                           key={suggestion}
                           type="button"
                           onClick={() => void sendMessage(suggestion)}
-                          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${isDark ? 'bg-slate-800 text-slate-200 ring-1 ring-slate-700 hover:bg-slate-700' : 'bg-gray-50 text-gray-700 ring-1 ring-gray-200 hover:bg-gray-100'}`}
+                          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors bg-slate-50 text-slate-700 ring-1 ring-slate-200 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-200 dark:ring-1 dark:ring-slate-700 dark:hover:bg-slate-700`}
                         >
                           {suggestion}
                         </button>
@@ -300,34 +297,32 @@ function ArticleChatSession({ article, isDark }: ArticleChatProps) {
                   >
                     {message.role === 'assistant' && (
                       <span className="shrink-0 grid place-items-center w-6 h-6 rounded-full text-white bg-[var(--brand)]">
-                        <Sparkles size={12} />
+                        <Sparkles size={14} />
                       </span>
                     )}
                     <div
                       className={`max-w-[82%] px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-line shadow-sm rounded-2xl ${
                         message.role === 'user'
                           ? 'bg-[var(--brand)] text-white rounded-br-md'
-                          : isDark
-                            ? 'bg-slate-800 text-slate-100 ring-1 ring-slate-700/60 rounded-bl-md'
-                            : 'bg-gray-50 text-gray-800 ring-1 ring-gray-100 rounded-bl-md'
+                          : 'bg-slate-50 text-slate-800 ring-1 ring-slate-100 rounded-bl-md dark:bg-slate-800 dark:text-slate-100 dark:ring-1 dark:ring-slate-700/60 dark:rounded-bl-md'
                       }`}
                     >
                       {message.content}
                       {message.role === 'assistant' && message.citations && message.citations.length > 0 && (
-                        <details className={`group mt-2.5 pt-2.5 border-t ${isDark ? 'border-slate-700/60' : 'border-gray-200'}`}>
+                        <details className={`group mt-2.5 pt-2.5 border-t border-slate-200 dark:border-slate-700/60`}>
                           <summary
-                            className={`list-none cursor-pointer inline-flex items-center gap-1 text-xs font-medium ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-gray-500 hover:text-gray-700'}`}
+                            className={`list-none cursor-pointer inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200`}
                           >
-                            <ChevronDown size={12} className="transition-transform group-open:rotate-180" />
+                            <ChevronDown size={14} className="transition-transform group-open:rotate-180" />
                             {t.chatSources} · {message.citations.length}
                           </summary>
                           <div className="mt-2 space-y-1.5">
                             {message.citations.map((citation) => (
                               <p
                                 key={citation.index}
-                                className={`line-clamp-4 rounded-lg px-2 py-1.5 text-xs leading-relaxed ${isDark ? 'bg-slate-900/60 text-slate-400' : 'bg-white text-gray-500'}`}
+                                className={`line-clamp-4 rounded-lg px-2 py-1.5 text-xs leading-relaxed bg-white text-slate-500 dark:bg-slate-900/60 dark:text-slate-400`}
                               >
-                                <span className={`mr-1 font-semibold ${isDark ? 'text-blue-300' : 'text-blue-600'}`}>[{citation.index}]</span>
+                                <span className={`mr-1 font-semibold text-blue-600 dark:text-blue-300`}>[{citation.index}]</span>
                                 {citation.text}
                               </p>
                             ))}
@@ -340,13 +335,13 @@ function ArticleChatSession({ article, isDark }: ArticleChatProps) {
                 {loading && (
                   <div className="flex items-end gap-2 justify-start">
                     <span className="shrink-0 grid place-items-center w-6 h-6 rounded-full text-white bg-[var(--brand)]">
-                      <Sparkles size={12} />
+                      <Sparkles size={14} />
                     </span>
-                    <div className={`flex items-center gap-1 px-3.5 py-3 rounded-2xl rounded-bl-md shadow-sm ${isDark ? 'bg-slate-800 ring-1 ring-slate-700/60' : 'bg-gray-50 ring-1 ring-gray-100'}`}>
+                    <div className={`flex items-center gap-1 px-3.5 py-3 rounded-2xl rounded-bl-md shadow-sm bg-slate-50 ring-1 ring-slate-100 dark:bg-slate-800 dark:ring-1 dark:ring-slate-700/60`}>
                       {[0, 1, 2].map((dot) => (
                         <motion.span
                           key={dot}
-                          className={`w-1.5 h-1.5 rounded-full ${isDark ? 'bg-slate-400' : 'bg-gray-400'}`}
+                          className={`w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-400`}
                           animate={{ opacity: [0.3, 1, 0.3], y: [0, -2, 0] }}
                           transition={{ duration: 1, repeat: Infinity, delay: dot * 0.15 }}
                         />
@@ -356,9 +351,9 @@ function ArticleChatSession({ article, isDark }: ArticleChatProps) {
                 )}
               </div>
 
-              <div className={`shrink-0 px-4 py-3 border-t ${isDark ? 'border-slate-700/60' : 'border-gray-100'}`}>
+              <div className={`shrink-0 px-4 py-3 border-t border-slate-100 dark:border-slate-700/60`}>
                 <div
-                  className={`flex items-center gap-2 rounded-2xl pl-3.5 pr-1.5 py-1.5 ${isDark ? 'bg-slate-800 focus-within:ring-2 focus-within:ring-blue-500/40' : 'bg-gray-100 focus-within:ring-2 focus-within:ring-blue-500/30'}`}
+                  className={`flex items-center gap-2 rounded-2xl pl-3.5 pr-1.5 py-1.5 bg-slate-100 focus-within:ring-2 focus-within:ring-blue-500/30 dark:bg-slate-800 dark:focus-within:ring-2 dark:focus-within:ring-blue-500/40`}
                 >
                   <input
                     name="chat-message"
@@ -368,7 +363,7 @@ function ArticleChatSession({ article, isDark }: ArticleChatProps) {
                     onChange={(event) => setInput(event.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder={t.chatPlaceholder}
-                    className={`flex-1 min-w-0 bg-transparent py-1.5 text-sm outline-none ${isDark ? 'text-slate-100 placeholder:text-slate-500' : 'text-gray-900 placeholder:text-gray-400'}`}
+                    className={`flex-1 min-w-0 bg-transparent py-1.5 text-sm outline-none text-slate-900 placeholder:text-slate-400 dark:text-slate-100 dark:placeholder:text-slate-500`}
                   />
                   <button
                     type="button"

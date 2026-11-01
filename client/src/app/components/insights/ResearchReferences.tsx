@@ -1,3 +1,4 @@
+import { useUiText } from '../../i18n/uiText';
 import type { EvidenceText } from './EvaluationPanel';
 
 // Numeric order matches the revised report and EndNote RIS dated 18 October 2026.
@@ -29,6 +30,7 @@ const references: Array<[number, string, string, string, string]> = [
 ];
 
 export function ResearchReferences({ tx }: { tx: EvidenceText }) {
+  const ui = useUiText();
   const glossary = [
     ['NLP', 'Natural language processing: computational analysis of human language.', '自然語言處理：以程式分析人類語言。'],
     ['Sentiment / polarity', 'A positive/neutral/negative label and a signed score P(positive) − P(negative). Neither is a truth score.', '情緒為正／中／負面標籤；極性為正面機率減負面機率，兩者都不是真偽分數。'],
@@ -54,11 +56,11 @@ export function ResearchReferences({ tx }: { tx: EvidenceText }) {
     ['[1]–[24] in the report', 'Numbers follow first-citation order and match the revised Word report and EndNote RIS, not chat passage numbers.', '依首次引用順序編號，與修訂 Word 報告及 EndNote RIS 一致，不同於問答段落編號。'],
   ];
   return <div className="evidence-body">
-    <div className="evidence-card"><h3>{tx('Names in plain language', '名詞簡明說明')}</h3>
+    <div className="evidence-card"><h3>{ui('Names in plain language')}</h3>
       <dl className="grid gap-x-8 gap-y-5 md:grid-cols-2">{glossary.map(([term, en, zh]) => <div key={term}><dt className="font-semibold text-sm mb-1">{term}</dt><dd><p>{tx(en, zh)}</p></dd></div>)}</dl>
     </div>
-    <div className="evidence-card"><h3>{tx('References used in the project report', '專題報告使用的參考文獻')}</h3>
-      <p>{tx('The numbering below matches the report. Published titles are retained so they can be searched in Google Scholar; links point to original papers, author copies, model cards or official documentation. Each entry identifies its relevant report section. Model cards and software documentation establish implementation details, not peer-reviewed validation. Local thresholds and frozen results are unchanged.', '下列編號與報告一致。保留原始題名便於 Google Scholar 搜尋，連結指向原論文、作者版本、模型卡或官方文件。各項標示對應報告章節。模型卡與軟體文件說明實作，不冒充同儕審查驗證。專案門檻與固定結果未變。')}</p>
+    <div className="evidence-card"><h3>{ui('References used in the project report')}</h3>
+      <p>{ui('The numbering below matches the report. Published titles are retained so they can be searched in Google Scholar; links point to original papers, author copies, model cards or official documentation. Each entry identifies its relevant report section. Model cards and software documentation establish implementation details, not peer-reviewed validation. Local thresholds and frozen results are unchanged.')}</p>
       <ol className="mt-5 space-y-5">{references.map(([id, title, url, en, zh]) => <li key={id} className="!m-0 border-t pt-4" style={{borderColor:'var(--ev-border)'}}>
         <div className="text-sm font-semibold">[{id}] {url ? <a href={url} target="_blank" rel="noreferrer">{title}</a> : title}</div><p>{tx(en, zh)}</p>
       </li>)}</ol>

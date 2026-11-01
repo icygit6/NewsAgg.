@@ -72,8 +72,8 @@ export function ThemePicker({ collapsible = false }: { collapsible?: boolean }) 
         value={isDark ? 'dark' : 'light'}
         onChange={toggleTheme}
         options={[
-          { value: 'light', label: <><Sun size={15} />{ui('Light')}</> },
-          { value: 'dark', label: <><Moon size={15} />{ui('Dark')}</> },
+          { value: 'light', label: <><Sun size={16} />{ui('Light')}</> },
+          { value: 'dark', label: <><Moon size={16} />{ui('Dark')}</> },
         ]}
       />
 
@@ -147,14 +147,14 @@ export function ThemePicker({ collapsible = false }: { collapsible?: boolean }) 
             onClick={save}
             className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-transparent disabled:text-slate-400 disabled:ring-1 disabled:ring-inset disabled:ring-slate-200 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200 dark:disabled:bg-transparent dark:disabled:text-slate-500 dark:disabled:ring-slate-700"
           >
-            <Save size={15} aria-hidden />{ui('Save')}
+            <Save size={16} aria-hidden />{ui('Save')}
           </button>
         </div>
         <p role="status" className="text-xs text-slate-500">{notice || ui('Saved on this browser.')}</p>
         {saved.map(item => <div key={item.key} className="flex items-center gap-2">
           <button type="button" onClick={() => { setTheme(item.id, item.custom, item.canvas); if (isDark !== item.dark) toggleTheme(); }} className="flex min-w-0 flex-1 items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-sm dark:bg-slate-800">
             <span className="h-4 w-4 shrink-0 rounded-full" style={{ background: item.id === 'custom' ? readableAccent(item.custom) : THEMES.find(theme => theme.id === item.id)?.swatch }} />
-            <span className="truncate">{item.name}</span>{item.dark ? <Moon size={12} /> : <Sun size={12} />}
+            <span className="truncate">{item.name}</span>{item.dark ? <Moon size={14} /> : <Sun size={14} />}
           </button>
           <button type="button" aria-label={`${ui('Delete')} ${item.name}`} title={ui('Delete')} onClick={() => persist(saved.filter(value => value.key !== item.key))} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-950/40 dark:hover:text-red-400"><Trash2 size={16} aria-hidden /></button>
         </div>)}

@@ -61,13 +61,13 @@ export function LiveView({ articles, categoryLabel }: LiveViewProps) {
   const settle = (url: string) => setFresh((old) => { if (!old.has(url)) return old; const next = new Set(old); next.delete(url); return next; });
 
   return (
-    <div className={`rounded-2xl border p-4 ${panelBaseClass(isDark)}`}>
+    <div className={`rounded-2xl border p-4 ${panelBaseClass()}`}>
       <div className="flex items-center justify-between gap-2 mb-3">
         <div className="flex items-center gap-2">
           <InsightMark kind="live" />
-          <h3 className={`font-poppins text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>{ui("Live View")} </h3>
+          <h3 className={`font-poppins text-sm font-semibold text-slate-800 dark:text-slate-200`}>{ui("Live view")} </h3>
         </div>
-        <span className={`shrink-0 whitespace-nowrap text-[11px] tabular-nums px-2 py-0.5 rounded-full ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-gray-100 text-gray-600'}`}>
+        <span className={`shrink-0 whitespace-nowrap text-[11px] tabular-nums px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300`}>
           {articles.length} {ui(articles.length === 1 ? "article" : "articles")} </span>
       </div>
 
@@ -75,25 +75,25 @@ export function LiveView({ articles, categoryLabel }: LiveViewProps) {
       </p>
 
         {articles.length === 0 ? (
-          <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{t.noResults}</p>
+          <p className={`text-sm text-slate-500 dark:text-slate-400`}>{t.noResults}</p>
         ) : (
-          <AutoPages label={ui("Live View")} scopeKey={categoryLabel}
+          <AutoPages label={ui("Live view")} scopeKey={categoryLabel}
             pageClassName="space-y-2.5"
             items={displayArticles.map((article) => (
             <Link
               key={article.url}
               to={`/article/${getArticleId(article)}`}
               onAnimationEnd={() => settle(article.url)}
-              className={`${fresh.has(article.url) ? 'live-row-in ' : ''}block rounded-xl p-2.5 transition-colors ${isDark ? 'hover:bg-slate-700/60' : 'hover:bg-gray-50'}`}
+              className={`${fresh.has(article.url) ? 'live-row-in ' : ''}block rounded-xl p-2.5 transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/60`}
             >
-              <p title={article.title} className={`text-sm font-medium line-clamp-2 break-words ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>
+              <p title={article.title} className={`text-sm font-medium line-clamp-2 break-words text-slate-900 dark:text-slate-100`}>
                 {article.title}
               </p>
               <div className="flex items-center gap-2 mt-1.5 text-xs flex-wrap">
                 <span style={{ color: mutedColor }}>{ui(formatRelativeTime(article.publishedAt))}</span>
-                <span className={`${isDark ? 'text-slate-400' : 'text-gray-500'}`}>•</span>
+                <span className={`text-slate-500 dark:text-slate-400`}>•</span>
                 <span className="inline-flex items-center gap-1.5" style={{ color: textColor }}>{<span aria-hidden className="h-2 w-2 rounded-full" style={{ background: CATEGORY_ACCENT[TOPIC_TO_CATEGORY[article.topic]] }} />}{ui(article.topic)}</span>
-                <span className={`${isDark ? 'text-slate-400' : 'text-gray-500'}`}>•</span>
+                <span className={`text-slate-500 dark:text-slate-400`}>•</span>
                 <span className={sentimentTextClass[article.sentiment.type]}>{t[article.sentiment.type]}</span>
               </div>
             </Link>

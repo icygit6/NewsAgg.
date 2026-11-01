@@ -23,7 +23,7 @@ import { mutedTextClass, panelBaseClass } from '../components/article/helpers';
 import { buildLiveEngagement, getArticleId } from '../services/newsAPI';
 import type { NewsArticle, NewsCategoryFilter } from '../types/article';
 import type { SentimentDistributionItem } from '../types/sentiment';
-import { SeoMetadata } from '../components/SeoMetadata';
+import { DEFAULT_TITLE, SeoMetadata } from '../components/SeoMetadata';
 import { useScrollFade, fadeMask } from '../hooks/useScrollFade';
 
 export function ArticlePage() {
@@ -58,6 +58,15 @@ export function ArticlePage() {
     : isError || (!loading && !article)
       ? 'Article not found in the current dataset.'
       : null;
+  // SeoMetadata titles a story once it loads; a missing one should say so in
+  // the browser tab too, not keep the generic site title.
+  const notFound = !loading && error !== null;
+  const notFoundTitle = ui('Article not found');
+  useEffect(() => {
+    if (!notFound) return;
+    document.title = `${notFoundTitle} · NewsAgg`;
+    return () => { document.title = DEFAULT_TITLE; };
+  }, [notFound, notFoundTitle]);
 
   const [tick, setTick] = useState(Date.now());
 
@@ -102,8 +111,8 @@ export function ArticlePage() {
   // ── Translate (cache-first via backend; no-op unless translateMode is on) ──
   const tr = useTranslate(article);
 
-  const panelBase = panelBaseClass(isDark);
-  const mutedText = mutedTextClass(isDark);
+  const panelBase = panelBaseClass();
+  const mutedText = mutedTextClass();
 
   if (loading) return <ArticleSkeleton label={t.loading} />;
 
@@ -117,7 +126,7 @@ export function ArticlePage() {
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className={`text-center py-20 rounded-2xl border ${panelBase}`}>
           <BrandLogo showWordmark={false} markClassName="mx-auto mb-4 h-14 w-14 opacity-70" />
-          <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>{ui("Article Not Found")}</h2>
+          <h2 className={`text-2xl font-bold mb-2 text-slate-900 dark:text-slate-100`}>{ui("Article not found")}</h2>
           <p className={`mb-6 ${mutedText}`}>{error}</p>
           <Link to="/" className="inline-block px-6 py-3 rounded-xl bg-[var(--brand)] text-white font-semibold hover:bg-[var(--brand-hover)] transition-all">{ui("Go to Homepage")} </Link>
         </motion.div>

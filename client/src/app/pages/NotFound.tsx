@@ -1,7 +1,8 @@
 import { Link } from 'react-router';
 import { useApp } from '../contexts/AppContext';
 import { useUiText } from '../i18n/uiText';
-import { FeedState, feedStateButton } from '../components/feed/FeedState';
+import { FeedState } from '../components/feed/FeedState';
+import { feedStateButton } from '../components/feed/feedStateButton';
 
 export function NotFound() {
   const { t } = useApp();

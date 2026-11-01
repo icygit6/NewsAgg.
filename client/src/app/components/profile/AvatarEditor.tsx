@@ -4,15 +4,12 @@ import { useApp } from '../../contexts/AppContext';
 import { authService } from '../../services/authService';
 import { useUiText } from '../../i18n/uiText';
 import { AVATAR_TEMPLATES, renderAvatarTemplate } from '../../lib/avatarTemplates';
-
-interface AvatarEditorProps {
-  isDark: boolean;
-}
+import { errorText } from '../ui/ErrorNote';
 
 /** Avatar upload: downscale to a 96×96 cover-cropped webp data-URL (a few KB,
  * well under the server's 100k-char cap) and persist it server-side so the
  * photo follows the account across browsers. */
-export function AvatarEditor({ isDark }: AvatarEditorProps) {
+export function AvatarEditor() {
   const { t, user, setUser, avatarSrc } = useApp();
   const ui = useUiText();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -87,14 +84,12 @@ export function AvatarEditor({ isDark }: AvatarEditorProps) {
     reader.readAsDataURL(file);
   };
 
-  const menuItem = `flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm font-medium transition-colors disabled:opacity-50 ${
-    isDark ? 'text-slate-200 hover:bg-slate-800' : 'text-slate-700 hover:bg-slate-100'
-  }`;
+  const menuItem = `flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm font-medium transition-colors disabled:opacity-50 text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800`;
 
   return (
     <div ref={menuRef} className="relative">
       <div className="relative w-24 h-24">
-        <div className={`w-full h-full rounded-2xl overflow-hidden ring-4 ${isDark ? 'ring-slate-900' : 'ring-white'}`}>
+        <div className={`w-full h-full rounded-2xl overflow-hidden ring-4 ring-white dark:ring-slate-900`}>
           <img src={avatarSrc} alt={user?.username || ''} className="w-full h-full object-cover bg-[var(--brand)]" />
         </div>
         <button
@@ -106,9 +101,7 @@ export function AvatarEditor({ isDark }: AvatarEditorProps) {
           aria-haspopup="dialog"
           aria-expanded={menuOpen}
           title={t.changePhoto}
-          className={`absolute -bottom-1 -right-1 w-8 h-8 rounded-full flex items-center justify-center shadow-md ring-2 transition-colors disabled:opacity-60 ${
-            isDark ? 'bg-[var(--brand)] text-white ring-slate-900 hover:bg-[var(--brand-hover)]' : 'bg-[var(--brand)] text-white ring-white hover:bg-[var(--brand-hover)]'
-          }`}
+          className={`absolute -bottom-1 -right-1 w-8 h-8 rounded-full flex items-center justify-center shadow-md ring-2 transition-colors disabled:opacity-60 bg-[var(--brand)] text-white ring-white hover:bg-[var(--brand-hover)] dark:bg-[var(--brand)] dark:text-white dark:ring-slate-900 dark:hover:bg-[var(--brand-hover)]`}
         >
           {saving ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />}
         </button>
@@ -118,12 +111,12 @@ export function AvatarEditor({ isDark }: AvatarEditorProps) {
         <div
           role="dialog"
           aria-label={t.changePhoto}
-          className={`absolute left-0 top-full z-30 mt-3 w-[17rem] rounded-2xl border p-2 shadow-lg ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}
+          className={`absolute left-0 top-full z-30 mt-3 w-[17rem] rounded-2xl border p-2 shadow-lg bg-white border-slate-200 dark:bg-slate-900 dark:border-slate-700`}
         >
           <button type="button" disabled={saving} onClick={() => { setMenuOpen(false); fileInputRef.current?.click(); }} className={menuItem}>
-            <Upload size={15} className="shrink-0 text-slate-400" />{ui('Upload photo')}
+            <Upload size={16} className="shrink-0 text-slate-400" />{ui('Upload photo')}
           </button>
-          <p className={`px-2.5 pt-2 text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{ui('Or pick an avatar')}</p>
+          <p className={`px-2.5 pt-2 text-xs font-semibold text-slate-500 dark:text-slate-400`}>{ui('Or pick an avatar')}</p>
           <div role="group" aria-label={ui('Avatar templates')} className="grid grid-cols-4 gap-2 p-2.5">
             {AVATAR_TEMPLATES.map((template, index) => (
               <button
@@ -139,13 +132,13 @@ export function AvatarEditor({ isDark }: AvatarEditorProps) {
             ))}
           </div>
           {user?.avatar && (
-            <button type="button" disabled={saving} onClick={() => { setMenuOpen(false); void upload(null); }} className={`${menuItem} ${isDark ? 'hover:text-red-300' : 'hover:text-red-600'}`}>
-              <Trash2 size={15} className="shrink-0" />{t.removePhoto}
+            <button type="button" disabled={saving} onClick={() => { setMenuOpen(false); void upload(null); }} className={`${menuItem} hover:text-red-600 dark:hover:text-red-300`}>
+              <Trash2 size={16} className="shrink-0" />{t.removePhoto}
             </button>
           )}
         </div>
       )}
-      {error && <p role="alert" className="mt-2 max-w-[12rem] text-xs text-rose-500">{error}</p>}
+      {error && <p role="alert" className={`mt-2 max-w-[12rem] text-xs ${errorText}`}>{error}</p>}
       {saved && !error && <p role="status" aria-live="polite" className="mt-2 max-w-[12rem] text-xs text-emerald-500">{t.avatarUpdated}</p>}
     </div>
   );

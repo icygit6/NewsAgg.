@@ -17,6 +17,15 @@ const existingCollection = (userParam: string, nameParam: string) =>
 // these English names; anything a reader types is shown as written.
 const DEFAULT_COLLECTIONS = ['Read later', 'Research', 'Follow this story', 'Share', 'Reference']
 const sameName = (a: string, b: string) => a.toLowerCase() === b.toLowerCase()
+// Whether a removed bookmark's collection still exists: it is on the reader's
+// list, or another active bookmark uses it. Deleting a collection removes its
+// bookmarks too, so bringing one back must not bring the collection back with it.
+const collectionStillExists = `(
+  EXISTS (SELECT 1 FROM users u, unnest(COALESCE(u.bookmark_collections, $defaults::text[])) c
+          WHERE u.id=bookmarks.user_id AND lower(c)=lower(bookmarks.collection_name))
+  OR EXISTS (SELECT 1 FROM bookmarks b2 WHERE b2.user_id=bookmarks.user_id AND b2.id<>bookmarks.id
+             AND b2.deleted_at IS NULL AND lower(b2.collection_name)=lower(bookmarks.collection_name)))`
+const firstCollection = (userParam: string) => `COALESCE((SELECT bookmark_collections[1] FROM users WHERE id=${userParam}),'Read later')`
 type Client = { query: (text: string, params?: any[]) => Promise<any> }
 
 async function inTransaction<T>(work: (client: Client) => Promise<T>): Promise<T> {
@@ -63,10 +72,12 @@ bookmarksRouter.post('/', validateBody(bookmarkSchema), async (req: any, res: Re
     const { articleId, articleTitle, articleUrl, urlToImage, sourceName, topic } = req.body
     const result = await query(
       `INSERT INTO bookmarks (user_id, article_id, article_title, article_url, url_to_image, source_name, topic, collection_name)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,COALESCE((SELECT bookmark_collections[1] FROM users WHERE id=$1),'Read later'))
-       ON CONFLICT (user_id, article_id) DO UPDATE SET deleted_at=NULL, archived=false
+       VALUES ($1,$2,$3,$4,$5,$6,$7,${firstCollection('$1')})
+       ON CONFLICT (user_id, article_id) DO UPDATE SET deleted_at=NULL, archived=false,
+         collection_name=CASE WHEN bookmarks.deleted_at IS NULL OR ${collectionStillExists.replace('$defaults', '$8')}
+           THEN bookmarks.collection_name ELSE EXCLUDED.collection_name END
        RETURNING ${columns}`,
-      [req.userId, articleId, articleTitle, articleUrl, urlToImage || null, sourceName, topic]
+      [req.userId, articleId, articleTitle, articleUrl, urlToImage || null, sourceName, topic, DEFAULT_COLLECTIONS]
     )
     res.status(201).json({ success: true, data: result.rows[0] })
   } catch (error) {
@@ -252,7 +263,11 @@ bookmarksRouter.post('/:bookmarkId/restore', async (req: any, res: Response) => 
   const bookmarkId = id(req.params.bookmarkId)
   if (!bookmarkId) return res.status(404).json({ success: false, error: 'Bookmark not found' })
   try {
-    const result = await query('UPDATE bookmarks SET deleted_at=NULL WHERE id=$1 AND user_id=$2 RETURNING id', [bookmarkId, req.userId])
+    const result = await query(
+      `UPDATE bookmarks SET deleted_at=NULL,
+         collection_name=CASE WHEN ${collectionStillExists.replace('$defaults', '$3')} THEN collection_name ELSE ${firstCollection('$2')} END
+       WHERE id=$1 AND user_id=$2 RETURNING id`,
+      [bookmarkId, req.userId, DEFAULT_COLLECTIONS])
     if (!result.rows[0]) return res.status(404).json({ success: false, error: 'Bookmark not found' })
     res.json({ success: true })
   } catch (error) {

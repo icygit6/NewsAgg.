@@ -44,26 +44,26 @@ export function LiveEngagement() {
   const mutedColor = chartMutedColor(isDark);
 
   return (
-    <div className={`rounded-2xl border p-4 ${panelBaseClass(isDark)}`}>
+    <div className={`rounded-2xl border p-4 ${panelBaseClass()}`}>
       <div className="flex items-center gap-2 mb-3">
         <PanelIcon icon={Users} />
-        <h3 className={`font-poppins text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>{ui("Live Engagement")} </h3>
+        <h3 className={`font-poppins text-sm font-semibold text-slate-800 dark:text-slate-200`}>{ui("Live engagement")} </h3>
       </div>
 
       <div className="space-y-2.5">
         {liveEngagement.length === 0 ? (
-          <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{t.noResults}</p>
+          <p className={`text-sm text-slate-500 dark:text-slate-400`}>{t.noResults}</p>
         ) : (
           liveEngagement.map((item) => (
             <Link
               key={item.articleId}
               to={`/article/${item.articleId}`}
-              className={`block rounded-xl p-2.5 transition-colors ${isDark ? 'bg-slate-700/50 hover:bg-slate-700' : 'bg-gray-50/90 hover:bg-gray-100'}`}
+              className={`block rounded-xl p-2.5 transition-colors bg-slate-50/90 hover:bg-slate-100 dark:bg-slate-700/50 dark:hover:bg-slate-700`}
             >
-              <p className={`text-sm font-medium line-clamp-1 ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>{item.title}</p>
+              <p className={`text-sm font-medium line-clamp-1 text-slate-900 dark:text-slate-100`}>{item.title}</p>
               <div className="flex items-center gap-2 mt-1 text-xs flex-wrap">
                 <span style={{ color: mutedColor }}>{item.topic}</span>
-                <span className={`${isDark ? 'text-slate-400' : 'text-gray-500'}`}>•</span>
+                <span className={`text-slate-500 dark:text-slate-400`}>•</span>
                 <span className={`${sentimentPillClass[item.sentiment]} px-2 py-0.5 rounded-full`}>{item.sentiment}</span>
               </div>
               <div className="grid grid-cols-3 gap-2 mt-2 text-xs">
