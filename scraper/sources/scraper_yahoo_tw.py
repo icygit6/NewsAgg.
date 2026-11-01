@@ -64,7 +64,7 @@ SPEC = SourceSpec(
     categories=_build_categories(),
     use_playwright=True,
     skip_zero_shot=False,
-    content_selectors=[".caas-body"],     # Yahoo's article body container
+    content_selectors=[".caas-body", "article .atoms"],
     boilerplate_extra=_YAHOO_BOILERPLATE,
 )
 

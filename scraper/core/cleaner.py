@@ -99,7 +99,7 @@ def same_family(u: str, base: str) -> bool:
 
 # ── Article-URL patterns ────────────────────────────────────────────
 _CNN_INC = re.compile(r"/\d{4}/\d{2}/\d{2}/")
-_CNN_EXC = re.compile(r"/video/|/gallery/|/live-updates/|/cnn-underscored/|/vr/|/weather/")
+_CNN_EXC = re.compile(r"/video/|/gallery/|/live-updates/|/live-news/|/cnn-underscored/|/vr/|/weather/")
 _BBC_INC = re.compile(
     r"/articles/[a-z0-9]"
     r"|/article/\d{8}"
@@ -160,6 +160,18 @@ def clean_text(text: str) -> str:
     text = re.sub(r"[ \t]+", " ", text)
     text = re.sub(r"\n{3,}", "\n\n", text)
     return text.strip()
+
+
+_PUBLICATION_LABEL = re.compile(
+    r'^(?:(?:Published|Updated|Last updated)\s*,?\s*)?'
+    r'(?:just now|today|yesterday|(?:less than\s+)?(?:\d+|a|an|one)\s+'
+    r'(?:seconds?|minutes?|hours?|days?|weeks?|months?|years?)'
+    r'(?:\s+(?:and\s+)?\d+\s+(?:seconds?|minutes?|hours?|days?))?\s+ago)\s*[.!]?$', re.I)
+
+
+def clean_caption(text: str) -> str:
+    """Remove the publisher's accessibility label, not the caption or credit."""
+    return re.sub(r'^\s*Image\s+caption\b\s*[,，:：]?\s*', '', text or '', flags=re.I).strip()
 
 
 # ── Boilerplate stripping ───────────────────────────────────────────
@@ -230,6 +242,8 @@ def strip_boilerplate(text: str, extra: Optional[list[re.Pattern]] = None) -> st
     for raw_line in text.splitlines():
         line = raw_line.strip()
         if line:
+            if _PUBLICATION_LABEL.fullmatch(line) or re.fullmatch(r'(?:Published|Updated|Last updated)\s*[:,]?', line, re.I):
+                continue
             if any(p.search(line) for p in full):
                 continue
             if len(line) < _SHORT_LINE_MAX and any(p.search(line) for p in BOILERPLATE_SHORT_LINE):

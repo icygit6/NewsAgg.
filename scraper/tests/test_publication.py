@@ -20,6 +20,11 @@ def fixture():
 
 
 class PublicationTests(unittest.TestCase):
+    def test_recommendation_stream_cannot_be_published(self):
+        row=fixture()
+        row['content'] += ' 自由時報 ・ 21 小時前 ・ 發表留言 另一篇 ・ 12 小時前 ・ 2則留言'
+        self.assertEqual(publication.rejection(row),'contaminated_body')
+
     def test_duplicate_alternate_url_is_quarantined_without_public_write(self):
         calls = []
         class Cursor:

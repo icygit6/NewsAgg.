@@ -48,6 +48,23 @@ class ArticleQualityTests(unittest.TestCase):
         self.assertEqual(text.count('Managers on the pitch'), 1)
         self.assertEqual([b['type'] for b in blocks], ['caption', 'paragraph'])
         self.assertNotIn('Follow your club', text)
+        self.assertNotIn('Image caption', text)
+
+    def test_publication_labels_are_not_story_prose_but_dates_are_preserved(self):
+        for label in ('Published Just now', 'Published 3 hours ago', 'Published, 1 minute ago', 'Updated 2 days ago'):
+            soup = BeautifulSoup(f'<article><p>{label}</p><p>Published research found important new evidence.</p></article>', 'html.parser')
+            text, blocks = quality.structured_body(soup, ['article'])
+            self.assertEqual(text, 'Published research found important new evidence.')
+            self.assertEqual(len(blocks), 1)
+        soup = BeautifulSoup('<time datetime="2026-10-23T12:00:00Z">Published 2 hours ago</time>', 'html.parser')
+        date, origin = quality.publication_date(soup, {}, {}, None, 'https://www.bbc.com/news/articles/example')
+        self.assertEqual(date.isoformat(), '2026-10-23T12:00:00+00:00')
+        self.assertEqual(origin, 'time')
+
+    def test_gallery_caption_loses_the_label_not_the_actual_caption(self):
+        soup = BeautifulSoup('<article><figure><img src="/photo.jpg"><figcaption><span>Image caption, </span>A player celebrates.</figcaption></figure></article>', 'html.parser')
+        images = quality.image_candidates(soup, 'https://www.bbc.com/news/articles/example', {})
+        self.assertEqual(images[0]['caption'], 'A player celebrates.')
 
     def test_dates_reject_old_unknown_future(self):
         now = datetime(2026, 9, 19, tzinfo=timezone.utc)

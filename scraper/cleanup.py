@@ -4,7 +4,7 @@
 The default run is a DRY RUN that only reports what would be deleted;
 --commit applies it in one transaction. What goes:
 
-  1. Articles published more than --days ago (default 45). The public feed
+  1. Articles published more than --days ago (default 30). The public feed
      shows 30 days and ingestion looks back 48 hours, so these are no longer
      shown anywhere except by direct link.
   2. Articles the website can never show, once older than --ineligible-days
@@ -38,7 +38,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from core import config, db          # noqa: E402  (config also runs load_env)
 
-DEFAULT_DAYS = 45
+DEFAULT_DAYS = 30
 DEFAULT_INELIGIBLE_DAYS = 7
 DEFAULT_STAGING_DAYS = 14
 DEFAULT_PROTECT_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "protected-evaluation-ids.txt")

@@ -22,6 +22,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from core import config, db          # noqa: E402  (config also runs load_env)
 from core.pipeline import run_source  # noqa: E402
+from core.deadline import parse_stop_at, stop_requested  # noqa: E402
 from sources import all_specs         # noqa: E402
 
 
@@ -41,9 +42,12 @@ def main() -> None:
                     help="articles per category per source (default: config)")
     ap.add_argument('--report-path', help='Atomic JSON manifest for this exact run')
     ap.add_argument('--run-key', default=None)
+    ap.add_argument('--stop-at', type=parse_stop_at, help='UTC/offset timestamp to stop starting new work; finish the current article and report')
     ap.add_argument('--max-age-hours', type=float, default=None)
     ap.add_argument('--refresh-existing', action='store_true', help='Recheck recent stored stories in a full rerun; still deduplicate inside this run')
     args = ap.parse_args()
+    if stop_requested(args.stop_at):
+        ap.error('--stop-at has already passed; refusing to create a new run')
     if args.target is not None and not 1 <= args.target <= 100:
         ap.error('--target must be between 1 and 100')
     if args.max_age_hours is not None:
@@ -103,6 +107,17 @@ def execute(args, to_db, report):
 
 def scrape(args, to_db, report, conn):
     all_records: list[dict] = []
+    stop_at = getattr(args, 'stop_at', None)
+    should_stop = lambda: stop_requested(stop_at)
+    accepted_ids = set()
+
+    def checkpoint(record):
+        # Save each accepted/committed article, not just the end of a category
+        # batch. A forced failure still remains failed, with recoverable IDs.
+        if record['id'] not in accepted_ids:
+            accepted_ids.add(record['id'])
+            report['articleIds'] = sorted(accepted_ids)
+            save_report(args.report_path, report)
 
     # One shared dedup set + one stats counter for the whole run: existing
     # canonicals are preloaded ONCE (one DB roundtrip instead of one per
@@ -142,11 +157,13 @@ def scrape(args, to_db, report, conn):
     active = {(original.key, topic) for topic, original in pairs}
     round_number = 0
     storage_reached = False
-    while active and not storage_reached:
+    while active and not storage_reached and not should_stop():
         first_pass = round_number == 0
         round_number += 1
         stats['quota_rounds'] = round_number
         for topic, original in pairs:
+            if should_stop():
+                break
             key = (original.key, topic)
             if key not in active:
                 continue
@@ -176,8 +193,10 @@ def scrape(args, to_db, report, conn):
             try:
                 records = run_source(spec, to_db=to_db, global_seen=global_seen, stats=stats,
                                      attempted_urls=attempted.setdefault(key, set()), candidate_limit=12 if first_pass else None,
-                                     discovery_target=target)
+                                     discovery_target=target, should_stop=should_stop, on_record=checkpoint)
                 all_records += records
+                for record in records:
+                    checkpoint(record)
                 obtained[key] += len(records)
                 # A full pass that cannot fill this batch has exhausted
                 # eligible candidates. Report the deficit without weak fills.
@@ -188,9 +207,13 @@ def scrape(args, to_db, report, conn):
                 active.discard(key)
                 print(f"!! source {spec.key}/{topic} failed: {e}")
             stats[f'deficit_{original.key}_{topic}'] = max(0, target-obtained[key])
-            report['articleIds'] = sorted({r['id'] for r in all_records})
+            report['articleIds'] = sorted(accepted_ids)
             save_report(args.report_path, report)
 
+    if should_stop() and any(value for key, value in stats.items() if key.startswith('deficit_')):
+        stats['time_budget_reached'] = 1
+        report['stopReason'] = 'time_budget'
+        print('Work budget reached; no new work will start. Preserving validated articles and finishing the report.')
     report['errors'] = stats['errors']
     report['status'] = 'failed' if stats['errors'] else ('partial' if any(v for k,v in stats.items() if k.startswith('deficit_')) else 'complete')
 

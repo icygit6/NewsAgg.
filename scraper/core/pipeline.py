@@ -8,11 +8,11 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, Callable
 
 from bs4 import BeautifulSoup
 
-from core import config, db, extract, http, nlp, summarizer, quality
+from core import config, db, extract, http, nlp, routing, summarizer, quality
 from core.cleaner import (
     clean_text,
     date_from_url,
@@ -38,6 +38,10 @@ class SourceSpec:
     content_selectors: list[str] = field(default_factory=list)   # CSS selectors tried first for the body
     boilerplate_extra: list[re.Pattern] = field(default_factory=list)  # site-specific line filters
     feeds: dict[str, list[str]] = field(default_factory=dict)
+    # Firehose feeds/sitemaps offered to a category only when the entry matches
+    # that category's pre-routing hint (core.routing). See routing.py.
+    routed_feeds: dict[str, list[str]] = field(default_factory=dict)
+    feed_scope: Optional[re.Pattern] = None   # URL every feed entry must match
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -147,8 +151,10 @@ def enrich_article(item: dict, spec: SourceSpec) -> Optional[dict]:
             item['rejection'] = reason or 'non_article'
             print(f"     reject: {item['rejection']}")
             return None
-        fallback = _extract_body(art, page_html, spec, soup)
-        text, blocks = quality.structured_body(soup, spec.content_selectors, fallback, spec.boilerplate_extra)
+        text, blocks = quality.structured_body(soup, spec.content_selectors, extra=spec.boilerplate_extra)
+        if quality.contamination_reason(text):
+            item['rejection'] = 'contaminated_body'
+            return None
         original_length = len(text)
         kept, size = [], 0
         for block in blocks:
@@ -186,7 +192,9 @@ def enrich_article(item: dict, spec: SourceSpec) -> Optional[dict]:
 
         # Stories without a publisher photo are not published, so reject them
         # before spending model time on sentiment, entities and summaries.
-        images = quality.validate_images(quality.image_candidates(soup, url, jsonld, art.top_image))
+        images = quality.validate_images(quality.image_candidates(soup, url, jsonld, selectors=spec.content_selectors))
+        if not images:
+            images = quality.validate_images(quality.publisher_linked_images(soup, url, title, spec.content_selectors))
         if not images:
             item['rejection'] = 'no_image'
             print(f"     reject: {item['rejection']}")
@@ -276,6 +284,7 @@ def enrich_article(item: dict, spec: SourceSpec) -> Optional[dict]:
             },
         }
 
+        record['quality_metadata']['body_policy'] = quality.BODY_POLICY
         s = sentiment
         print(
             f"     ok {s['type'].upper()} | conf={s['score']:.2f} | pol={s['comparative']:+.2f} | "
@@ -312,6 +321,8 @@ def run_source(
     attempted_urls: Optional[set[str]] = None,
     candidate_limit: Optional[int] = None,
     discovery_target: Optional[int] = None,
+    should_stop: Optional[Callable[[], bool]] = None,
+    on_record: Optional[Callable[[dict], None]] = None,
 ) -> list[dict]:
     """Crawl, filter, enrich and (optionally) upsert one source. Returns records.
 
@@ -320,6 +331,7 @@ def run_source(
     preloads existing canonicals once). Standalone calls keep the old behavior.
     """
     target = spec.target_per_category
+    should_stop = should_stop or (lambda: False)
     per_src_mult = config.CRAWL_MULT
 
     owns_conn = False
@@ -340,13 +352,25 @@ def run_source(
     print("=" * 70)
 
     for category, urls in spec.categories.items():
+        if should_stop():
+            break
         print(f"\n-- {category} --")
         # Small fair-share batches still discover for the original full quota.
         per_src_target = min(120, max(40, ((discovery_target or target) * per_src_mult * 2) // max(1, len(urls))))
 
         raw_pool: list[dict] = []
+        # Listing a feed costs one cached request; only fetching articles is
+        # expensive, and that stops at the quota. So the feed cap is generous.
+        feed_cap = max(per_src_target, config.FEED_CANDIDATE_CAP)
         for feed in spec.feeds.get(category, []):
-            raw_pool += http.crawl_feed(feed, category, per_src_target, urls[0])
+            if should_stop():
+                break
+            raw_pool += http.crawl_feed(feed, category, feed_cap, urls[0], scope=spec.feed_scope)
+        hint = routing.hint_for(category)
+        for feed in spec.routed_feeds.get(category, []):
+            if should_stop():
+                break
+            raw_pool += http.crawl_feed(feed, category, feed_cap, urls[0], match=hint, scope=spec.feed_scope)
         cat_articles: list[dict] = []
         attempted = attempted_urls if attempted_urls is not None else set()
         def candidates():
@@ -355,12 +379,14 @@ def run_source(
             # fallback (the previous raw-feed-length gate did exactly that).
             batches = [lambda: raw_pool] + [lambda u=u: http.crawl_source(u, category, per_src_target, rendered=spec.use_playwright) for u in urls]
             for discover in batches:
-                if len(cat_articles) >= target:
+                if len(cat_articles) >= target or should_stop():
                     return
                 pool = discover()
                 stats[f'discovered_{spec.key}_{category}'] = stats.get(f'discovered_{spec.key}_{category}', 0) + len(pool)
                 pool.sort(key=lambda x: -((quality.parse_date(x.get('published_hint')) or date_from_url(x['url'])).timestamp() if quality.parse_date(x.get('published_hint')) or date_from_url(x['url']) else 0.0))
                 for item in _assign_topic(pool):
+                    if should_stop():
+                        return
                     if candidate_limit and attempts >= candidate_limit:
                         return
                     canonical = normalize_canonical(item['url'])
@@ -375,7 +401,7 @@ def run_source(
 
         attempts = 0
         for item in candidates():
-            if len(cat_articles) >= target:
+            if len(cat_articles) >= target or should_stop():
                 break
             if item["url"] in global_seen:
                 continue
@@ -419,6 +445,8 @@ def run_source(
                     continue
             global_seen.add(ckey)
             cat_articles.append(record)
+            if on_record:
+                on_record(record)
             if candidate_limit and attempts >= candidate_limit:
                 break
 

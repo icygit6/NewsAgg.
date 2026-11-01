@@ -162,23 +162,83 @@ def crawl_source(source_url: str, category: str, max_cand: int,
     print(f"     -> {len(results)} candidates")
     return results
 
-def crawl_feed(feed_url, category, max_cand, source_url):
-    """RSS/Atom is preferred for dated discovery; publication is verified again on-page."""
-    import xml.etree.ElementTree as ET
+_SITEMAP_NS = 'http://www.sitemaps.org/schemas/sitemap/0.9'
+_NEWS_NS = 'http://www.google.com/schemas/sitemap-news/0.9'
+_FEED_CACHE: dict[str, tuple[float, bytes]] = {}
+_FEED_CACHE_LIMIT = 160
+
+
+def _fetch_feed_bytes(feed_url: str) -> Optional[bytes]:
+    """Feed/sitemap body, cached briefly.
+
+    The balanced runner calls run_source once per (source, category) round, and
+    every round re-reads the same feed. A sitemap can be half a megabyte, so the
+    repeats are cached for a few minutes; articles are never cached.
+    """
+    now = time.time()
+    hit = _FEED_CACHE.get(feed_url)
+    if hit and now - hit[0] < config.FEED_CACHE_TTL:
+        return hit[1]
     response = get(feed_url)
     if response is None:
-        return []
-    try:
-        root = ET.fromstring(response.content)
-    except ET.ParseError:
-        return []
-    rows = []
+        return None
+    if len(_FEED_CACHE) >= _FEED_CACHE_LIMIT:
+        _FEED_CACHE.pop(min(_FEED_CACHE, key=lambda k: _FEED_CACHE[k][0]))
+    _FEED_CACHE[feed_url] = (now, response.content)
+    return response.content
+
+
+def _feed_entries(root):
+    """Yield (url, title, published) from RSS, Atom or a (news) sitemap."""
     for item in root.findall('.//item') + root.findall('.//{http://www.w3.org/2005/Atom}entry'):
         values = {n.tag.split('}')[-1]: (n.text or '').strip() for n in item}
         link = values.get('link') or next((n.get('href') for n in item if n.tag.endswith('link')), '')
+        yield link, values.get('title', ''), values.get('pubDate') or values.get('published')
+    # <url><loc/><lastmod/><news:news><news:publication_date/><news:title/>.
+    # Sitemaps are how a publisher without a per-section feed lists its output.
+    # <loc> and <lastmod> are read from direct children only: extension blocks
+    # (CNN's <image:image><image:loc>) repeat those names with other meanings.
+    for item in list(root.iter(f'{{{_SITEMAP_NS}}}url')) + list(root.iter('url')):
+        direct = {n.tag.split('}')[-1]: (n.text or '').strip() for n in item}
+        news = item.find(f'{{{_NEWS_NS}}}news')
+        title = published = None
+        if news is not None:
+            title = news.findtext(f'{{{_NEWS_NS}}}title')
+            published = news.findtext(f'{{{_NEWS_NS}}}publication_date')
+        yield direct.get('loc', ''), (title or '').strip(), (published or direct.get('lastmod') or '').strip() or None
+
+
+def crawl_feed(feed_url, category, max_cand, source_url, *, match=None, scope=None):
+    """RSS/Atom/sitemap discovery; publication is verified again on-page.
+
+    ``match``: compiled pattern; an entry is kept only if it matches its URL or
+    title. ``scope``: compiled pattern the URL must match (keeps a multilingual
+    sitemap to the publisher's English sections). Entries are returned newest
+    first, so the cap never discards the freshest stories of a long sitemap.
+    """
+    import xml.etree.ElementTree as ET
+    body = _fetch_feed_bytes(feed_url)
+    if body is None:
+        return []
+    try:
+        root = ET.fromstring(body)
+    except ET.ParseError:
+        return []
+    rows, seen = [], set()
+    for link, title, published in _feed_entries(root):
         url = make_abs(link, source_url)
-        if same_family(url, source_url) and is_article_url(url):
-            rows.append({'url': url, 'topic': category, 'title_hint': values.get('title', ''), 'published_hint': values.get('pubDate') or values.get('published'), 'source_url': feed_url})
-        if len(rows) >= max_cand:
-            break
-    return rows
+        if not url or url in seen or not same_family(url, source_url) or not is_article_url(url):
+            continue
+        if scope is not None and not scope.search(url):
+            continue
+        if match is not None and not match.search(f'{url} {title}'):
+            continue
+        seen.add(url)
+        rows.append({'url': url, 'topic': category, 'title_hint': title, 'published_hint': published, 'source_url': feed_url})
+    from core import quality
+    from core.cleaner import date_from_url
+    def newest(row):
+        when = quality.parse_date(row['published_hint']) or date_from_url(row['url'])
+        return when.timestamp() if when else float('-inf')
+    rows.sort(key=newest, reverse=True)
+    return rows[:max_cand]

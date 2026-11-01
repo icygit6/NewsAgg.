@@ -8,6 +8,8 @@ def rejection(record):
     if record.get('extraction_version') != quality.VERSION:
         return 'unverified_extraction'
     text = record.get('content') or ''
+    if quality.contamination_reason(text):
+        return 'contaminated_body'
     blocks = record.get('content_blocks')
     if len(text) < config.MIN_TEXT_LEN or not isinstance(blocks, list) or not blocks:
         return 'incomplete_body'

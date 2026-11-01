@@ -80,6 +80,8 @@ TARGET_PER_CATEGORY = 20     # per-source/category ceiling; balanced runner fill
 STORAGE_BUDGET_BYTES = int(os.getenv('SCRAPER_STORAGE_BUDGET_MB', '400')) * 1024 * 1024
 STORAGE_HEADROOM_BYTES = 60 * 1024 * 1024
 CRAWL_MULT = 3               # crawl this many times the target, then filter down
+FEED_CANDIDATE_CAP = 120     # newest entries kept per feed/sitemap; listing is free, only fetches cost
+FEED_CACHE_TTL = 600         # seconds a feed/sitemap body is reused across quota rounds
 MIN_TEXT_LEN = 300           # minimum article body length (chars)
 MIN_WORDS_EN = 80            # minimum body words for English sources (zh exempt —
                              # CJK has no spaces, word counts are meaningless there)

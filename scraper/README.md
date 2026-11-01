@@ -29,7 +29,7 @@ scraper/
 │   └── scraper_yahoo_tw.py   zh-TW, Playwright, section→topic mapping
 ├── run_all.py         every source, sequential (used by GitHub Actions)
 ├── run_single.py      python run_single.py --source cnn
-├── cleanup.py         delete articles >45 days AND not protected/bookmarked
+├── cleanup.py         delete articles >30 days AND not protected/bookmarked
 └── requirements.txt
 ```
 

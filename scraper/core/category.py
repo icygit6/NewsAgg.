@@ -28,7 +28,8 @@ def second_opinion(title, content, requested_topic=None, source=None, diagnostic
     topic = requested_topic or 'unspecified'
     # Reserve a share for every publisher so the first source cannot consume
     # every hosted second opinion for a category. Overall free-tier cap unchanged.
-    source_count = 3 if topic in ('Health', 'Politics', 'Lifestyle', 'Climate') else 4
+    # Yahoo TW has no Health or Climate section; every other topic has four publishers.
+    source_count = 3 if topic in ('Health', 'Climate') else 4
     source_limit = 12 // source_count
     reason = ('missing_key' if not key else 'budget' if _calls >= 96 or _calls_by_topic.get(topic, 0) >= 12
               or (source and _calls_by_source_topic.get((source, topic), 0) >= source_limit)
