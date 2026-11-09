@@ -11,12 +11,28 @@ vi.mock('../../contexts/AppContext', () => ({ useApp: () => ({
   isDark: false, language: 'en', selectedCategory: state.category, setSelectedCategory: state.select,
 }) }));
 vi.mock('../../i18n/uiText', () => ({ useUiText: () => (text: string) => text }));
+const latest = vi.hoisted(() => ({ articles: [] as unknown[] }));
+vi.mock('../../hooks/useArticles', () => ({ useLatestArticles: () => ({ data: latest }) }));
+vi.mock('../../hooks/useTitleTranslations', () => ({ useTitleTranslations: <T,>(items: T[]) => items }));
 import { MoreInCategory } from './MoreInCategory';
 
 const articles = [{ id: 'sport-1', topic: 'Sport', title: 'A sports headline',
   url: 'https://example.com/sport', publishedAt: '2026-10-24T00:00:00Z', source: { name: 'BBC' },
 }] as NewsArticle[];
-afterEach(() => { cleanup(); state.category = 'all'; state.select.mockClear(); });
+afterEach(() => { cleanup(); state.category = 'all'; state.select.mockClear(); latest.articles = []; });
+
+it('tops the box up with other stories from its category, skipping ones the feed already shows', () => {
+  latest.articles = [
+    articles[0],
+    { ...articles[0], id: 'sport-in-feed', title: 'Already a card' },
+    { ...articles[0], id: 'business-1', topic: 'Business', title: 'Another category' },
+    { ...articles[0], id: 'sport-2', title: 'A second sports headline' },
+  ];
+  render(<MemoryRouter><MoreInCategory articles={articles} exclude={new Set(['sport-1', 'sport-in-feed'])} /></MemoryRouter>);
+  expect(screen.getAllByRole('listitem').map(item => item.textContent)).toEqual([
+    expect.stringContaining('A sports headline'), expect.stringContaining('A second sports headline'),
+  ]);
+});
 
 it('hides the category action when already viewing that category, keeping article links', () => {
   state.category = 'sport';

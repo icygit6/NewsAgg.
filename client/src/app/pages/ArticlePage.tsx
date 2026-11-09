@@ -1,8 +1,9 @@
 import { useUiText } from '../i18n/uiText';
 import { ArticleSkeleton } from '../components/ui/ContentSkeleton';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Footer } from '../components/shell/Footer';
-import { Link, useNavigate, useParams } from 'react-router';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
+import { segment } from '../components/ui/styles';
 import { motion } from 'motion/react';
 import { ArrowLeft } from 'lucide-react';
 import { BrandLogo } from '../components/ui/BrandLogo';
@@ -25,6 +26,14 @@ import type { NewsArticle, NewsCategoryFilter } from '../types/article';
 import type { SentimentDistributionItem } from '../types/sentiment';
 import { DEFAULT_TITLE, SeoMetadata } from '../components/SeoMetadata';
 import { useScrollFade, fadeMask } from '../hooks/useScrollFade';
+import { useMainScrolledPast } from '../hooks/useMainScroll';
+import { ScrollTopButton } from '../components/ui/ScrollTopButton';
+
+/** Desktop scroll-to-top, pinned to the reading column's corner so it never covers the analysis sidebar. */
+function ArticleScrollTop({ resetKey }: { resetKey: string }) {
+  const show = useMainScrolledPast(400, resetKey);
+  return <ScrollTopButton show={show} className="absolute bottom-6 right-6 max-lg:hidden" />;
+}
 
 export function ArticlePage() {
   const ui = useUiText();
@@ -69,6 +78,24 @@ export function ArticlePage() {
   }, [notFound, notFoundTitle]);
 
   const [tick, setTick] = useState(Date.now());
+
+  // Below the desktop breakpoint the story and its analysis are two tabs instead of one long
+  // scroll. Both stay mounted; each tab keeps its own scroll offset in the shared scroll container.
+  const [params, setParams] = useSearchParams();
+  const tab: 'article' | 'insights' = params.get('tab') === 'insights' ? 'insights' : 'article';
+  const tabScroll = useRef({ article: 0, insights: 0 });
+  const selectTab = (next: 'article' | 'insights') => {
+    if (next === tab) return;
+    const scroller = document.getElementById('main-scroll');
+    tabScroll.current[tab] = scroller?.scrollTop ?? 0;    setParams(current => {
+      const query = new URLSearchParams(current);
+      if (next === 'insights') query.set('tab', 'insights'); else query.delete('tab');
+      return query;
+    }, { replace: true });
+  };
+  useLayoutEffect(() => {
+    document.getElementById('main-scroll')?.scrollTo({ top: tabScroll.current[tab] });
+  }, [tab]);
 
   const handleBackToHome = () => {
     const historyIndex = window.history.state?.idx ?? 0;
@@ -172,20 +199,35 @@ export function ArticlePage() {
         </button>
       </motion.div>
 
+      {/* Phone/tablet only: sticks under the top bar so the other tab is always one tap away. */}
+      <div className="sticky top-0 z-30 -mx-4 mb-3 bg-[var(--page-bg)] px-4 py-2 md:-mx-6 md:px-6 lg:hidden">
+        <div role="group" aria-label={ui('Article views')} className={`${segment.track} flex w-full`}>
+          {([['article', ui('Article')], ['insights', t.insights]] as const).map(([key, label]) => (
+            <button key={key} type="button" onClick={() => selectTab(key)} aria-pressed={tab === key}
+              className={`min-h-10 flex-1 text-center ${tab === key ? segment.active : segment.item}`}>{label}</button>
+          ))}
+        </div>
+      </div>
+
       <div data-testid="article-sentiment-layout" className="lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:grid-rows-[minmax(0,1fr)] gap-6">
         {/* Match the shell's 60:40 content-to-sentiment split at desktop widths. */}
-        <div id="article-reading-scroll" ref={readingFade.ref} style={fadeMask(readingFade.above, readingFade.below, 10)} role="region" aria-label={ui('Article content')} tabIndex={0} className="min-w-0 pb-10 lg:min-h-0 lg:overflow-x-hidden lg:overflow-y-auto lg:pr-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+        <div className="relative min-w-0 lg:min-h-0">
+        <div id="article-reading-scroll" ref={readingFade.ref} style={fadeMask(readingFade.above, readingFade.below, 10)} role="region" aria-label={ui('Article content')} tabIndex={0} className={`min-w-0 pb-10 lg:h-full lg:min-h-0 lg:overflow-x-hidden ${tab === 'insights' ? 'max-lg:hidden' : ''} lg:overflow-y-auto lg:pr-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500`}>
           <div className="mb-5">
             <LanguageSwitcher isDark={isDark} isLoading={tr.isLoading} isAutoTranslated={tr.isAutoTranslated} error={tr.error} onRetry={tr.retry} selectedLanguage={tr.selectedLanguage} onSelectLanguage={tr.setSelectedLanguage} />
           </div>
           {/* No entrance of its own: the hero image arrives through the view transition from the card. */}
           <motion.article initial={false} animate={{ opacity: 1, y: 0 }} className="min-w-0">
             <ArticleHeader article={displayArticle} isDark={isDark} />
-            <ArticleBody article={displayArticle} isDark={isDark} />
-            <ArticleFooter article={article} isDark={isDark} />
+            <div className="article-measure">
+              <ArticleBody article={displayArticle} isDark={isDark} />
+              <ArticleFooter article={article} isDark={isDark} />
+            </div>
           </motion.article>
-          {POSTS_ENABLED && <ArticleQuotes key={getArticleId(article)} articleId={getArticleId(article)} />}
+          {POSTS_ENABLED && <div className="article-measure"><ArticleQuotes key={getArticleId(article)} articleId={getArticleId(article)} /></div>}
           <div className="hidden lg:block"><Footer /></div>
+        </div>
+        <ArticleScrollTop resetKey={getArticleId(article)} />
         </div>
 
         {/* Sidebar — desktop: scales with the article instead of keeping a fixed width. */}
@@ -205,7 +247,7 @@ export function ArticlePage() {
       </div>
 
       {/* Sidebar — mobile */}
-      <div className="lg:hidden py-8">
+      <div className={`pb-8 lg:hidden ${tab === 'article' ? 'hidden' : ''}`}>
         <motion.aside initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25 }}>
           {sidebar}
         </motion.aside>

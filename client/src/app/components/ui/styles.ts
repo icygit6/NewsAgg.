@@ -26,11 +26,13 @@ export const fieldInput = `w-full rounded-xl border border-slate-200 bg-white px
 /** Section label inside drawers and settings: sentence case, readable size, no letter-spacing. */
 export const sectionLabel = 'text-xs font-semibold text-slate-500 dark:text-slate-400';
 
-/** Segmented control (two to four options). */
+/** Every tab or segmented choice on the site, styled like the Posts sort control: one soft
+ * white track with a firm border, plain text options, and the chosen one filled with the brand blue, like the
+ * selected item in the nav rail. */
 export const segment = {
-  track: 'inline-flex gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800',
-  item: `rounded-lg px-3 py-1.5 text-[13px] font-semibold text-slate-600 transition-colors hover:text-slate-900 dark:text-slate-300 dark:hover:text-white ${focus}`,
-  active: `rounded-lg bg-white px-3 py-1.5 text-[13px] font-semibold text-[var(--brand)] shadow-[0_1px_2px_rgb(15_23_42/0.08)] dark:bg-slate-900 dark:text-blue-300 ${focus}`,
+  track: 'inline-flex gap-1 rounded-xl border border-slate-300 bg-white p-1 dark:border-slate-600 dark:bg-slate-800',
+  item: `rounded-lg px-3 py-1.5 text-[13px] font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white ${focus}`,
+  active: `rounded-lg bg-[var(--brand)] px-3 py-1.5 text-[13px] font-semibold text-white transition-colors ${focus}`,
 } as const;
 
 /** "Nothing here yet" inside a panel or list. A whole page or main panel uses <FeedState> instead. */

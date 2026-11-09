@@ -88,6 +88,13 @@ export const CATEGORY_BADGE_CLASS: Record<Category, string> = {
   science: 'bg-[#0369a1] text-white',
 };
 
+/** Badge colours for a post category label, matching the badge on a published post.
+ * "General" is not a news category, so it takes the neutral fallback the news cards use. */
+export function postCategoryBadgeClass(label: string): string {
+  const category = CATEGORIES.find(c => CATEGORY_LABELS[c] === label);
+  return category ? CATEGORY_BADGE_CLASS[category] : 'bg-slate-600 text-white';
+}
+
 /** CSS variables for a category, read by `hover:text-[var(--cat)]` and friends. */
 export function categoryVars(category: Category | undefined): Record<string, string> {
   if (!category) return {};

@@ -32,8 +32,8 @@ export function AuthLayout({ title, children }: AuthLayoutProps) {
         {children}
       </div>
       <nav className="mt-6 flex flex-wrap justify-center gap-5 text-sm" aria-label={ui('Account help')}>
-        <Link className="font-semibold text-[var(--brand)] underline-offset-4 hover:underline" to="/">{ui('← Back to NewsAgg')}</Link>
-        <Link className="font-semibold text-[var(--brand)] underline-offset-4 hover:underline" to="/privacy">{ui('Privacy Policy')}</Link>
+        <Link className="font-semibold text-[var(--brand)] hover:text-[var(--brand-hover)]" to="/">{ui('← Back to NewsAgg')}</Link>
+        <Link className="font-semibold text-[var(--brand)] hover:text-[var(--brand-hover)]" to="/privacy">{ui('Privacy Policy')}</Link>
       </nav>
     </div>
   );

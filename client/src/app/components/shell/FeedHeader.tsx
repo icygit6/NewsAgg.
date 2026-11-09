@@ -1,4 +1,4 @@
-import { useUiText } from '../../i18n/uiText';
+import { useUiPunctuation, useUiText } from '../../i18n/uiText';
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { Link } from 'react-router';
 import { SlidersHorizontal, Search, X, Sun, Moon, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -10,9 +10,11 @@ import { FilterSheet } from '../ui/FilterSheet';
 import { BrandLogo } from '../ui/BrandLogo';
 import { SearchBox } from './SearchBox';
 import { CategoryScrollFrame } from '../ui/CategoryScrollFrame';
+import { fadeMask } from '../../hooks/useScrollFade';
 
 export function FeedHeader() {
   const ui = useUiText();
+  const p = useUiPunctuation();
   const {
     t,
     isDark,
@@ -23,6 +25,8 @@ export function FeedHeader() {
     selectedSources,
     selectedSort,
   } = useApp();
+  // Names the theme in use, e.g. "Toggle theme (Dark)", to match the icon.
+  const themeLabel = `${ui('Toggle theme')}${p.open}${ui(isDark ? 'Dark' : 'Light')}${p.close}`;
 
   const [filterOpen, setFilterOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -42,7 +46,10 @@ export function FeedHeader() {
     selectedSentiments.length + selectedCategories.length +
     (selectedSort !== 'latest' ? 1 : 0);
 
-  // An active chip takes its category's colour; the inactive ones show it as a dot.
+  // Styled like the Posts page's sort control: plain text in one soft track, and only the
+  // selected chip filled (its category's colour; "All" in the track's white highlight).
+  // When they all fit, chips grow to share the track's width instead of leaving a gap
+  // at the end; they never shrink below their label, so a narrow track still scrolls.
   const chip = (key: Category | 'all', label: string) => {
     const active = key === 'all' ? selectedCategories.length === 0 : selectedCategories.includes(key);
     return (
@@ -50,16 +57,17 @@ export function FeedHeader() {
         key={key}
         onClick={() => setSelectedCategory(key)}
         aria-current={active ? 'true' : undefined}
-        style={active ? { background: key === 'all' ? 'var(--brand)' : CATEGORY_ACCENT[key] } : undefined}
-        className={`shrink-0 inline-flex min-h-9 pointer-coarse:min-h-11 items-center gap-1.5 px-3.5 py-1.5 rounded-full border text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 ${
-          active
-            ? 'border-transparent font-semibold text-white'
-            : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:border-slate-800'
+        style={active && key !== 'all' ? { background: CATEGORY_ACCENT[key] } : undefined}
+        className={`shrink-0 grow inline-flex min-h-8 pointer-coarse:min-h-10 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-[13px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 ${
+          !active
+            // slate-600 on the slate-100 track is ~6.9:1 (slate-500 fell just short of 4.5:1). The hover
+            // is a grey tint, not white, so it never reads as a second selected chip.
+            ? 'text-slate-600 hover:bg-slate-200/70 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white'
+            : key === 'all'
+              ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white'
+              : 'text-white shadow-sm'
         }`}
       >
-        {key !== 'all' && (
-          !active && <span aria-hidden className="h-2 w-2 rounded-full" style={{ background: CATEGORY_ACCENT[key] }} />
-        )}
         {label}
       </button>
     );
@@ -69,8 +77,8 @@ export function FeedHeader() {
   // the tablet-only theme toggle can keep its `hidden md:inline-flex`.
   const iconBtn = `items-center justify-center p-2 pointer-coarse:min-h-11 pointer-coarse:min-w-11 rounded-full transition-colors text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800`;
 
-  const filterBtn = (anchorRef: RefObject<HTMLDivElement>, align: 'left' | 'right' = 'left') => (
-    <div ref={anchorRef} className="relative shrink-0">
+  const filterBtn = (anchorRef: RefObject<HTMLDivElement>, align: 'left' | 'right' = 'left', className = '') => (
+    <div ref={anchorRef} className={`relative shrink-0 ${className}`}>
       <button
         onClick={() => setFilterOpen((p) => !p)}
         aria-label={t.filter}
@@ -80,15 +88,8 @@ export function FeedHeader() {
             : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
         }`}
       >
+        {/* No count badge: the icon turns the brand colour while any filter is on. */}
         <SlidersHorizontal size={16} />
-        {filterActiveCount > 0 && (
-          <span
-            className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-white text-[11px] font-bold"
-            style={{ background: 'var(--brand, #2563eb)' }}
-          >
-            {filterActiveCount}
-          </span>
-        )}
       </button>
       <FilterSheet open={filterOpen} onClose={() => setFilterOpen(false)} anchorRef={anchorRef} align={align} />
     </div>
@@ -99,27 +100,34 @@ export function FeedHeader() {
       className="z-30 shrink-0 md:h-[88px]"
     >
       {/* Mobile: search bar row */}
-      <div className="md:hidden flex items-center gap-2 px-3 py-2.5">
-        <Link to="/" className="shrink-0" aria-label={ui("NewsAgg home")}>
+      {/* The logo and search start where TopBar's do on every other page (16px in, search at 64px); the right side keeps its own spacing. */}
+      <div className="md:hidden flex items-center gap-2 pl-4 pr-3 py-2.5">
+        {/* flex, like TopBar's link: an inline link leaves a descender gap under the mark, which sits it above the row's centre line. */}
+        <Link to="/" className="mr-1 flex shrink-0" aria-label={ui("NewsAgg home")}>
           <BrandLogo showWordmark={false} markClassName="w-9 h-9" />
         </Link>
         <div className="flex-1 min-w-0">
           <SearchBox />
         </div>
-        {filterBtn(mobileFilterRef)}
-        <button onClick={toggleTheme} aria-label={ui("Toggle theme")} className={`${iconBtn} inline-flex`}>
-          {isDark ? <Sun size={20} /> : <Moon size={20} />}
+        {/* The button's own padding already spaces the icon from the search box, so it
+            cancels the row gap; the 44px touch target is unchanged. */}
+        {filterBtn(mobileFilterRef, 'left', '-ml-2')}
+        {/* Same as the filter: both buttons' padding does the spacing, so the gap goes. */}
+        <button onClick={toggleTheme} aria-label={themeLabel} title={themeLabel} className={`${iconBtn} inline-flex -ml-2`}>
+          {/* The icon shows the theme in use, not the one a press switches to. */}
+          {isDark ? <Moon size={20} /> : <Sun size={20} />}
         </button>
       </div>
 
       {/* Desktop: chips, then filter and search side by side at the right edge */}
       <div className="hidden md:flex items-stretch h-full">
-        <div className="flex-1 min-w-0 flex items-center gap-2 px-3">
-          <Link to="/" className="shrink-0 lg:hidden" aria-label={ui("NewsAgg home")}>
+        <div className="flex-1 min-w-0 flex items-center gap-2 pl-4 pr-3">
+          <Link to="/" className="flex shrink-0 lg:hidden" aria-label={ui("NewsAgg home")}>
             <BrandLogo showWordmark={false} markClassName="w-9 h-9" />
           </Link>
           {/* Scrollable chips */}
-          <CategoryScrollFrame className="flex-1" previous={
+          {/* One track, as on the Posts page; the edge with more chips fades out rather than cutting a word. */}
+          <CategoryScrollFrame className="flex-1 rounded-xl border border-slate-200 bg-slate-100 p-1 dark:border-slate-700 dark:bg-slate-900" previous={
               <button
                 type="button"
                 onClick={() => scrollByPage(-1)}
@@ -149,8 +157,8 @@ export function FeedHeader() {
               data-testid="feed-categories"
               role="group"
               aria-label={ui('Categories')}
-              className="no-scrollbar flex min-w-0 flex-1 gap-2 overflow-x-auto overscroll-x-contain px-1 py-1"
-              style={{ scrollbarWidth: 'none' }}
+              className="no-scrollbar flex min-w-0 flex-1 gap-1 overflow-x-auto overscroll-x-contain"
+              style={{ scrollbarWidth: 'none', ...fadeMask(canScrollLeft, canScrollRight, 32, 'to right') }}
             >
               {chip('all', t.allCategories)}
               {CATEGORIES.map((c) => chip(c, ui(CATEGORY_LABELS[c])))}
@@ -187,10 +195,11 @@ export function FeedHeader() {
           </div>
           <button
             onClick={toggleTheme}
-            aria-label={ui("Toggle theme")}
+            aria-label={themeLabel} title={themeLabel}
             className={`${iconBtn} hidden shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 md:inline-flex lg:hidden`}
           >
-            {isDark ? <Sun size={20} /> : <Moon size={20} />}
+            {/* The icon shows the theme in use, not the one a press switches to. */}
+            {isDark ? <Moon size={20} /> : <Sun size={20} />}
           </button>
         </div>
       </div>

@@ -190,7 +190,7 @@ export function MethodologyPage() {
     <DocLayout
       icon={FlaskConical}
       title={t.methodologyTitle}
-      intro={<><p>{content.intro}</p><p className="mt-3"><Link className="font-semibold text-blue-600 hover:underline dark:text-blue-400" to="/insights?view=research">{ui('Explore full evaluation, macro F1, confusion matrices and test evidence →')}</Link></p></>}
+      intro={<><p>{content.intro}</p><p className="mt-3"><Link className="font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300" to="/insights?view=research">{ui('Explore full evaluation, macro F1, confusion matrices and test evidence →')}</Link></p></>}
       back={content.back}
     >
       {content.sections.map((section) => (

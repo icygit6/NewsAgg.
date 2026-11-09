@@ -5,9 +5,7 @@ import { ExternalLink, PlayCircle, ChevronDown, Info } from 'lucide-react';
 import type { NewsArticle } from '../../types/article';
 import { useApp } from '../../contexts/AppContext';
 import { panelBaseClass } from './helpers';
-import { ReportIssue } from './ReportIssue';
-import { button } from '../ui/styles';
-import { getArticleId } from '../../services/newsAPI';
+import { SourceLogo } from '../ui/SourceLogo';
 
 interface ArticleFooterProps {
   article: NewsArticle;
@@ -31,21 +29,28 @@ export function ArticleFooter({ article, isDark }: ArticleFooterProps) {
   const headingText = 'text-slate-900 dark:text-slate-100';
 
   return (
-    <div className={`rounded-2xl border p-5 ${panelBase}`}>
-      <p className={`text-sm mb-4 text-slate-700 dark:text-slate-300`}>{ui("Continue with the original coverage and any linked media from this source.")}</p>
-      <div className="flex flex-wrap gap-3">
-        <a href={article.url} target="_blank" rel="noopener noreferrer" className={button.primary}>
-          <ExternalLink size={16} />{ui("Read on")} {article.source.name}
-        </a>
-        {article.videoUrl && (
-          <a href={article.videoUrl} target="_blank" rel="noopener noreferrer" className={button.secondary}>
-            <PlayCircle size={16} />{ui("Watch video")} </a>
-        )}
-        <ReportIssue articleId={getArticleId(article)} isDark={isDark} />
+    <>
+    {/* The actions live in the bar under the title; the end of the story only
+        says where it came from and points to the full version. */}
+    <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-5 dark:border-slate-700/60">
+      <div className="flex min-w-0 items-center gap-2.5">
+        <SourceLogo source={article.source} isDark={isDark} className="h-8 w-8" />
+        <p className="min-w-0 text-sm text-slate-600 dark:text-slate-300">{ui('Story from')} <span className="font-semibold text-slate-900 dark:text-slate-100">{article.source.name}</span></p>
       </div>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        {article.videoUrl && (
+          <a href={article.videoUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">
+            <PlayCircle size={16} aria-hidden="true" />{ui('Watch video')}</a>
+        )}
+        <a href={article.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--brand)] hover:underline">
+          {ui('Read the full story on')} {article.source.name}<ExternalLink size={15} aria-hidden="true" />
+        </a>
+      </div>
+    </div>
 
+    <div className={`rounded-2xl border p-5 ${panelBase}`}>
       {/* Metric glossary + sentiment math (collapsible) */}
-      <div className={`mt-5 pt-5 border-t border-slate-200 dark:border-slate-700/50`}>
+      <div>
         <button
           onClick={() => setOpen((value) => !value)}
           aria-expanded={open}
@@ -80,7 +85,7 @@ export function ArticleFooter({ article, isDark }: ArticleFooterProps) {
                 <li>{t.negative}: polarity ≤ −0.10</li>
                 <li>{t.sentimentFallbackRule}</li>
               </ul>
-              <Link to="/methodology" className="mt-3 inline-block text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline">
+              <Link to="/methodology" className="mt-3 inline-block text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">
                 {t.methodologyTitle} →
               </Link>
             </div>
@@ -88,5 +93,6 @@ export function ArticleFooter({ article, isDark }: ArticleFooterProps) {
         )}
       </div>
     </div>
+    </>
   );
 }

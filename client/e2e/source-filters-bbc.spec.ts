@@ -1,24 +1,26 @@
 import { expect, test } from '@playwright/test';
 
-test('source options are alphabetical after All Sources and filter icons sit above labels', async ({ page }, info) => {
+test('source options are alphabetical after All Sources and filter tabs fit on one line', async ({ page }, info) => {
   for (const width of [390, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
     await page.getByRole('button', { name: 'Filter', exact: true }).filter({ visible: true }).first().click();
-    for (const label of ['By Category', 'By Source', 'By Sentiment', 'Sort']) {
-      const tab = page.getByRole('button', { name: label, exact: true });
+    // Short one-word tabs in one track (like Insights / Pulse): no icons, never wrapping.
+    for (const label of ['Category', 'Source', 'Sentiment', 'Sort']) {
+      const tab = page.getByRole('button', { name: label, exact: true }).filter({ visible: true });
       await expect(tab).toBeVisible();
-      const stacked = await tab.evaluate(el => {
-        const icon = el.querySelector('svg')!.getBoundingClientRect();
-        const text = el.querySelector('span')!.getBoundingClientRect();
-        return icon.bottom <= text.top && Math.abs(icon.x + icon.width / 2 - text.x - text.width / 2) < 1;
+      const shape = await tab.evaluate(el => {
+        const style = getComputedStyle(el);
+        const content = el.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
+        return { icon: el.querySelector('svg') !== null, lines: Math.round(el.scrollHeight > el.clientHeight ? 2 : content / parseFloat(style.lineHeight)) };
       });
-      expect(stacked, `${width}px ${label}: icon should be above its label`).toBe(true);
+      expect(shape.icon, `${width}px ${label}: no icon`).toBe(false);
+      expect(shape.lines, `${width}px ${label}: one line`).toBeLessThanOrEqual(1);
     }
-    const sourceTab = page.getByRole('button', { name: 'By Source', exact: true });
-    await sourceTab.click();
-    const names = await sourceTab.evaluate(el => [...el.parentElement!.nextElementSibling!.querySelectorAll('button')].map(button => button.textContent!.trim()));
-    expect(names).toEqual(['All Sources', 'Al Jazeera', 'BBC', 'CNN', 'Yahoo TW']);
+    await page.getByRole('button', { name: 'Source', exact: true }).filter({ visible: true }).click();
+    const all = page.getByRole('button', { name: 'All Sources' }).filter({ visible: true });
+    const names = await all.evaluate(el => [...el.parentElement!.querySelectorAll('button')].map(button => button.textContent!.trim()));
+    expect(names).toEqual(['All Sources', 'Al Jazeera', 'BBC', 'CNN', 'Yahoo Taiwan']);
     if (width === 1280) await page.screenshot({ path: `test-results/source-filter-${info.project.name}.png` });
   }
 });

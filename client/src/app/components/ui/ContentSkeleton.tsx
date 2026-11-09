@@ -138,7 +138,7 @@ export function FeedSkeleton({ count = 6, hero = false, label }: { count?: numbe
         {Array.from({ length: count }, (_, index) => (
           <div key={index} className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
             <SkeletonBlock className="aspect-[16/10] rounded-none" />
-            <div className="space-y-2 p-2.5 sm:p-3">
+            <div className="space-y-3 px-2.5 py-3.5 sm:px-3 sm:py-4">
               <div className="flex items-center gap-2">
                 <SkeletonBlock className="h-7 w-7 shrink-0 rounded-full sm:h-8 sm:w-8" />
                 <SkeletonBlock className="h-3 w-20 max-w-full" />
@@ -148,8 +148,8 @@ export function FeedSkeleton({ count = 6, hero = false, label }: { count?: numbe
                 <SkeletonBlock className="h-4 w-full sm:h-5" />
                 <SkeletonBlock className="h-4 w-2/3 sm:h-5" />
               </div>
-              {/* The news card's gap above its keywords (the bookmark card's action-row height). */}
-              <div className="h-9" />
+              {/* The rest of the news card's extra height (most of it is in the spacing). */}
+              <div className="h-2" />
               <div className="flex gap-2"><SkeletonBlock className="h-5 w-16" /><SkeletonBlock className="h-5 w-20" /></div>
               <div className="flex justify-between gap-2 border-t border-slate-100 pt-2 dark:border-slate-800">
                 <SkeletonBlock className="h-3 w-16" /><SkeletonBlock className="h-3 w-20" />

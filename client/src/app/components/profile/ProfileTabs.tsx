@@ -1,3 +1,4 @@
+import { segment } from '../ui/styles';
 import { ListSkeleton } from '../ui/ContentSkeleton';
 import { InfiniteScrollFooter } from '../ui/InfiniteScrollFooter';
 import { useState } from 'react';
@@ -36,7 +37,7 @@ export function ProfileTabs() {
   return (
     <div>
       <div
-        className={`mb-4 flex gap-6 border-b border-slate-200 dark:border-slate-800`}
+        className={`${segment.track} mb-4 flex w-full`}
         role="tablist"
       >
         {tabs.map(({ key, label }) => (
@@ -52,12 +53,7 @@ export function ProfileTabs() {
               if (event.key === 'ArrowLeft') { event.preventDefault(); moveTab(key, -1); }
               if (event.key === 'ArrowRight') { event.preventDefault(); moveTab(key, 1); }
             }}
-            className={`-mb-px border-b-2 px-1 pb-3 pt-1 text-sm font-semibold transition-colors ${
-              tab === key
-                ? 'text-slate-900 dark:text-slate-100'
-                : 'border-transparent text-slate-500 hover:text-slate-800 dark:border-transparent dark:text-slate-400 dark:hover:text-slate-200'
-            }`}
-            style={tab === key ? { borderColor: 'var(--brand)' } : undefined}
+            className={`flex-1 min-h-9 ${tab === key ? segment.active : segment.item}`}
           >
             {label}
           </button>

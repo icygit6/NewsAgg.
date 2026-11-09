@@ -24,21 +24,18 @@ for (const width of [1024, 1366]) {
   });
 }
 
-test('mouse wheel moves both category strips without arrows covering chips', async ({ page }) => {
+test('mouse wheel moves the category strip smoothly without shifting it', async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 768 });
 
-  for (const { path, stripId, nextLabel } of [
-    { path: '/', stripId: 'feed-categories', nextLabel: 'Next categories' },
-    { path: '/posts', stripId: 'post-categories', nextLabel: 'Scroll categories right' },
+  for (const { path, stripId } of [
+    { path: '/', stripId: 'feed-categories' },
   ]) {
     await page.goto(path);
     const strip = page.getByTestId(stripId);
     await expect(strip).toBeVisible();
-    const arrow = page.getByRole('button', { name: nextLabel });
-    await expect(arrow).toBeVisible();
+    // No arrows: the strip only needs more chips than fit.
+    await expect.poll(() => strip.evaluate(el => el.scrollWidth - el.clientWidth)).toBeGreaterThan(40);
     const stripBox = (await strip.boundingBox())!;
-    const arrowBox = (await arrow.boundingBox())!;
-    expect(arrowBox.x, `${path}: arrow must be outside the chip viewport`).toBeGreaterThanOrEqual(stripBox.x + stripBox.width);
 
     await page.mouse.move(stripBox.x + stripBox.width / 2, stripBox.y + stripBox.height / 2);
     await strip.evaluate(el => {
@@ -60,15 +57,14 @@ test('mouse wheel moves both category strips without arrows covering chips', asy
     await expect.poll(() => strip.evaluate(el => Math.abs(el.scrollLeft - Math.min(
       el.scrollWidth - el.clientWidth, (el as HTMLElement & { wheelDelta: number }).wheelDelta,
     )))).toBeLessThan(1);
-    const intermediate = await strip.evaluate(el => (el as HTMLElement & { wheelSamples: number[] }).wheelSamples.filter(position => position > 0 && position < 219));
+    // Count positions strictly between the start and where the scroll ends: mobile-emulated
+    // Chromium scales the step (~2.6x), so a fixed 219px ceiling saw its first frame jump past it.
+    const intermediate = await strip.evaluate(el => (el as HTMLElement & { wheelSamples: number[] }).wheelSamples.filter(position => position > 0 && position < el.scrollLeft - 0.5));
     expect(new Set(intermediate).size, `${path}: wheel movement must animate through intermediate positions`).toBeGreaterThan(3);
-    const left = page.getByRole('button', { name: path === '/' ? 'Previous categories' : 'Scroll categories left' });
-    await expect(left).toBeVisible();
-    const leftBox = (await left.boundingBox())!;
+    // Scrolling must not move or resize the strip (no arrow lanes opening up).
     const movedStripBox = (await strip.boundingBox())!;
     expect(movedStripBox.width).toBeCloseTo(stripBox.width, 0);
     expect(movedStripBox.x).toBeCloseTo(stripBox.x, 0);
-    expect(leftBox.x + leftBox.width, `${path}: left arrow must not cover a chip`).toBeLessThanOrEqual(movedStripBox.x);
 
     // A rapid burst must accumulate rather than restarting smooth scrolling.
     await strip.evaluate(el => el.scrollTo({ left: 0, behavior: 'instant' }));
@@ -105,7 +101,7 @@ test('category wheel scrolling respects reduced motion', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
   const strip = page.getByTestId('feed-categories');
-  await expect(page.getByRole('button', { name: 'Next categories' })).toBeEnabled();
+  await expect.poll(() => strip.evaluate(el => el.scrollWidth - el.clientWidth)).toBeGreaterThan(160);
   const position = await strip.evaluate(el => {
     el.dispatchEvent(new WheelEvent('wheel', { deltaY: 160, bubbles: true, cancelable: true }));
     return el.scrollLeft;
@@ -119,7 +115,7 @@ test('category touch swipes scroll sideways without selecting a chip', async ({ 
   await page.goto('/');
   const strip = page.getByTestId('feed-categories');
   await expect(strip).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Next categories' })).toBeEnabled();
+  await expect.poll(() => strip.evaluate(el => el.scrollWidth - el.clientWidth)).toBeGreaterThan(40);
   const selected = await strip.locator('[aria-current="true"]').innerText();
   const box = (await strip.boundingBox())!;
   const cdp = await page.context().newCDPSession(page);

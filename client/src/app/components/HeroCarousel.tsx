@@ -217,16 +217,18 @@ export function HeroCarousel() {
         <ChevronRight size={16} />
       </button>
 
-      {/* Dots indicator — each button gets a 24px tap target (p-2.5) around a small
-          visible dot, plus an accessible name for screen readers. */}
-      <div className="absolute bottom-1 right-2 flex items-center z-10">
+      {/* Dots indicator — each button gets a 24px+ tap target around a small visible dot, plus an
+          accessible name for screen readers. Ten slides at 40px each overflowed a phone-width card
+          and clipped the first dot off the left edge, so the buttons are narrower below md. */}
+      <div className="absolute bottom-1 right-2 flex items-center z-10 max-md:left-2">
         {headlines.map((_, i) => (
           <button
             key={i}
             onClick={() => setCurrent(i)}
             aria-label={`${t.goToSlide} ${i + 1}`}
             aria-current={i === idx ? 'true' : undefined}
-            className="p-2.5 flex items-center"
+            // Below md the dots share the card's whole width in equal slots; from md up they stay a compact group at the right.
+            className="flex items-center px-1 py-2.5 max-md:flex-1 max-md:justify-center md:p-2.5"
           >
             <span
               className={`block h-1.5 w-5 origin-center rounded-full motion-safe:transition-[transform,background-color] motion-safe:duration-200 motion-safe:ease-out ${i === idx ? 'scale-x-100 bg-blue-400' : 'scale-x-[0.3] bg-white/40 hover:bg-white/70'}`}

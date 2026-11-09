@@ -446,7 +446,12 @@
 
 /* B3: reading typography: display headline, ~68 characters a line, a touch larger and looser. */
 .article-title { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.015em; text-wrap: balance; font-size: clamp(1.9rem, 1.4rem + 1.6vw, 2.6rem); }
-.article-body { max-width: 68ch; font-size: 1.0625rem !important; line-height: 1.85 !important; }
+/* The summary, body, end-of-story line and quotes share one measure (about 68
+   characters of body text), so the column never changes width while reading. */
+.article-measure { max-width: 45rem; }
+/* Desktop article pages use the full reading column, so no dead strip sits before the sidebar. */
+@media (min-width: 1024px) { .article-measure { max-width: none; } }
+.article-body { font-size: 1.0625rem !important; line-height: 1.85 !important; }
 .article-body p { text-wrap: pretty; }
 
 /* B4 / C3: bars grow from their start once, transform only. */

@@ -50,7 +50,7 @@ export function SourcesPage({ embedded = false }: { embedded?: boolean }) {
                 return <li key={i} className="min-w-0 border-b border-slate-100 dark:border-slate-800">
                   <a href={url} target="_blank" rel="noopener noreferrer" className="group flex min-w-0 items-start gap-2 rounded-md px-1 py-2 text-sm transition-colors hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)] dark:hover:bg-slate-800">
                     <span className="min-w-0 flex-1">
-                      <span className="block break-all font-medium text-[var(--brand)] group-hover:underline">{url}</span>
+                      <span className="block break-all font-medium text-[var(--brand)] group-hover:text-[var(--brand-hover)]">{url}</span>
                       <span className="mt-0.5 block text-xs leading-5 text-slate-600 dark:text-slate-400">{entry.categories.map(value => zh ? zhCategories[value] ?? value : value).join(' · ')}</span>
                     </span>
                     <ExternalLink size={14} className="mt-1 shrink-0 text-slate-400" aria-hidden="true" />
@@ -63,7 +63,7 @@ export function SourcesPage({ embedded = false }: { embedded?: boolean }) {
       </details>;
     })}
   </div>;
-  if (!embedded) return <DocLayout icon={Rss} title={title} intro={intro} back={ui('Back to home')}>{content}</DocLayout>;
+  if (!embedded) return <DocLayout wide icon={Rss} title={title} intro={intro} back={ui('Back to home')}>{content}</DocLayout>;
   return <section id="collection-sources" className="min-w-0 scroll-mt-6 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
     <h2 className="text-lg font-bold">{title}</h2>
     <p className="mb-5 mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{intro}</p>

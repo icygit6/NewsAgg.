@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router';
 import { Search, SlidersHorizontal, X } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { useBookmarkMeta } from '../../hooks/useBookmarks';
-import { useCollectionLabel } from './collections';
+import { collectionChoices, useCollectionLabel } from './collections';
 import { ManageCollectionsMenu } from './ManageCollections';
 import { useUiText } from '../../i18n/uiText';
 import { StyledSelect } from '../ui/StyledSelect';
@@ -31,7 +31,8 @@ export function BookmarkCollection() {
   const filterAnchor = useRef<HTMLDivElement>(null);
   const meta = useBookmarkMeta(Boolean(user));
   const collectionLabel = useCollectionLabel();
-  const collections = (meta.data?.collections ?? []).filter(Boolean);
+  // Every collection the reader has, empty ones included, not only those with bookmarks in them.
+  const collections = collectionChoices(meta.data);
 
   const control: FilterControl = {
     categories, setCategories, sources, setSources, sentiments, setSentiments, sort, setSort,
@@ -44,32 +45,33 @@ export function BookmarkCollection() {
 
   return (
     <div>
-      <p className="opacity-70 mb-5">{meta.data?.total ?? '…'} {ui('saved articles')}</p>
-      {/* Status and collection on the left; manage, filter and search as the
-          home header's round icon buttons on the right. On a phone the two
-          selects take the first line and the icons wrap below, right-aligned. */}
+      {/* Phone: the count and the manage, filter and search icons share the first
+          line (the icons would otherwise sit alone on a half-empty row) and the
+          selects take the second. From md up the count has its own line and the
+          selects stretch across one row with the icons at its end. The icon
+          group is where the dropdowns line up, on the page margin. */}
       <div className="mb-5 flex flex-wrap items-center gap-2">
-        <div className="grid min-w-[16rem] flex-1 grid-cols-2 gap-2">
-          <StyledSelect label={ui('Filter by status')} value={status} onChange={setStatus} isDark={isDark} options={(['', 'unread', 'read', 'archived'] as const).map((value, i) => {
-            const count = meta.data && (value ? meta.data[value] : meta.data.unread + meta.data.read);
-            return { value, label: `${ui(['All active', 'Unread', 'Read', 'Archived'][i])}${count === undefined ? '' : ` (${count})`}` };
-          })} />
-          <StyledSelect label={ui('Filter by collection')} value={collection} onChange={setCollection} isDark={isDark} options={[{ value: '', label: ui('All collections') }, ...collections.map((value: string) => ({ value, label: collectionLabel(value) }))]} />
-        </div>
-        {/* Dropdowns line up with this group's right edge, on the page margin, so they stay on screen. */}
-        <div className="relative ml-auto flex shrink-0 items-center gap-1">
+        <p className="order-1 flex-1 opacity-70 md:basis-full">{meta.data?.total ?? '…'} {ui('saved articles')}</p>
+        <div className="relative order-2 flex shrink-0 items-center gap-1 md:order-4">
           <ManageCollectionsMenu meta={meta.data} isDark={isDark} buttonClassName={open => iconButton(open)}
             onRenamed={(from, to) => { if (collection === from) setCollection(to); }}
             onDeleted={name => { if (collection === name) setCollection(''); }} />
           <div ref={filterAnchor} className="shrink-0">
             <button onClick={() => setFilterOpen(open => !open)} aria-expanded={filterOpen} aria-label={ui('Filter bookmarks')} title={ui('Filter bookmarks')}
               className={`flex items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors pointer-coarse:min-h-11 pointer-coarse:min-w-11 ${active > 0 || filterOpen ? 'text-[var(--brand,#2563eb)]' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'}`}>
+              {/* No count badge: the icon turns the brand colour while any filter is on. */}
               <SlidersHorizontal size={16} aria-hidden="true" />
-              {active > 0 && <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold text-white" style={{ background: 'var(--brand, #2563eb)' }}>{active}</span>}
             </button>
             <FilterSheet open={filterOpen} onClose={() => setFilterOpen(false)} anchorRef={filterAnchor} control={control} align="right" />
           </div>
           <BookmarkSearch value={search} onChange={setSearch} isDark={isDark} buttonClassName={iconButton} />
+        </div>
+        <div className="order-3 grid basis-full grid-cols-2 gap-2 md:min-w-0 md:flex-1 md:basis-0">
+          <StyledSelect label={ui('Filter by status')} value={status} onChange={setStatus} isDark={isDark} menu="panel" options={(['', 'unread', 'read', 'archived'] as const).map((value, i) => {
+            const count = meta.data && (value ? meta.data[value] : meta.data.unread + meta.data.read);
+            return { value, label: `${ui(['All active', 'Unread', 'Read', 'Archived'][i])}${count === undefined ? '' : ` (${count})`}` };
+          })} />
+          <StyledSelect label={ui('Filter by collection')} value={collection} onChange={setCollection} isDark={isDark} menu="panel" options={[{ value: '', label: ui('All collections') }, ...collections.map((value: string) => ({ value, label: collectionLabel(value) }))]} />
         </div>
       </div>
       <BookmarkList filters={{ search, status, collection, sort, sources: sources.join(','), categories: categories.join(','), sentiments: sentiments.join(',') }} />

@@ -12,6 +12,7 @@ import {
   forgotPasswordSchema,
   resetPasswordSchema,
   verifyEmailSchema,
+  toUsername,
 } from '../middleware/validate'
 import {
   hashToken,
@@ -337,8 +338,10 @@ authRouter.post('/google', requireConfiguredCaptcha, validateBody(googleAuthSche
       // First Google sign-in: create the account on the spot, passwordless.
       // Google already verified the email, so email_verified starts true.
       const localPart = email.split('@')[0]
-      let base = (username || localPart).trim().slice(0, 24)
-      if (base.length < 3) base = `${base}${localPart}user`.slice(0, 24)
+      // A Google display name may hold anything ("Dr. O'Brien", emoji); keep
+      // only what a username allows, and fall back to the email's local part.
+      let base = (toUsername(username || '') || toUsername(localPart)).slice(0, 24).trim()
+      if (base.length < 3) base = toUsername(`${base}${localPart}user`).slice(0, 24)
 
       for (let attempt = 0; attempt < 4; attempt++) {
         const candidate =

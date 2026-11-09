@@ -13,7 +13,7 @@ export function LoadError({ message, onRetry, className = '' }: { message: strin
   return (
     <p role="alert" className={`text-sm ${errorText} ${className}`}>
       {message}
-      {onRetry && <>{' '}<button type="button" onClick={onRetry} className="font-semibold hover:underline">{ui('Try again')}</button></>}
+      {onRetry && <>{' '}<button type="button" onClick={onRetry} className="font-semibold hover:opacity-80">{ui('Try again')}</button></>}
     </p>
   );
 }

@@ -6,9 +6,10 @@ import { useApp } from '../../contexts/AppContext';
 import { POSTS_ENABLED } from '../../constants';
 import { useInterfaceLanguage } from '../../hooks/useInterfaceLanguage';
 import { TranslateNewsToggle } from '../ui/TranslateNewsToggle';
+import { SegmentedControl } from '../ui/SegmentedControl';
 import { BrandLogo } from '../ui/BrandLogo';
 import { ThemePicker } from '../ui/ThemePicker';
-import { adminAttentionCount, useAdminOverview, useIsAdmin } from '../../hooks/useAdmin';
+import { adminAttentionCount, useAdminAttention, useIsAdmin } from '../../hooks/useAdmin';
 
 interface NavItem {
   to: string;
@@ -57,8 +58,8 @@ export function NavRail() {
   }, [themeMenu]);
   const currentLang = reading.current.short;
   const admin = useIsAdmin();
-  const adminOverview = useAdminOverview();
-  const openReports = adminAttentionCount(adminOverview.data);
+  const adminAttention = useAdminAttention();
+  const openReports = adminAttentionCount(adminAttention.data);
 
   const items: NavItem[] = [
     { to: '/', icon: Home, label: t.home },
@@ -152,26 +153,15 @@ export function NavRail() {
               className={`fixed z-50 w-72 rounded-xl border p-1 shadow-lg bg-white border-slate-200 dark:bg-slate-900 dark:border-slate-700`}
               style={{ left: langMenu.left, bottom: langMenu.bottom }}
             >
-              {reading.options.map(({ code, short, label }) => (
-                <button
-                  key={code}
-                  title={label}
-                  onClick={() => {
-                    reading.choose(code);
-                    setLangMenu(null);
-                  }}
-                  className={`w-full text-left px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    reading.choice === code
-                      ? 'text-white'
-                      : 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800'
-                  }`}
-                  style={
-                    reading.choice === code ? { background: 'var(--brand)' } : undefined
-                  }
-                >
-                  {short}
-                </button>
-              ))}
+              {/* Side by side in one track, like the Insights / Pulse switch (and the drawer's language control). */}
+              <div className="p-1">
+                <SegmentedControl
+                  label={t.language}
+                  value={reading.choice}
+                  onChange={(code) => { reading.choose(code); setLangMenu(null); }}
+                  options={reading.options.map(({ code, label }) => ({ value: code, title: label, label: <span className="truncate">{label}</span> }))}
+                />
+              </div>
               <div className={`my-1 border-t border-slate-200 dark:border-slate-700`} />
               <TranslateNewsToggle isDark={isDark} compact />
             </div>

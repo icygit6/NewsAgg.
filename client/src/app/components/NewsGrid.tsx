@@ -5,7 +5,6 @@ import { useArticles, useRankedHeadlines } from '../hooks/useArticles';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { NewsCard } from './NewsCard';
 import { HeroCarousel } from './HeroCarousel';
-import { CATEGORY_LABELS } from '../constants';
 import { FeedSkeleton } from './ui/ContentSkeleton';
 import { InfiniteScrollFooter } from './ui/InfiniteScrollFooter';
 import { LeadStoryCard } from './LeadStoryCard';
@@ -75,21 +74,13 @@ export function NewsGrid() {
   // Preserve server page boundaries when inserting category headline groups.
   const lead = !debouncedQuery ? displayArticles[0] : undefined;
   const rest = lead ? displayArticles.slice(1) : displayArticles;
+  // Stories already in the feed, so the More in boxes top up with other ones.
+  const loadedIds = new Set(displayArticles.map((article) => article.id));
   const pageOf = new Map<string, number>();
   data?.pages.forEach((page, index) => page.articles.forEach((article) => { if (!pageOf.has(article.id)) pageOf.set(article.id, index); }));
 
   return (
     <div className="w-full min-w-0">
-      {selectedCategory !== 'all' && (
-        <header className="flex items-end justify-between gap-4 py-5">
-          <h1 className="text-3xl font-extrabold tracking-tight">
-            {ui(CATEGORY_LABELS[selectedCategory])}
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            {(data?.pages[0]?.totalCount ?? articles.length).toLocaleString()} {ui("articles")} </p>
-        </header>
-      )}
-
       {/* Hero Carousel — hidden while searching (raw query so it reacts on the
           first keystroke). Its data follows the active category filter. */}
       {showHero && (
@@ -106,7 +97,7 @@ export function NewsGrid() {
         {withCategoryRunsByPage(rest, pageOf).map((item) =>
           item.kind === 'card'
             ? <NewsCard key={item.article.id || item.article.url} article={item.article} />
-            : <MoreInCategory key={`more-${item.articles[0].id}`} articles={item.articles} />)}
+            : <MoreInCategory key={`more-${item.articles[0].id}`} articles={item.articles} exclude={loadedIds} />)}
       </div>
       </div>
 

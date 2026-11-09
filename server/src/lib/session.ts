@@ -3,6 +3,7 @@ import type { Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
 import { JWT_SECRET } from '../config'
 import { query } from '../db/client'
+import { clientIp } from './clientIp'
 
 export const SESSION_COOKIE = 'newsagg_session'
 export const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000
@@ -38,8 +39,8 @@ export function clearSessionCookie(req: Request, res: Response) {
 export async function createSession(userId: number | string, req: Request) {
   const sessionId = randomBytes(32).toString('hex')
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS)
-  const forwardedFor = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim()
-  const ip = forwardedFor || req.ip || null
+  // The visitor's address, not the Cloudflare Worker's (see lib/clientIp).
+  const ip = clientIp(req)
   const userAgent = String(req.headers['user-agent'] || '').slice(0, 512) || null
   await query(
     `DELETE FROM account_sessions

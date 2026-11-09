@@ -1,5 +1,7 @@
+import { segment } from '../ui/styles';
 import { RailSkeleton } from '../ui/ContentSkeleton';
 import { lazy, Suspense, useState } from 'react';
+import { useLocation } from 'react-router';
 import { useApp } from '../../contexts/AppContext';
 import { FooterCompact } from './Footer';
 import { useScrollFade, fadeMask } from '../../hooks/useScrollFade';
@@ -13,7 +15,11 @@ type RailTab = 'pulse' | 'insights';
 
 export function RightRail() {
   const { t, selectedCategory } = useApp();
-  const [tab, setTab] = useState<RailTab>('insights');
+  const [selectedTab, setTab] = useState<RailTab>('insights');
+  // Pulse is a digest of posts, so beside the Posts feed it only repeats the
+  // page. Show Insights alone there.
+  const onPostsPage = useLocation().pathname.startsWith('/posts');
+  const tab: RailTab = onPostsPage ? 'insights' : selectedTab;
   const scrollFade = useScrollFade<HTMLDivElement>();
 
   const tabButton = (key: RailTab, label: string) => (
@@ -25,12 +31,7 @@ export function RightRail() {
       aria-selected={tab === key}
       aria-controls="rail-panel"
       onClick={() => setTab(key)}
-      className={`flex-1 py-2 text-sm font-semibold rounded-full transition-colors ${
-        tab === key
-          ? 'text-white'
-          : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
-      }`}
-      style={tab === key ? { background: 'var(--brand)' } : undefined}
+      className={`flex-1 min-h-9 ${tab === key ? segment.active : segment.item}`}
     >
       {label}
     </button>
@@ -44,21 +45,25 @@ export function RightRail() {
       <div
         className="shrink-0 h-[88px] px-4 flex items-center"
       >
-        <div
-          className={`flex gap-1 rounded-full border p-1 w-full bg-white border-slate-200 dark:bg-slate-900 dark:border-slate-800`}
-          role="tablist"
-          aria-label={`${t.insights} / ${t.pulse}`}
-        >
-          {tabButton('insights', t.insights)}
-          {tabButton('pulse', t.pulse)}
-        </div>
+        {onPostsPage ? (
+          <h2 id="rail-tab-insights" className="font-poppins text-lg font-bold text-slate-900 dark:text-slate-100">{t.insights}</h2>
+        ) : (
+          <div
+            className={`${segment.track} flex w-full`}
+            role="tablist"
+            aria-label={`${t.insights} / ${t.pulse}`}
+          >
+            {tabButton('insights', t.insights)}
+            {tabButton('pulse', t.pulse)}
+          </div>
+        )}
       </div>
 
       {/* Scrollable content — independent scroll container */}
       <div
         id="rail-panel"
         ref={scrollFade.ref}
-        role="tabpanel"
+        role={onPostsPage ? 'region' : 'tabpanel'}
         aria-labelledby={`rail-tab-${tab}`}
         className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain px-4 pb-6"
         style={{ scrollbarWidth: 'none', ...fadeMask(scrollFade.above, scrollFade.below, 20) }}
@@ -66,7 +71,7 @@ export function RightRail() {
         <Suspense fallback={<RailSkeleton dual={selectedCategory === 'all'} />}>
           {tab === 'pulse' ? <PulseRail /> : <InsightsRail />}
         </Suspense>
-        <div className="mt-6 pt-4">
+        <div className="mt-6">
           <FooterCompact />
         </div>
       </div>

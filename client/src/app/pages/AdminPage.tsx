@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
-import { Bug, Check, Database, Eye, ExternalLink, EyeOff, Flag, Lightbulb, MessageSquare, RotateCcw, ShieldCheck, Trash2, Users, X } from 'lucide-react';
+import { Bug, Check, Database, Eye, ExternalLink, EyeOff, Flag, LayoutDashboard, Lightbulb, MessageSquare, RotateCcw, ShieldCheck, Trash2, Users, X, type LucideIcon } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { useUiText, useUiLocale } from '../i18n/uiText';
 import { errorBox, LoadError } from '../components/ui/ErrorNote';
@@ -9,7 +9,7 @@ import {
   type AdminFeedback, type AdminUser, type ArticleReport, type PostReport,
 } from '../hooks/useAdmin';
 import { LoadingIndicator } from '../components/ui/ContentSkeleton';
-import { emptyNote } from '../components/ui/styles';
+import { emptyNote, segment } from '../components/ui/styles';
 
 type Tab = 'overview' | 'reports' | 'feedback' | 'users' | 'deleted';
 
@@ -34,7 +34,7 @@ function ActionButton({ onClick, disabled, tone = 'neutral', children }: { onCli
     danger: 'border-red-500/40 text-red-600 hover:bg-red-500/10',
     good: 'border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10',
   };
-  return <button type="button" onClick={onClick} disabled={disabled} className={`inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 ${tones[tone]}`}>{children}</button>;
+  return <button type="button" onClick={onClick} disabled={disabled} className={`inline-flex min-h-8 items-center justify-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 ${tones[tone]}`}>{children}</button>;
 }
 
 export function AdminPage() {
@@ -57,6 +57,23 @@ export function AdminPage() {
   const card = `rounded-2xl border p-5 bg-white border-slate-200 dark:bg-slate-900/70 dark:border-slate-800`;
   const when = (value: string | null) => (value ? new Date(value).toLocaleString(locale, { dateStyle: 'medium', timeStyle: 'short' }) : '—');
   const fail = (reason: unknown) => setError(reason instanceof Error ? reason.message : String(reason));
+  const userAccount = (account: AdminUser) => <>
+    <Link to={`/profile/${encodeURIComponent(account.username)}`} className="font-semibold hover:text-blue-600 dark:hover:text-blue-400">{account.display_name || account.username}</Link>
+    <div className="text-xs opacity-60">@{account.username}{account.role === 'admin' && <span className="ml-1 rounded-full bg-blue-600 px-2 py-0.5 text-xs font-medium text-white">Admin</span>}</div>
+  </>;
+  const signInMethod = (account: AdminUser) => `${account.google_account ? 'Google' : ui('Password')}${account.email_verified ? '' : ` · ${ui('unverified')}`}`;
+  const userActions = (account: AdminUser) => {
+    const isAdminAccount = account.role === 'admin';
+    return <>
+      {permissions.data?.canManageRoles && !account.can_manage_roles && <ActionButton disabled={actions.role.isPending} onClick={() => actions.role.mutate({ id: account.id, role: isAdminAccount ? 'user' : 'admin' }, { onError: fail })}>{ui(isAdminAccount ? 'Remove admin' : 'Make admin')}</ActionButton>}
+      {!isAdminAccount && (confirmUser === account.id ? <>
+        <ActionButton tone="danger" disabled={actions.deleteUser.isPending} onClick={() => actions.deleteUser.mutate(account.id, { onSuccess: () => setConfirmUser(null), onError: fail })}>{ui('Delete permanently')}</ActionButton>
+        <ActionButton onClick={() => setConfirmUser(null)}>{ui('Cancel')}</ActionButton>
+      </> : (
+        <ActionButton tone="danger" onClick={() => setConfirmUser(account.id)}><Trash2 size={14} />{ui('Delete user')}</ActionButton>
+      ))}
+    </>;
+  };
 
   if (!user) {
     return <div className="text-center py-24"><ShieldCheck className="mx-auto mb-4" /><h1 className="text-2xl font-bold">{ui('Sign in as an admin')}</h1><button onClick={() => setSidebarOpen(true)} className="mt-4 px-6 py-3 rounded-xl bg-[var(--brand)] text-white">{ui('Sign in')}</button></div>;
@@ -66,12 +83,12 @@ export function AdminPage() {
   }
 
   const openReports = (overview.data?.open_article_reports ?? 0) + (overview.data?.open_post_reports ?? 0);
-  const tabs: Array<{ id: Tab; label: string; badge?: number }> = [
-    { id: 'overview', label: ui('Overview') },
-    { id: 'reports', label: ui('Reports'), badge: openReports },
-    { id: 'feedback', label: ui('Feedback'), badge: overview.data?.open_feedback ?? 0 },
-    { id: 'users', label: ui('Users') },
-    { id: 'deleted', label: ui('Deleted content') },
+  const tabs: Array<{ id: Tab; label: string; short?: string; icon: LucideIcon; badge?: number }> = [
+    { id: 'overview', label: ui('Overview'), icon: LayoutDashboard },
+    { id: 'reports', label: ui('Reports'), icon: Flag, badge: openReports },
+    { id: 'feedback', label: ui('Feedback'), icon: MessageSquare, badge: overview.data?.open_feedback ?? 0 },
+    { id: 'users', label: ui('Users'), icon: Users },
+    { id: 'deleted', label: ui('Deleted content'), short: ui('Deleted'), icon: Trash2 },
   ];
 
   return (
@@ -84,13 +101,19 @@ export function AdminPage() {
         </div>
       </header>
 
-      <div role="tablist" className={`flex gap-1 overflow-x-auto no-scrollbar rounded-2xl border p-1 border-slate-200 dark:border-slate-800`}>
-        {tabs.map(({ id, label, badge }) => (
+      {/* Like the Settings sections: phones get five equal columns, icon over a short label;
+          wider screens put the icon beside the full label. */}
+      <div role="tablist" className={`${segment.track.replace('inline-flex', 'grid grid-cols-5')} w-full max-sm:gap-0.5`}>
+        {tabs.map(({ id, label, short, icon: Icon, badge }) => (
           <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)}
-            className={`flex-1 shrink-0 whitespace-nowrap inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${tab === id ? 'text-white' : 'opacity-70 hover:opacity-100'}`}
-            style={tab === id ? { background: 'var(--brand, #2563eb)' } : undefined}>
-            {label}
-            {badge ? <span className="rounded-full bg-red-500 px-1.5 text-[11px] leading-5 text-white">{badge}</span> : null}
+            className={`relative min-w-0 whitespace-nowrap flex min-h-12 flex-col items-center justify-center gap-0.5 sm:min-h-9 sm:flex-row sm:gap-2 ${(tab === id ? segment.active : segment.item).replace('px-3', 'px-1 sm:px-3').replace('text-[13px]', 'text-[11px] sm:text-[13px]')}`}>
+            <Icon size={16} className="shrink-0" aria-hidden />
+            {short ? <><span className="max-w-full truncate sm:hidden">{short}</span><span className="hidden sm:inline">{label}</span></> : <span className="max-w-full truncate">{label}</span>}
+            {badge ? <>
+              <span className="hidden rounded-full bg-red-500 px-1.5 text-[11px] leading-5 text-white sm:inline">{badge}</span>
+              <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500 sm:hidden" aria-hidden />
+              <span className="sr-only sm:hidden">{badge}</span>
+            </> : null}
           </button>
         ))}
       </div>
@@ -124,14 +147,15 @@ export function AdminPage() {
             </div>
             <p className="text-sm opacity-70 mb-3">{ui('Read-only. The users, auth_tokens and account_sessions tables hold password hashes and sign-in tokens, so opening them shows “permission denied”. Browse accounts in the users_overview view instead.')}</p>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead><tr className="text-left opacity-60"><th className="py-2 pr-4">{ui('Table')}</th><th className="py-2 pr-4 text-right">{ui('Rows (approx.)')}</th><th className="py-2 text-right">{ui('Size')}</th></tr></thead>
+              {/* Below md the number columns get fixed widths and long table names wrap, so the table fits the card instead of scrolling sideways. */}
+              <table className="w-full text-sm max-md:table-fixed">
+                <thead><tr className="text-left opacity-60"><th className="py-2 pr-4 max-md:pr-2">{ui('Table')}</th><th className="py-2 pr-4 text-right max-md:w-20 max-md:pr-2">{ui('Rows (approx.)')}</th><th className="py-2 text-right max-md:w-[4.5rem]">{ui('Size')}</th></tr></thead>
                 <tbody>
                   {overview.data?.tables.map((table) => (
                     <tr key={table.name} className={`border-t border-slate-100 dark:border-slate-800`}>
-                      <td className="py-1.5 pr-4 font-mono">{table.name}</td>
-                      <td className="py-1.5 pr-4 text-right tabular-nums">{table.estimated_rows.toLocaleString(locale)}</td>
-                      <td className="py-1.5 text-right tabular-nums">{formatBytes(table.bytes)}</td>
+                      <td className="py-1.5 pr-4 font-mono max-md:break-all max-md:pr-2 max-md:text-xs">{table.name}</td>
+                      <td className="py-1.5 pr-4 text-right tabular-nums max-md:whitespace-nowrap max-md:pr-2">{table.estimated_rows.toLocaleString(locale)}</td>
+                      <td className="py-1.5 text-right tabular-nums max-md:whitespace-nowrap">{formatBytes(table.bytes)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -184,7 +208,7 @@ export function AdminPage() {
                     {report.post_deleted && <span className="rounded-full bg-red-500/10 px-2 py-0.5 font-semibold text-red-600">{ui('Post hidden')}</span>}
                     <span className="opacity-60">{when(report.created_at)} · {ui('reported by')} @{report.reporter_username}</span>
                   </div>
-                  <p className="mt-2 text-sm"><Link to={`/profile/${report.author_username}`} className="font-semibold hover:text-blue-600 dark:hover:text-blue-400">@{report.author_username}</Link></p>
+                  <p className="mt-2 text-sm"><Link to={`/profile/${encodeURIComponent(report.author_username)}`} className="font-semibold hover:text-blue-600 dark:hover:text-blue-400">@{report.author_username}</Link></p>
                   <p className="mt-1 text-sm whitespace-pre-wrap break-words opacity-80">{report.content}</p>
                   {report.details && <p className="mt-1 text-xs opacity-60">{ui('Details')}: {report.details}</p>}
                   <div className="mt-3 flex flex-wrap gap-2">
@@ -228,8 +252,8 @@ export function AdminPage() {
                   <div className="mt-2 flex flex-col gap-0.5 text-xs opacity-70">
                     <span className="break-words">
                       {ui('From')}: {item.username
-                        ? <><Link to={`/profile/${item.username}`} className="font-semibold hover:text-blue-600 dark:hover:text-blue-400">@{item.username}</Link>{item.account_email && <> · <a href={`mailto:${item.account_email}`} className="hover:underline break-all">{item.account_email}</a></>}</>
-                        : <>{ui('Guest')}{item.contact_email && <> · <a href={`mailto:${item.contact_email}`} className="hover:underline break-all">{item.contact_email}</a></>}</>}
+                        ? <><Link to={`/profile/${encodeURIComponent(item.username)}`} className="font-semibold hover:text-blue-600 dark:hover:text-blue-400">@{item.username}</Link>{item.account_email && <> · <a href={`mailto:${item.account_email}`} className="break-all hover:text-blue-600 dark:hover:text-blue-400">{item.account_email}</a></>}</>
+                        : <>{ui('Guest')}{item.contact_email && <> · <a href={`mailto:${item.contact_email}`} className="break-all hover:text-blue-600 dark:hover:text-blue-400">{item.contact_email}</a></>}</>}
                     </span>
                     {item.page && <span className="break-all">{ui('Page')}: <Link to={item.page} className="font-mono hover:text-blue-600 dark:hover:text-blue-400">{item.page}</Link></span>}
                     {item.user_agent && <span className="truncate" title={item.user_agent}>{ui('Device')}: {item.user_agent}</span>}
@@ -251,11 +275,20 @@ export function AdminPage() {
         {deleted.isLoading && <LoadingIndicator label={ui('Loading…')} />}
         {deleted.isError && <LoadError message={ui('Could not load deleted content.')} />}
         {deleted.data?.length === 0 && <p className={emptyNote}>{ui('No deleted content.')}</p>}
-        <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="text-left"><th>{ui('Type')}</th><th>{ui('Post')}</th><th>{ui('Message')}</th><th>{ui('Deleted by')}</th><th>{ui('Date')}</th></tr></thead><tbody>
-          {deleted.data?.map(item => <tr key={item.id} className="border-t border-slate-400/20 align-top">
-            <td className="p-3">{item.kind} #{item.target_id}</td><td className="p-3">#{item.post_id}</td>
-            <td className="p-3 min-w-64 max-w-xl whitespace-pre-wrap break-words"><span className="block text-xs opacity-60">@{item.author_username || '—'}</span>{item.content}</td>
-            <td className="p-3">{item.deleted_by_username || '—'}</td><td className="p-3">{when(item.deleted_at)}</td>
+        {/* Phones get one card per item; the table needs about 700px for its five columns. */}
+        <ul className="space-y-3 md:hidden">
+          {deleted.data?.map(item => <li key={item.id} className="rounded-xl border border-slate-200 p-4 text-sm dark:border-slate-800">
+            <p className="text-xs opacity-60">{item.kind} #{item.target_id} · {ui('Post')} #{item.post_id}</p>
+            <p className="mt-2 text-xs opacity-60">@{item.author_username || '—'}</p>
+            <p className="whitespace-pre-wrap break-words">{item.content}</p>
+            <p className="mt-2 text-xs opacity-60">{ui('Deleted by')} {item.deleted_by_username || '—'} · {when(item.deleted_at)}</p>
+          </li>)}
+        </ul>
+        <div className="hidden overflow-x-auto md:block"><table className="w-full text-sm"><thead><tr className="text-left opacity-60"><th className="px-3 py-2 font-semibold">{ui('Type')}</th><th className="px-3 py-2 font-semibold">{ui('Post')}</th><th className="px-3 py-2 font-semibold">{ui('Message')}</th><th className="px-3 py-2 font-semibold">{ui('Deleted by')}</th><th className="px-3 py-2 font-semibold">{ui('Date')}</th></tr></thead><tbody>
+          {deleted.data?.map(item => <tr key={item.id} className="border-t border-slate-100 align-top dark:border-slate-800">
+            <td className="px-3 py-2 whitespace-nowrap">{item.kind} #{item.target_id}</td><td className="px-3 py-2">#{item.post_id}</td>
+            <td className="px-3 py-2 min-w-64 max-w-xl whitespace-pre-wrap break-words"><span className="block text-xs opacity-60">@{item.author_username || '—'}</span>{item.content}</td>
+            <td className="px-3 py-2">{item.deleted_by_username || '—'}</td><td className="px-3 py-2 whitespace-nowrap">{when(item.deleted_at)}</td>
           </tr>)}
         </tbody></table></div>
         <div className="flex gap-3 mt-4"><ActionButton disabled={deletedOffset === 0} onClick={() => setDeletedOffset(Math.max(0, deletedOffset - 50))}>{ui('Previous')}</ActionButton><ActionButton disabled={!deleted.data || deleted.data.length < 50} onClick={() => setDeletedOffset(deletedOffset + 50)}>{ui('Next')}</ActionButton></div>
@@ -264,37 +297,35 @@ export function AdminPage() {
         <section className={card}>
           <h2 className="text-lg font-bold mb-3 flex items-center gap-2"><Users size={20} />{ui('Users')} {users.data && <span className="opacity-60 font-normal">({users.data.length})</span>}</h2>
           {users.isLoading && <LoadingIndicator label={ui('Loading…')} />}
-          <div className="overflow-x-auto">
+          {/* Seven columns need about 1000px; narrower screens get one card per account. */}
+          <ul className="grid gap-3 md:grid-cols-2 xl:hidden">
+            {users.data?.map((account: AdminUser) => (
+              <li key={account.id} className="flex min-w-0 flex-col rounded-xl border border-slate-200 p-4 text-sm dark:border-slate-800">
+                {userAccount(account)}
+                <p className="mt-2 break-all">{account.email}</p>
+                <p className="text-xs opacity-60">{signInMethod(account)}</p>
+                <p className="mt-2 text-xs opacity-60">{ui('Posts')} {account.posts} · {ui('Reported')} {account.reports_against}</p>
+                <p className="text-xs opacity-60">{ui('Joined')} {when(account.created_at)}</p>
+                <p className="text-xs opacity-60">{ui('Last active')} {when(account.last_login)}</p>
+                <div className="mt-3 flex flex-wrap gap-2 empty:hidden">{userActions(account)}</div>
+              </li>
+            ))}
+          </ul>
+          <div className="hidden overflow-x-auto xl:block">
             <table className="w-full text-sm">
-              <thead><tr className="text-left opacity-60"><th className="py-2 pr-3">{ui('Account')}</th><th className="py-2 pr-3">{ui('Email')}</th><th className="py-2 pr-3 text-right">{ui('Posts')}</th><th className="py-2 pr-3 text-right">{ui('Reported')}</th><th className="py-2 pr-3">{ui('Joined')}</th><th className="py-2 pr-3">{ui('Last active')}</th><th className="py-2" /></tr></thead>
+              <thead><tr className="text-left opacity-60"><th className="py-2 pr-3">{ui('Account')}</th><th className="py-2 pr-3">{ui('Email')}</th><th className="py-2 pr-3 text-right">{ui('Posts')}</th><th className="py-2 pr-3 text-right">{ui('Reported')}</th><th className="py-2 pl-6 pr-3">{ui('Joined')}</th><th className="py-2 pr-3">{ui('Last active')}</th><th className="py-2" /></tr></thead>
               <tbody>
-                {users.data?.map((account: AdminUser) => {
-                  const isAdminAccount = account.role === 'admin';
-                  return (
-                    <tr key={account.id} className={`border-t align-top border-slate-100 dark:border-slate-800`}>
-                      <td className="py-2 pr-3">
-                        <Link to={`/profile/${account.username}`} className="font-semibold hover:text-blue-600 dark:hover:text-blue-400">{account.display_name || account.username}</Link>
-                        <div className="text-xs opacity-60">@{account.username}{isAdminAccount && <span className="ml-1 rounded-full bg-blue-600 px-2 py-0.5 text-xs font-medium text-white">Admin</span>}</div>
-                      </td>
-                      <td className="py-2 pr-3 break-all">{account.email}<div className="text-xs opacity-60">{account.google_account ? 'Google' : ui('Password')}{account.email_verified ? '' : ` · ${ui('unverified')}`}</div></td>
-                      <td className="py-2 pr-3 text-right tabular-nums">{account.posts}</td>
-                      <td className="py-2 pr-3 text-right tabular-nums">{account.reports_against}</td>
-                      <td className="py-2 pr-3 whitespace-nowrap">{when(account.created_at)}</td>
-                      <td className="py-2 pr-3 whitespace-nowrap">{when(account.last_login)}</td>
-                      <td className="py-2 text-right whitespace-nowrap">
-                        {permissions.data?.canManageRoles && !account.can_manage_roles && <ActionButton disabled={actions.role.isPending} onClick={() => actions.role.mutate({ id: account.id, role: isAdminAccount ? 'user' : 'admin' }, { onError: fail })}>{ui(isAdminAccount ? 'Remove admin' : 'Make admin')}</ActionButton>}
-                        {!isAdminAccount && (confirmUser === account.id ? (
-                          <span className="inline-flex gap-2">
-                            <ActionButton tone="danger" disabled={actions.deleteUser.isPending} onClick={() => actions.deleteUser.mutate(account.id, { onSuccess: () => setConfirmUser(null), onError: fail })}>{ui('Delete permanently')}</ActionButton>
-                            <ActionButton onClick={() => setConfirmUser(null)}>{ui('Cancel')}</ActionButton>
-                          </span>
-                        ) : (
-                          <ActionButton tone="danger" onClick={() => setConfirmUser(account.id)}><Trash2 size={14} />{ui('Delete user')}</ActionButton>
-                        ))}
-                      </td>
-                    </tr>
-                  );
-                })}
+                {users.data?.map((account: AdminUser) => (
+                  <tr key={account.id} className={`border-t align-top border-slate-100 dark:border-slate-800`}>
+                    <td className="py-2 pr-3">{userAccount(account)}</td>
+                    <td className="py-2 pr-3 break-all">{account.email}<div className="text-xs opacity-60">{signInMethod(account)}</div></td>
+                    <td className="py-2 pr-3 text-right tabular-nums">{account.posts}</td>
+                    <td className="py-2 pr-3 text-right tabular-nums">{account.reports_against}</td>
+                    <td className="py-2 pl-6 pr-3 whitespace-nowrap">{when(account.created_at)}</td>
+                    <td className="py-2 pr-3 whitespace-nowrap">{when(account.last_login)}</td>
+                    <td className="py-2"><div className="flex justify-end gap-2 whitespace-nowrap">{userActions(account)}</div></td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

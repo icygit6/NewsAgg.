@@ -41,10 +41,10 @@ export const mutedTextClass = (): string => ('text-slate-500 dark:text-slate-400
 export const bodyTextClass = (): string => ('text-slate-700 dark:text-slate-200');
 
 // ── Formatters ────────────────────────────────────────────────────────────────
-export const formatPublishedDate = (value: string, locale?: string): string => {
+export const formatPublishedDate = (value: string, locale?: string, dateStyle: 'full' | 'medium' = 'full'): string => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString(locale, { dateStyle: 'full', timeStyle: 'short' });
+  return date.toLocaleString(locale, { dateStyle, timeStyle: 'short' });
 };
 
 export const formatRelativeTime = (value: string): string => {

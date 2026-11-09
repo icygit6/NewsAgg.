@@ -3,6 +3,7 @@ import rateLimit from 'express-rate-limit'
 import { query } from '../db/client'
 import { logger } from '../lib/logger'
 import { verifyUnsubscribeToken } from '../lib/unsubscribeToken'
+import { clientIp, ipBucket } from '../lib/clientIp'
 
 // Public (no session) because it is opened from an email client. Authority
 // comes from the signed token in the link, not from a cookie.
@@ -12,6 +13,7 @@ emailPreferencesRouter.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 30,
+    keyGenerator: (req) => ipBucket(clientIp(req)),
     message: { success: false, message: 'Too many requests' },
   })
 )

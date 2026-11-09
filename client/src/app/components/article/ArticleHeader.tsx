@@ -1,16 +1,15 @@
 import { useUiText, useUiLocale } from '../../i18n/uiText';
-import { Bookmark, Calendar, Clock3, Globe, Languages, MessageSquareQuote, PlayCircle, User } from 'lucide-react';
-import { useNavigate } from 'react-router';
+import { Calendar, Clock3, Languages, PlayCircle, User } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
-import { useBookmarks } from '../../hooks/useBookmarks';
-import { CATEGORY_BADGE_CLASS, CATEGORY_LABELS, POSTS_ENABLED, TOPIC_TO_CATEGORY } from '../../constants';
+import { CATEGORY_BADGE_CLASS, CATEGORY_LABELS, TOPIC_TO_CATEGORY } from '../../constants';
 import { getArticleId } from '../../services/newsAPI';
 import { ImageWithFallback } from '../utils/ImageWithFallback';
 import type { NewsArticle } from '../../types/article';
 import { SENTIMENT_STYLE, bodyTextClass, formatPublishedDate, formatLanguageName, mutedTextClass } from './helpers';
 import { SourceLogo } from '../ui/SourceLogo';
 import { SkeletonBlock } from '../ui/ContentSkeleton';
-import { useState } from 'react';
+import { ArticleActions } from './ArticleActions';
+import { Fragment, useState } from 'react';
 
 interface ArticleHeaderProps {
   article: NewsArticle;
@@ -20,34 +19,28 @@ interface ArticleHeaderProps {
 export function ArticleHeader({ article, isDark }: ArticleHeaderProps) {
   const ui = useUiText();
   const locale = useUiLocale();
-  const { t, isAuthenticated, setSidebarOpen } = useApp();
-  const { isBookmarked: isArticleBookmarked, bookmarkIdFor, add, remove } = useBookmarks();
-  const navigate = useNavigate();
+  const { t } = useApp();
   const mutedText = mutedTextClass();
   const bodyText = bodyTextClass();
   const sentimentStyle = SENTIMENT_STYLE[article.sentiment.type];
   // Fallback guards legacy/unknown topics (e.g. pre-migration 'Travel').
   const topicBadgeClass = CATEGORY_BADGE_CLASS[TOPIC_TO_CATEGORY[article.topic]] ?? 'bg-slate-600 text-white';
 
+  // Skip the author when it only repeats the publisher shown above.
+  const author = article.author?.trim();
+  const sameAsSource = !!author && author.toLowerCase() === article.source.name.trim().toLowerCase();
+  const details = [
+    ...(sameAsSource ? [] : [{ key: 'author', Icon: User, text: author || ui("Unknown") }]),
+    { key: 'date', Icon: Calendar, text: formatPublishedDate(article.publishedAt, locale), short: formatPublishedDate(article.publishedAt, locale, 'medium') },
+    { key: 'read', Icon: Clock3, text: ui(article.readability.readingTimeMin > 0 ? `${article.readability.readingTimeMin} min read` : 'Quick read') },
+    ...(article.language ? [{ key: 'lang', Icon: Languages, text: formatLanguageName(article.language, locale) }] : []),
+  ];
+
   const articleId = getArticleId(article);
   const imageKey = article.urlToImage || article.images[0]?.url || articleId;
   const [loadedImage, setLoadedImage] = useState('');
   const imagePending = Boolean(article.urlToImage || article.images.length) && loadedImage !== imageKey;
-  const isBookmarked = isArticleBookmarked(articleId);
-  const isBookmarking = add.isPending || remove.isPending;
 
-  const handleBookmark = () => {
-    if (!isAuthenticated) {
-      setSidebarOpen(true); // sign-in gate, same as NewsCard
-      return;
-    }
-    if (isBookmarked) {
-      const bookmarkId = bookmarkIdFor(articleId);
-      if (bookmarkId) remove.mutate(bookmarkId);
-    } else {
-      add.mutate(article);
-    }
-  };
 
   return (
     <>
@@ -74,43 +67,24 @@ export function ArticleHeader({ article, isDark }: ArticleHeaderProps) {
         </div>
       </div>
 
-      <h1 className={`article-title font-poppins text-[2rem] font-bold leading-tight mb-4 text-slate-900 dark:text-slate-50`}>
+      <h1 className={`article-title font-poppins text-[1.625rem] sm:text-[2rem] font-bold leading-tight xl:mb-4 text-slate-900 dark:text-slate-50`}>
         {article.title}
       </h1>
       </div>
       </div>
 
-      <div className={`flex flex-wrap items-center gap-4 pb-4 mb-6 border-b text-sm border-slate-100 dark:border-slate-700`}>
-        <div className="flex items-center gap-1.5"><User size={14} className={mutedText} /><span className={bodyText}>{article.author || ui("Unknown")}</span></div>
-        <div className="flex items-center gap-1.5"><Calendar size={14} className={mutedText} /><span className={bodyText}>{formatPublishedDate(article.publishedAt, locale)}</span></div>
-        <div className="flex items-center gap-1.5"><Globe size={14} className={mutedText} /><span className={bodyText}>{article.source.name}</span></div>
-        <div className="flex items-center gap-1.5"><Clock3 size={14} className={mutedText} /><span className={bodyText}>{ui(article.readability.readingTimeMin > 0 ? `${article.readability.readingTimeMin} min read` : 'Quick read')}</span></div>
-        {article.language && <div className="flex items-center gap-1.5"><Languages size={14} className={mutedText} /><span className={bodyText}>{formatLanguageName(article.language, locale)}</span></div>}
-        <button
-          type="button"
-          onClick={handleBookmark}
-          disabled={isBookmarking}
-          aria-pressed={isBookmarked}
-          className={`ml-auto inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors disabled:opacity-50 ${
-            isBookmarked
-              ? 'bg-amber-500 text-white'
-              : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 dark:border dark:border-slate-700'
-          }`}
-        >
-          <Bookmark size={14} fill={isBookmarked ? 'currentColor' : 'none'} />
-          {isBookmarked ? t.bookmarked : t.bookmark}
-        </button>
-        {POSTS_ENABLED && (
-          <button
-            type="button"
-            onClick={() => navigate(`/posts?compose=1&attach=${articleId}`)}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 dark:border dark:border-slate-700`}
-          >
-            <MessageSquareQuote size={14} />
-            {t.quoteThis}
-          </button>
-        )}
+      {/* Phones: one quiet line of dot-separated text (icons and the full weekday return from sm up). */}
+      <div className={`flex flex-wrap items-center gap-x-2 gap-y-1 pb-4 mb-4 border-b text-[13px] sm:gap-x-4 sm:gap-y-1.5 sm:text-sm border-slate-100 dark:border-slate-700`}>
+        {details.map((item, index) => (
+          <Fragment key={item.key}>
+            {index > 0 && <span aria-hidden="true" className={`sm:hidden ${mutedText}`}>·</span>}
+            <div className="flex items-center gap-1.5"><item.Icon size={14} className={`max-sm:hidden ${mutedText}`} />{'short' in item
+              ? <span className={bodyText}><span className="sm:hidden">{item.short}</span><span className="max-sm:hidden">{item.text}</span></span>
+              : <span className={bodyText}>{item.text}</span>}</div>
+          </Fragment>
+        ))}
       </div>
+      <ArticleActions article={article} isDark={isDark} />
     </>
   );
 }

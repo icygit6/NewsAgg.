@@ -19,13 +19,23 @@ export function validateBody(schema: z.ZodTypeAny) {
   }
 }
 
+// A username becomes part of its profile URL (/profile/<name>), where # ? / %
+// and similar characters would send the link somewhere else. Letters in any
+// script, digits, spaces and _ - . cover every name in use.
+const USERNAME_DISALLOWED = /[^\p{L}\p{M}\p{N} _.-]+/gu
+export const USERNAME_RULE = 'username may only use letters, digits, spaces and _ - .'
+
+/** A name from elsewhere (a Google profile) reduced to the allowed characters. */
+export const toUsername = (raw: string) => raw.replace(USERNAME_DISALLOWED, '').replace(/\s+/g, ' ').trim()
+
 export const registerSchema = z.object({
   email: z.string().trim().toLowerCase().email('valid email required').max(255),
   username: z
     .string()
     .trim()
     .min(3, 'username must be 3-30 characters')
-    .max(30, 'username must be 3-30 characters'),
+    .max(30, 'username must be 3-30 characters')
+    .refine((name) => toUsername(name) === name, USERNAME_RULE),
   password: z.string().min(8, 'password must be at least 8 characters').max(128),
   termsAccepted: z.literal(true, { errorMap: () => ({ message: 'terms must be accepted' }) }),
   emailUpdates: z.boolean().optional().default(false),
@@ -83,7 +93,8 @@ export const profileSchema = z.object({
     .string()
     .trim()
     .min(3, 'username must be 3-30 characters')
-    .max(30, 'username must be 3-30 characters'),
+    .max(30, 'username must be 3-30 characters')
+    .refine((name) => toUsername(name) === name, USERNAME_RULE),
 })
 
 export const passwordChangeSchema = z.object({

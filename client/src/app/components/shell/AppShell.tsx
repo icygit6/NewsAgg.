@@ -7,6 +7,7 @@ import { BottomTabBar } from './BottomTabBar';
 import { TopBar } from './TopBar';
 import { FeedHeader } from './FeedHeader';
 import { Footer } from './Footer';
+import { CentreColumnScrollTop } from '../ScrollToTop';
 import { usePublicationRefresh } from '../../hooks/usePublicationRefresh';
 import { useScrollFade, fadeMask } from '../../hooks/useScrollFade';
 import { DEFAULT_TITLE } from '../SeoMetadata';
@@ -56,7 +57,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <div className={`flex flex-1 min-h-0 min-w-0 ${handle.hideRightRail ? '' : 'lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:grid-rows-[minmax(0,1fr)]'}`}>
           {/* Centre column: header sits above main only */}
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
             {isHome ? <FeedHeader /> : <TopBar />}
             <main
               id="main-scroll"
@@ -64,9 +65,15 @@ export function AppShell({ children }: { children: ReactNode }) {
               className={`main-scroll-performance flex-1 min-h-0 min-w-0 overflow-x-hidden overflow-y-auto pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-0 ${isArticle ? 'lg:overflow-y-hidden' : ''}`}
               style={{ scrollbarWidth: 'none', ...fadeMask(scrollFade.above, scrollFade.below, 20) }}
             >
-              {children}
-              {!handle.hideFooter && !isArticle && <Footer hiddenOnMobile={!handle.mobileFooter} />}
+              {!handle.hideFooter && !isArticle ? (
+                // The page fills at least the scroll area, so a short page still puts the footer at the bottom.
+                <div className="flex min-h-full flex-col">
+                  <div className="min-w-0 flex-1">{children}</div>
+                  <Footer hiddenOnMobile={!handle.mobileFooter} />
+                </div>
+              ) : children}
             </main>
+            <CentreColumnScrollTop />
           </div>
 
           {!handle.hideRightRail && <RightRail />}

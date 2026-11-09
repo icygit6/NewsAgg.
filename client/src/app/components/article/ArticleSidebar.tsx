@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { SentimentExplorer } from '../sentiment/SentimentExplorer';
 import { SentimentReasons } from '../sentiment/SentimentReasons';
+import { useReasonFocus } from '../sentiment/useReasonFocus';
 import type { SourceSentiments, SentimentEvidence } from '../../hooks/useStats';
 import { ArticleSentimentPanel } from '../ArticleSentimentPanel';
 import { ReadabilityPanel } from './ReadabilityPanel';
@@ -89,7 +90,8 @@ function MetricRow({ label, value, accentClass }: MetricRowProps) {
     <div
       className={`flex items-center justify-between gap-3 rounded-xl px-3 py-2 bg-slate-50/80 dark:bg-slate-900/40`}
     >
-      <span className={`text-xs text-slate-500 dark:text-slate-400`}>{label}</span>
+      {/* The label never wraps mid-word; a long value (a full date) wraps instead. */}
+      <span className={`shrink-0 whitespace-nowrap text-xs text-slate-500 dark:text-slate-400`}>{label}</span>
       <span
         className={`min-w-0 break-words text-right text-sm font-semibold ${accentClass ?? ('text-slate-900 dark:text-slate-100')}`}
       >
@@ -117,7 +119,7 @@ function ShowMoreToggle({ count, open, onToggle }: { count: number; open: boolea
   const ui = useUiText();
   if (count <= SIDEBAR_LIST_LIMIT) return null;
   return (
-    <button type="button" aria-expanded={open} onClick={onToggle} className="mt-3 rounded px-1 py-2 text-xs font-semibold text-[var(--brand)] hover:underline">
+    <button type="button" aria-expanded={open} onClick={onToggle} className="mt-3 rounded px-1 py-2 text-xs font-semibold text-[var(--brand)] hover:text-[var(--brand-hover)]">
       {open ? ui('Show less') : `${ui('Show more')} (${count - SIDEBAR_LIST_LIMIT})`}
     </button>
   );
@@ -154,6 +156,7 @@ export function ArticleSidebar({
   // sidebar, which would trap the wheel and touch scroll of the page.
   const [showAllTopics, setShowAllTopics] = useState(false);
   const [showAllLive, setShowAllLive] = useState(false);
+  const [reasonFocus, pickReason] = useReasonFocus(article.topic);
   useEffect(() => { setShowAllTopics(false); setShowAllLive(false); }, [article.id]);
 
   return (
@@ -166,7 +169,7 @@ export function ArticleSidebar({
         <PanelHeading icon={PieChart} isDark={isDark} className="mb-2">{ui("Category sentiment distribution")}</PanelHeading>
         <p className={`text-xs mb-4 ${mutedText}`}>{ui(article.topic)} {ui("articles in current dataset")}</p>
 
-        <SentimentExplorer counts={{ positive: categorySentimentDistribution.find(item => item.type === 'positive')?.count ?? 0, neutral: categorySentimentDistribution.find(item => item.type === 'neutral')?.count ?? 0, negative: categorySentimentDistribution.find(item => item.type === 'negative')?.count ?? 0 }} sources={sentimentSources} scopeKey={article.topic} />
+        <SentimentExplorer counts={{ positive: categorySentimentDistribution.find(item => item.type === 'positive')?.count ?? 0, neutral: categorySentimentDistribution.find(item => item.type === 'neutral')?.count ?? 0, negative: categorySentimentDistribution.find(item => item.type === 'negative')?.count ?? 0 }} sources={sentimentSources} scopeKey={article.topic} selection={reasonFocus} onPick={pickReason} />
 
         <div className="flex items-center justify-between mt-4 text-xs">
           <span className={mutedText}>{ui("Total in category")}</span>
@@ -174,7 +177,7 @@ export function ArticleSidebar({
             {categorySentimentTotal}
           </span>
         </div>
-        <SentimentReasons evidence={sentimentEvidence} />
+        <SentimentReasons evidence={sentimentEvidence} focus={reasonFocus} onPick={pickReason} />
       </div>
 
       <ReadabilityPanel article={article} isDark={isDark} />

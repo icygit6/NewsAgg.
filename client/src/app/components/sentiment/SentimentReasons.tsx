@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import { useId, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { useUiPunctuation, useUiText } from '../../i18n/uiText';
 import { useTitleTranslations } from '../../hooks/useTitleTranslations';
@@ -17,31 +17,52 @@ const DESCRIPTION: Record<Type, string> = {
 
 function Examples({ examples }: { examples: SentimentEvidence['positive']['examples'] }) {
   const translated = useTitleTranslations(examples);
-  return <ul className="mt-2 space-y-2">{translated.map(article => <li key={article.id}><Link className={`block rounded py-1 text-xs leading-relaxed underline-offset-2 hover:underline [overflow-wrap:anywhere] text-blue-700 dark:text-blue-300`} to={`/article/${encodeURIComponent(article.id)}`}>{article.title}</Link></li>)}</ul>;
+  return <ul className="mt-2 space-y-2">{translated.map(article => <li key={article.id}><Link className={`block rounded py-1 text-xs leading-relaxed [overflow-wrap:anywhere] text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-100`} to={`/article/${encodeURIComponent(article.id)}`}>{article.title}</Link></li>)}</ul>;
 }
 
 /** One sentiment at a time behind tabs. The caveats that apply to every tab
- * are stated once above them instead of being repeated per sentiment. */
-function ReasonTabs({ evidence, total, initial }: { evidence: SentimentEvidence; total: number; initial: Type }) {
+ * are stated once above them instead of being repeated per sentiment. `scopeKey`
+ * changes when the evidence moves on (another category); the tabs then start over. */
+function ReasonTabs({ evidence, total, initial, scopeKey, focus, onPick }: { evidence: SentimentEvidence; total: number; initial: Type; scopeKey?: string; focus?: { type: Type }; onPick?: (type: Type) => void }) {
   const ui = useUiText();
   const p = useUiPunctuation();
   const { t, isDark } = useApp();
   const id = useId();
   const [active, setActive] = useState<Type>(initial);
+  // The AI explanation is generated on request and rate-limited. It loads for the tab the
+  // reader opened or picked; a category the rotation brings up offers a button instead,
+  // or every ten-second turn would request another one.
+  const [explained, setExplained] = useState<Type | null>(initial);
+  const scope = useRef(scopeKey);
   const tabs = useRef<Partial<Record<Type, HTMLButtonElement | null>>>({});
   const group = evidence[active];
   const muted = 'text-slate-600 dark:text-slate-400';
+  useEffect(() => {
+    if (scope.current === scopeKey) return;
+    scope.current = scopeKey;
+    setActive(initial);
+    setExplained(null);
+  }, [scopeKey, initial]);
+  // A polarity clicked or tapped on the pie opens its tab, explanation included.
+  useEffect(() => {
+    if (!focus) return;
+    setActive(focus.type);
+    setExplained(focus.type);
+  }, [focus]);
+  const pick = (type: Type) => { setActive(type); setExplained(type); onPick?.(type); };
   const move = (event: KeyboardEvent, index: number) => {
     const step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
     if (!step) return;
     event.preventDefault();
     const next = TYPES[(index + step + TYPES.length) % TYPES.length];
-    setActive(next);
+    pick(next);
     tabs.current[next]?.focus();
   };
   const why = group.examples.length > 0 && <>
     <p className="mt-3 font-semibold">{ui('Why this sentiment?')}</p>
-    <ArticleSentimentExplanation key={group.examples[0].id} article={{ id: group.examples[0].id }} compact showNote={false} />
+    {explained === active
+      ? <ArticleSentimentExplanation key={group.examples[0].id} article={{ id: group.examples[0].id }} compact showNote={false} />
+      : <button type="button" onClick={() => setExplained(active)} className="mt-1 min-h-11 rounded-lg border border-current/20 px-3 font-semibold text-blue-700 dark:text-blue-300">{ui('Show AI explanation')}</button>}
   </>;
   const examples = group.examples.length > 0 && <>
     <p className="mt-3 font-semibold">{ui('Supporting examples')}</p>
@@ -50,9 +71,9 @@ function ReasonTabs({ evidence, total, initial }: { evidence: SentimentEvidence;
   return <>
     <p className={muted}>{ui('Themes are detected in original headlines and summaries. They describe coverage, not the model’s internal reasoning or proof of why a label was assigned. Themes may overlap; examples are not the full dataset.')} {ui('Based on the first supporting article below, not every article in this group.')} {ui('AI interpretation of the article’s content; not the original classifier’s internal reasoning.')}</p>
     <div role="tablist" aria-label={ui('Reasons and examples')} className="mt-3 grid grid-cols-3 gap-1.5">
-      {TYPES.map((type, index) => <button key={type} ref={el => { tabs.current[type] = el; }} type="button" role="tab"
+      {TYPES.map((type, index) => <button key={type} ref={el => { tabs.current[type] = el; }} type="button" role="tab" data-reason-tab
         id={`${id}-${type}`} aria-selected={active === type} aria-controls={`${id}-panel`} tabIndex={active === type ? 0 : -1}
-        onClick={() => setActive(type)} onKeyDown={event => move(event, index)}
+        onClick={() => pick(type)} onKeyDown={event => move(event, index)}
         className="min-h-11 min-w-0 rounded-lg border px-2 py-1.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-[var(--brand)]"
         style={active === type ? { borderColor: SENTIMENT_COLOR[type], background: `color-mix(in srgb, ${SENTIMENT_COLOR[type]} 10%, transparent)` } : { borderColor: isDark ? '#334155' : '#e2e8f0' }}>
         <span className="flex items-center gap-1.5 font-semibold" style={{ color: SENTIMENT_COLOR[type] }}><span className="h-2 w-2 shrink-0 rounded-full" style={{ background: SENTIMENT_COLOR[type] }} />{t[type]}</span>
@@ -72,7 +93,7 @@ function ReasonTabs({ evidence, total, initial }: { evidence: SentimentEvidence;
  * Pattern summary plus per-sentiment reasons. `show="all"` (sidebars) keeps
  * the reasons behind a disclosure; `show="open"` (Insights) always shows them.
  */
-export function SentimentReasons({ evidence, onOpenChange, show = 'all' }: { show?: 'all' | 'open'; evidence?: SentimentEvidence; onOpenChange?: (open: boolean) => void }) {
+export function SentimentReasons({ evidence, onOpenChange, show = 'all', scopeKey, focus, onPick }: { show?: 'all' | 'open'; evidence?: SentimentEvidence; onOpenChange?: (open: boolean) => void; scopeKey?: string; focus?: { type: Type }; onPick?: (type: Type) => void }) {
   const ui = useUiText();
   const p = useUiPunctuation();
   const { t, selectedSentiments = [], selectedSentiment = 'all' } = useApp();
@@ -83,14 +104,15 @@ export function SentimentReasons({ evidence, onOpenChange, show = 'all' }: { sho
   const leaders = TYPES.filter(type => evidence[type].count === largest);
   const dominant = leaders[0];
   const dominantTheme = evidence[dominant].themes[0];
-  const tabs = <ReasonTabs evidence={evidence} total={total} initial={dominant} />;
+  const tabs = <ReasonTabs evidence={evidence} total={total} initial={dominant} scopeKey={scopeKey} focus={focus} onPick={onPick} />;
   return <div className="mt-3 min-w-0 border-t border-current/10 pt-3 text-xs leading-relaxed [overflow-wrap:anywhere]" data-testid="sentiment-reasons">
     <p className="font-semibold">{ui('Pattern summary')}</p>
     {total === 0 ? <p className="mt-1">{ui('No articles match these filters.')}</p> : <>
       <p className="mt-1">{leaders.length === 1 ? <>{ui('Largest share')}{p.colon}<strong>{t[dominant]}{p.open}{Math.round(largest / total * 100)}%{p.close}</strong>{p.stop}{dominantTheme && <>{ui('Most frequent detected theme in this group')}{p.colon}{ui(dominantTheme.label)}{p.open}{dominantTheme.count.toLocaleString()} {ui('articles')}{p.close}{p.stop}</>}</> : <>{ui('Equal largest shares')}{p.colon}{leaders.map(type => t[type]).join(' / ')}{p.open}{Math.round(largest / total * 100)}%{p.close}{p.stop}</>}</p>
       {(selectedSentiments.length > 0 || selectedSentiment !== 'all') && <p className="mt-2 font-medium">{ui('Sentiment filters are active; these percentages describe only the selected sentiments.')}</p>}
       {show === 'all' && <details open={open} onToggle={event => { const next = event.currentTarget.open; setOpen(next); onOpenChange?.(next); }} className="mt-2">
-        <summary className={`min-h-11 cursor-pointer py-3 font-semibold text-blue-700 dark:text-blue-300`}>{ui('View reasons and examples')}</summary>
+        {/* Opened with a mouse, the summary takes no focus, so a rotating panel isn't left paused. */}
+        <summary onPointerDown={event => { if (event.pointerType === 'mouse') event.preventDefault(); }} className={`min-h-11 cursor-pointer py-3 font-semibold text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-100`}>{ui('View reasons and examples')}</summary>
         {open && tabs}
       </details>}
       {show === 'open' && <section className="mt-4">

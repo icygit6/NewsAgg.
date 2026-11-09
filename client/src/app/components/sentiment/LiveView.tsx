@@ -7,9 +7,9 @@ import { useApp } from '../../contexts/AppContext';
 import { getArticleId } from '../../services/newsAPI';
 import type { NewsArticle } from '../../types/article';
 import type { SentimentType } from '../../types/sentiment';
-import { panelBaseClass, chartTextColor, chartMutedColor } from './shared';
+import { panelBaseClass, chartMutedColor } from './shared';
 import { useEffect, useRef, useState } from 'react';
-import { CATEGORY_ACCENT, TOPIC_TO_CATEGORY } from '../../constants';
+import { CATEGORY_BADGE_CLASS, TOPIC_TO_CATEGORY } from '../../constants';
 
 interface LiveViewProps {
   articles: NewsArticle[];
@@ -42,7 +42,6 @@ export function LiveView({ articles, categoryLabel }: LiveViewProps) {
   const ui = useUiText();
   const { t, isDark } = useApp();
   const mutedColor = chartMutedColor(isDark);
-  const textColor = chartTextColor(isDark);
   // Rows that arrive after the first render slide in; the first batch does not.
   // Rows not in the previous list are marked fresh until their entrance ends, so a re-render
   // in between (scroll-fade edges, translations) cannot cut the animation short.
@@ -92,7 +91,7 @@ export function LiveView({ articles, categoryLabel }: LiveViewProps) {
               <div className="flex items-center gap-2 mt-1.5 text-xs flex-wrap">
                 <span style={{ color: mutedColor }}>{ui(formatRelativeTime(article.publishedAt))}</span>
                 <span className={`text-slate-500 dark:text-slate-400`}>•</span>
-                <span className="inline-flex items-center gap-1.5" style={{ color: textColor }}>{<span aria-hidden className="h-2 w-2 rounded-full" style={{ background: CATEGORY_ACCENT[TOPIC_TO_CATEGORY[article.topic]] }} />}{ui(article.topic)}</span>
+                <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${CATEGORY_BADGE_CLASS[TOPIC_TO_CATEGORY[article.topic]] ?? 'bg-slate-600 text-white'}`}>{ui(article.topic)}</span>
                 <span className={`text-slate-500 dark:text-slate-400`}>•</span>
                 <span className={sentimentTextClass[article.sentiment.type]}>{t[article.sentiment.type]}</span>
               </div>

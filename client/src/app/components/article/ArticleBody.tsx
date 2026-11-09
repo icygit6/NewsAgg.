@@ -43,7 +43,8 @@ export function ArticleBody({ article, isDark }: ArticleBodyProps) {
   return (
     <>
       {article.qualityVerified === false && <p role="note" className={`rounded-xl border border-amber-400/40 p-3 mb-5 text-sm ${bodyText}`}>{ui("Archived extraction: this article has not passed the current feed quality checks. You can read the original publisher version using the source link below.")}</p>}
-      {article.description && <p className={`text-lg leading-relaxed mb-5 ${bodyText}`}>{article.description}</p>}
+      {/* The summary already restates the lead, so the lead shows only when there is no summary. */}
+      {article.description && !article.aiSummary && <p className={`text-lg leading-relaxed mb-5 ${bodyText}`}>{article.description}</p>}
       {article.videoUrl && <VideoPlayer videoUrl={article.videoUrl} title={article.title} isDark={isDark} />}
 
       {article.aiSummary && (

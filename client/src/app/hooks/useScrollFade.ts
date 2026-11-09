@@ -39,8 +39,8 @@ export function useScrollFade<T extends HTMLElement>(targetKey?: unknown) {
 }
 
 /** CSS mask that fades whichever edges still have content beyond them. */
-export function fadeMask(above: boolean, below: boolean, size = 28): { maskImage?: string; WebkitMaskImage?: string } {
+export function fadeMask(above: boolean, below: boolean, size = 28, direction: 'to bottom' | 'to right' = 'to bottom'): { maskImage?: string; WebkitMaskImage?: string } {
   if (!above && !below) return {};
-  const gradient = `linear-gradient(to bottom, ${above ? `transparent 0, black ${size}px` : 'black 0'}, ${below ? `black calc(100% - ${size}px), transparent 100%` : 'black 100%'})`;
+  const gradient = `linear-gradient(${direction}, ${above ? `transparent 0, black ${size}px` : 'black 0'}, ${below ? `black calc(100% - ${size}px), transparent 100%` : 'black 100%'})`;
   return { maskImage: gradient, WebkitMaskImage: gradient };
 }

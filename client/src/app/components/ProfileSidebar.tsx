@@ -1,10 +1,10 @@
 import { useUiText } from '../i18n/uiText';
-import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
+import { motion, AnimatePresence, animate, useDragControls, useMotionValue, useReducedMotion, useTransform, type PanInfo } from 'motion/react';
 import { X, LogOut, Bookmark, ChevronRight, Settings, ShieldCheck, MessageSquarePlus } from 'lucide-react';
-import { useNavigate } from 'react-router';
-import { useApp } from '../contexts/AppContext';
+import { useLocation, useNavigate } from 'react-router';
+import { useApp, useSidebarOpen } from '../contexts/AppContext';
 import { useBookmarks } from '../hooks/useBookmarks';
-import { adminAttentionCount, useAdminOverview, useIsAdmin } from '../hooks/useAdmin';
+import { adminAttentionCount, useAdminAttention, useIsAdmin } from '../hooks/useAdmin';
 import { openFeedback } from '../hooks/useFeedback';
 import { useProfilePrivacy } from '../hooks/useProfilePrivacy';
 import { authService } from '../services/authService';
@@ -17,20 +17,21 @@ import { useInterfaceLanguage } from '../hooks/useInterfaceLanguage';
 import { TranslateNewsToggle } from './ui/TranslateNewsToggle';
 import { ThemePicker } from './ui/ThemePicker';
 import { SegmentedControl } from './ui/SegmentedControl';
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 /** Slim account drawer: identity card linking to /profile plus quick
  * settings rows. All account editing lives on the /settings page. */
 export function ProfileSidebar() {
   const ui = useUiText();
   const {
-    sidebarOpen, setSidebarOpen, isDark, t, user, setUser,
+    setSidebarOpen, isDark, t, user, setUser,
     avatarSrc,
   } = useApp();
+  const sidebarOpen = useSidebarOpen();
   const { bookmarks } = useBookmarks();
   const admin = useIsAdmin();
-  const adminOverview = useAdminOverview();
-  const openReports = adminAttentionCount(adminOverview.data);
+  const adminAttention = useAdminAttention();
+  const openReports = adminAttentionCount(adminAttention.data);
   const [hideEmail] = useProfilePrivacy('hideEmail');
   const navigate = useNavigate();
   // Match NavRail/BottomTabBar: no left navigation below lg (1024px).
@@ -43,7 +44,8 @@ export function ProfileSidebar() {
     if (!sidebarOpen) return;
     previousFocusRef.current = document.activeElement as HTMLElement | null;
     const drawer = drawerRef.current;
-    drawer?.querySelector<HTMLElement>('button, a, input, [tabindex]:not([tabindex="-1"])')?.focus();
+    // preventScroll: the drawer is still off-screen at this point, and focusing it would otherwise scroll the page to bring it into view.
+    drawer?.querySelector<HTMLElement>('button, a, input, [tabindex]:not([tabindex="-1"])')?.focus({ preventScroll: true });
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented || (event.target instanceof Element && event.target.closest('[role="listbox"]'))) return;
       if (event.key === 'Escape') {
@@ -59,18 +61,74 @@ export function ProfileSidebar() {
       else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
     };
     document.addEventListener('keydown', onKeyDown);
-    const priorOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
     return () => {
       document.removeEventListener('keydown', onKeyDown);
-      document.body.style.overflow = priorOverflow;
-      previousFocusRef.current?.focus();
+      previousFocusRef.current?.focus({ preventScroll: true });
     };
   }, [sidebarOpen, setSidebarOpen]);
 
-  const goTo = (path: string) => {
-    navigate(path);
+  // A drawer left open across a route change (browser back from a story) belongs to the page that is gone.
+  const location = useLocation();
+  const { pathname } = location;
+  const lastPathname = useRef(pathname);
+  useEffect(() => {
+    if (lastPathname.current === pathname) return;
+    lastPathname.current = pathname;
     setSidebarOpen(false);
+  }, [pathname, setSidebarOpen]);
+
+  // Each opening gets a session number; the body renders only after that session's slide-in has finished.
+  const [wasOpen, setWasOpen] = useState(sidebarOpen);
+  const [session, setSession] = useState(0);
+  const [readySession, setReadySession] = useState(-1);
+  if (sidebarOpen !== wasOpen) {
+    setWasOpen(sidebarOpen);
+    if (sidebarOpen) setSession(current => current + 1);
+  }
+  const bodyReady = readySession === session;
+
+  const dragControls = useDragControls();
+  const x = useMotionValue(0);
+  const scrimOpacity = useTransform(x, value => Math.max(0, 1 - Math.abs(value) / 320));
+  const leaving = useRef(false);
+  // A fresh opening starts at rest; the layer unmounts on close, so this only clears the last swipe.
+  useLayoutEffect(() => {
+    if (!sidebarOpen) return;
+    leaving.current = false;
+    x.set(0);
+  }, [sidebarOpen, x]);
+
+  const startSwipe = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === 'mouse' || leaving.current) return;
+    // Form controls and sliders keep their own horizontal gestures.
+    if ((event.target as Element).closest('input, textarea, select, iframe, [role="slider"], [role="listbox"]')) return;
+    dragControls.start(event);
+  };
+  const endSwipe = (_event: unknown, info: PanInfo) => {
+    const toward = isMobile ? 1 : -1;
+    const close = info.offset.x * toward > 90 || info.velocity.x * toward > 500;
+    // Continue from where the finger let go, with its speed, instead of snapping back and re-sliding.
+    const spring = { type: 'spring' as const, stiffness: 520, damping: 44, velocity: info.velocity.x, restDelta: 1, restSpeed: 10 };
+    if (!close) { animate(x, 0, reducedMotion ? { duration: 0 } : spring); return; }
+    leaving.current = true;
+    const distance = toward * (drawerRef.current?.getBoundingClientRect().width ?? window.innerWidth);
+    animate(x, distance, { ...(reducedMotion ? { duration: 0 } : spring), onComplete: () => setSidebarOpen(false) });
+  };
+
+  const goTo = (path: string) => {
+    // Replace the entry the drawer pushed, so back from the new page lands where the drawer was opened.
+    navigate(path, { replace: (location.state as { drawer?: boolean } | null)?.drawer === true });
+    setSidebarOpen(false);
+  };
+
+  // Plain clicks on in-site links (the footer's) take the same path as the rows: close at once and replace the drawer's entry.
+  const followLink = (event: React.MouseEvent) => {
+    const link = (event.target as Element).closest<HTMLAnchorElement>('a[href]');
+    if (!link || link.target || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const url = new URL(link.href);
+    if (url.origin !== window.location.origin) return;
+    event.preventDefault();
+    goTo(`${url.pathname}${url.search}${url.hash}`);
   };
 
   const handleLogout = async () => {
@@ -97,20 +155,46 @@ export function ProfileSidebar() {
             exit={{ opacity: 0 }}
             transition={{ duration: reducedMotion ? 0 : 0.2, ease: 'easeOut' }}
             onClick={() => setSidebarOpen(false)}
-            className="fixed inset-0 z-[60] bg-black/30 backdrop-blur-[2px]"
-          />
+            style={{ viewTransitionName: 'account-drawer-scrim' }}
+            className="fixed inset-0 z-[60]"
+          >
+            {/* The dimming layer follows the drag, so the page brightens as the drawer leaves. No backdrop blur:
+                re-blurring the page on every frame is what made the slide stutter on phones. */}
+            <motion.div style={{ opacity: scrimOpacity }} className="absolute inset-0 bg-black/40" />
+          </motion.div>
 
+          {/* Two layers: the outer one only slides in and out (a plain transform animation that
+              runs on the compositor); the inner one is what a swipe drags. */}
           <motion.div
             ref={drawerRef}
             role="dialog"
             aria-modal="true"
             aria-label={user ? t.account : t.signIn}
-            initial={{ transform: `translateX(${isMobile ? '100%' : '-100%'})`, opacity: 0 }}
-            animate={{ transform: 'translateX(0%)', opacity: 1 }}
-            exit={{ transform: `translateX(${isMobile ? '100%' : '-100%'})`, opacity: 0, transition: { duration: reducedMotion ? 0 : 0.2 } }}
+            initial={{ transform: `translateX(${isMobile ? '100%' : '-100%'})` }}
+            animate={{ transform: 'translateX(0%)' }}
+            exit={{ transform: `translateX(${isMobile ? '100%' : '-100%'})`, transition: { duration: reducedMotion ? 0 : 0.2, ease: [0.4, 0, 1, 1] } }}
             transition={{ duration: reducedMotion ? 0 : 0.3, ease: [0.32, 0.72, 0, 1] }}
-            className={`account-drawer fixed inset-y-0 z-[70] pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] w-[400px] max-w-[95vw] flex flex-col overflow-hidden shadow-2xl ${
-              isMobile ? 'right-0 rounded-l-[28px]' : 'left-0 rounded-r-[28px]'
+            // The body mounts once the slide has landed, so rendering it never competes with the animation.
+            onAnimationComplete={() => { if (sidebarOpen) setReadySession(session); }}
+            // Named so a story image morphing back into the feed stays beneath the drawer instead of painting over it.
+            style={{ viewTransitionName: 'account-drawer', willChange: 'transform' }}
+            className={`account-drawer fixed inset-y-0 z-[70] w-full sm:w-[400px] sm:max-w-[95vw] ${isMobile ? 'right-0' : 'left-0'}`}
+          >
+          <motion.div
+            // Swipe back toward the edge it came from to close (touch and pen only; a mouse keeps selecting text).
+            drag="x"
+            dragListener={false}
+            dragControls={dragControls}
+            dragDirectionLock
+            // Held at 0 on the side it can't go, 1:1 with the finger on the closing side; release is animated by endSwipe, not by inertia.
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={isMobile ? { left: 0, right: 1 } : { left: 1, right: 0 }}
+            dragMomentum={false}
+            onPointerDown={startSwipe}
+            onDragEnd={endSwipe}
+            style={{ x, willChange: 'transform' }}
+            className={`touch-pan-y flex h-full flex-col overflow-hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] shadow-2xl ${
+              isMobile ? 'sm:rounded-l-[28px]' : 'rounded-r-[28px]'
             } bg-white dark:bg-slate-900`}
           >
             {/* Header */}
@@ -129,7 +213,9 @@ export function ProfileSidebar() {
               </button>
             </div>
 
-            <div className="min-h-0 flex-1 px-6 pb-6 overflow-y-auto no-scrollbar">
+            {/* touch-pan-y here too: a scroller restarts touch-action, so without it the browser claims sideways drags. */}
+            <div onClickCapture={followLink} className="min-h-0 flex-1 touch-pan-y px-6 pb-6 overflow-y-auto no-scrollbar">
+              {!bodyReady ? null : <div className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-150">
               {user ? (
                 <>
                   {/* Identity card → /profile */}
@@ -203,6 +289,7 @@ export function ProfileSidebar() {
               <div className={`mt-6 pt-4 border-t border-slate-100 dark:border-slate-700`}>
                 <FooterCompact brief />
               </div>
+              </div>}
             </div>
 
             {/* Sign out */}
@@ -217,6 +304,7 @@ export function ProfileSidebar() {
                 </button>
               </div>
             )}
+          </motion.div>
           </motion.div>
         </>
       )}

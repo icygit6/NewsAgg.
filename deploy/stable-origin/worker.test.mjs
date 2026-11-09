@@ -95,3 +95,18 @@ test('cache lookup and insertion use the same version-aware asset key', async(t)
   assert.equal(seen[0][1],seen[1][1]);
   assert.match(seen[0][1],/v=sentiment-20261022/);
 });
+
+test('passes the visitor address with the edge key, and drops a forged copy', async(t) => {
+  const seen=[];
+  t.mock.method(globalThis,'fetch',async(request)=>{
+    seen.push({ip:request.headers.get('x-newsagg-client-ip'),key:request.headers.get('x-newsagg-edge-key')});
+    return new Response('{}');
+  });
+  const forged={'cf-connecting-ip':'203.0.113.7','x-newsagg-client-ip':'198.51.100.1','x-newsagg-edge-key':'guess'};
+  const origin='https://old-tunnel.trycloudflare.com';
+  await worker.fetch(new Request('https://newsagg.example.workers.dev/api/account/me',{headers:forged}),{NEWSAGG_ORIGIN:origin,NEWSAGG_EDGE_KEY:'edge-secret'});
+  await worker.fetch(new Request('https://newsagg.example.workers.dev/api/account/me',{headers:forged}),{NEWSAGG_ORIGIN:origin});
+  assert.deepEqual(seen[0],{ip:'203.0.113.7',key:'edge-secret'});
+  // Without a configured key nothing is vouched for, and the visitor's copies never pass through.
+  assert.deepEqual(seen[1],{ip:null,key:null});
+});

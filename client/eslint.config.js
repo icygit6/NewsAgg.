@@ -33,6 +33,7 @@ export default tseslint.config(
         allowConstantExport: true,
         allowExportNames: [
           'useApp',
+          'useSidebarOpen',
           'categoryAttribution',
           'LANG_PILLS',
           'getVideoEmbedUrl',

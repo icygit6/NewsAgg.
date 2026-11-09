@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { authService } from '../../services/authService';
+import { button, fieldInput } from '../ui/styles';
 
 /** Display name, username and bio: the Profile section of /settings. */
 export function EditProfileForm() {
@@ -41,26 +42,25 @@ export function EditProfileForm() {
     setMsg({ ok: true, text: t.profileUpdated });
   };
 
-  const inputClass = `w-full px-4 py-2.5 rounded-xl border text-sm transition bg-white border-slate-300 text-slate-900 placeholder-slate-400 focus:border-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-blue-500 focus:outline-none`;
+  const inputClass = fieldInput;
   const labelClass = `block text-xs font-medium mb-1.5 text-slate-500 dark:text-slate-400`;
 
   return (
     <form
       onSubmit={(event) => { event.preventDefault(); void save(); }}
       aria-label={t.editProfile}
-      className="max-w-2xl"
     >
       <div className="grid gap-3 sm:grid-cols-2">
         <div><label htmlFor="profile-display-name" className={labelClass}>{ui("Display name")}</label><input id="profile-display-name" value={displayName} onChange={e => setDisplayName(e.target.value)} maxLength={60} className={inputClass} /></div>
         <div><label htmlFor="profile-username" className={labelClass}>{t.usernameLabel}</label><input id="profile-username" name="username" autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} className={inputClass} maxLength={30} /></div>
       </div>
       <div className="mt-3"><label htmlFor="profile-bio" className={labelClass}>{ui("Public bio")}</label><textarea id="profile-bio" value={bio} onChange={e => setBio(e.target.value)} maxLength={240} rows={3} className={`${inputClass} resize-none`} /><p className="mt-1 text-right text-xs text-slate-400">{bio.length}/240</p></div>
-      <div className="mt-3 flex items-center justify-end gap-3">
-        {msg && <p role={msg.ok ? 'status' : 'alert'} aria-live="polite" className={`text-xs ${msg.ok ? 'text-emerald-500' : 'text-red-500'}`}>{ui(msg.text)}</p>}
+      <div className="mt-3 flex flex-wrap items-center justify-end gap-3 max-sm:[&>button]:w-full">
+        {msg && <p role={msg.ok ? 'status' : 'alert'} aria-live="polite" className={`text-xs ${msg.ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}`}>{ui(msg.text)}</p>}
         <button
           type="submit"
           disabled={saving || username.trim().length < 3}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--brand)] text-white text-sm font-semibold hover:bg-[var(--brand-hover)] transition-all disabled:opacity-50"
+          className={button.primary}
         >
           {saving && <Loader2 size={14} className="animate-spin" />}
           {t.saveChanges}

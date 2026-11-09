@@ -1,3 +1,4 @@
+import { segment } from '../components/ui/styles';
 import { useUiText } from '../i18n/uiText';
 import { ListSkeleton } from '../components/ui/ContentSkeleton';
 import { InfiniteScrollFooter } from '../components/ui/InfiniteScrollFooter';
@@ -8,7 +9,7 @@ import { useApp } from '../contexts/AppContext';
 import { usePosts } from '../hooks/usePosts';
 import { PostComposer } from '../components/posts/PostComposer';
 import { PostCard } from '../components/posts/PostCard';
-import { PostCategoryPicker } from '../components/posts/PostCategoryPicker';
+import { PostCategorySelect } from '../components/posts/PostCategorySelect';
 import { FeedState } from '../components/feed/FeedState';
 import { feedStateButton } from '../components/feed/feedStateButton';
 
@@ -16,7 +17,7 @@ import { feedStateButton } from '../components/feed/feedStateButton';
  * list below. Supports ?compose=1&attach=<articleId> from "Quote this". */
 export function PostsPage() {
   const ui = useUiText();
-  const { t, isDark, isAuthenticated, setSidebarOpen } = useApp();
+  const { t, isAuthenticated, setSidebarOpen } = useApp();
   const [searchParams, setSearchParams] = useSearchParams();
   const [category, setCategory] = useState('all');
   const [sort, setSort] = useState<'latest' | 'oldest' | 'popular'>('latest');
@@ -36,13 +37,11 @@ export function PostsPage() {
       >
         {t.posts}
       </h1>
-      <div className="space-y-3">
-        <div className="flex items-center gap-3">
-          <div role="group" aria-label={ui('Sort posts')} className={`inline-flex min-w-0 overflow-x-auto rounded-xl border p-1 border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-900`}>
-            {(['latest', 'oldest', 'popular'] as const).map(option => <button key={option} type="button" aria-pressed={sort === option} onClick={() => setSort(option)} className={`whitespace-nowrap rounded-lg px-2.5 sm:px-3 py-1.5 text-[13px] font-semibold transition-colors ${sort === option ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white dark:shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'}`}><span className="hidden sm:inline">{ui(option === 'latest' ? 'Newest first' : option === 'oldest' ? 'Oldest first' : 'Most popular')}</span><span className="sm:hidden">{ui(option === 'latest' ? 'Newest' : option === 'oldest' ? 'Oldest' : 'Popular')}</span></button>)}
+      <div className="flex items-center justify-between gap-2">
+          <div role="group" aria-label={ui('Sort posts')} className={`${segment.track} min-w-0 max-sm:gap-0.5`}>
+            {(['latest', 'oldest', 'popular'] as const).map(option => <button key={option} type="button" aria-pressed={sort === option} onClick={() => setSort(option)} className={`whitespace-nowrap max-sm:px-2 ${sort === option ? segment.active : segment.item}`}><span className="hidden sm:inline">{ui(option === 'latest' ? 'Newest first' : option === 'oldest' ? 'Oldest first' : 'Most popular')}</span><span className="sm:hidden">{ui(option === 'latest' ? 'Newest' : option === 'oldest' ? 'Oldest' : 'Popular')}</span></button>)}
           </div>
-        </div>
-        <PostCategoryPicker value={category === 'all' ? '' : category} onChange={value => setCategory(value || 'all')} allLabel={ui('All categories')} isDark={isDark} ariaLabel={ui('Filter posts by category')} />
+          <PostCategorySelect variant="filter" value={category === 'all' ? '' : category} onChange={value => setCategory(value || 'all')} label={ui('Filter posts by category')} />
       </div>
 
       {isAuthenticated ? (

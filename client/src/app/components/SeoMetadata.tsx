@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import type { NewsArticle } from '../types/article';
 import { BRAND_ASSET_VERSION } from '../constants';
 
-export const DEFAULT_TITLE = 'NewsAgg: Automated News Aggregation, NLP-Based Sentiment and Topic Classification, and Topic Insights Dashboard';
+export const DEFAULT_TITLE = 'NewsAgg: Automated Multilingual News Aggregation with NLP Sentiment Analysis and Topic Insights Dashboard';
 const DEFAULT_DESCRIPTION = 'English and Traditional Chinese news with sentiment, topic, and keyword insights.';
 
 function upsertMeta(selector: string, attribute: 'name' | 'property', key: string, content: string) {

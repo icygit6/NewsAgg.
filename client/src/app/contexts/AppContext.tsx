@@ -23,7 +23,7 @@ interface AppContextType {
   setNewsMode: (mode: NewsMode) => void;
   t: Translations;
   // Sidebar
-  sidebarOpen: boolean;
+  /** Stable setter; read the state itself with useSidebarOpen(). */
   setSidebarOpen: (open: boolean) => void;
   // Category filter
   selectedCategories: Category[];
@@ -48,6 +48,10 @@ interface AppContextType {
   user: User | null;
   isAuthenticated: boolean;
   authInitialized: boolean;
+  /** The sign-in check could not reach the server (offline, restarting, rate
+   * limited), so "no user" means "unknown", not "signed out". */
+  authUnavailable: boolean;
+  retryAuth: () => void;
   setUser: (user: User | null) => void;
   // Avatar (user-set profile picture, persisted per-account in localStorage)
   avatarUrl: string | null;
@@ -63,6 +67,14 @@ const GUEST_AVATAR = `data:image/svg+xml;utf8,${encodeURIComponent(
 )}`;
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
+
+/** Whether the account drawer is open, kept out of AppContext on purpose: it flips on every
+ * open and close, and a change to the shared value re-renders every page component at once,
+ * which stalled the slide-in. Only the drawer, its tab and its history hook read this. */
+const SidebarOpenContext = createContext(false);
+export function useSidebarOpen() {
+  return useContext(SidebarOpenContext);
+}
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [isDark, setIsDark] = useState(() => localStorage.getItem('isDark') === 'true');
@@ -84,6 +96,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [user, setUser] = useState<User | null>(null);
   const [authInitialized, setAuthInitialized] = useState(false);
+  const [authUnavailable, setAuthUnavailable] = useState(false);
   const [avatarUrl, setAvatarUrlState] = useState<string | null>(null);
 
   const setLanguage = useCallback((lang: Language) => {
@@ -144,6 +157,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Paint the last known non-sensitive profile immediately, then validate the
   // HttpOnly cookie against /api/account/me. The JWT itself is never readable
   // by browser JavaScript.
+  // A failed check (offline, server restarting, rate limited) says nothing about
+  // the session, so it is retried before anyone is treated as signed out. A 401
+  // still signs out at once (accountFetch dispatches the global event).
+  const verifySession = useCallback(async (isCancelled: () => boolean = () => false) => {
+    setAuthUnavailable(false);
+    for (const delay of [0, 1500, 4000]) {
+      if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
+      if (isCancelled()) return;
+      // accountFetch resolves {success:false} on its own failures; the catch is
+      // defense-in-depth so this check can never reject unhandled.
+      const res = await authService.me().catch(() => ({ success: false as const }));
+      if (isCancelled()) return;
+      if (res.success && 'user' in res && res.user) {
+        setUser(res.user);
+        authService.setUser(res.user);
+        return;
+      }
+      if (res.success) {
+        // No session cookie: drop any profile cached by an earlier sign-in.
+        setUser(null);
+        authService.clearCachedUser();
+        return;
+      }
+    }
+    setAuthUnavailable(true);
+  }, []);
+
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
@@ -153,23 +193,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         console.error('Error loading user from localStorage:', err);
       }
     }
-    authService
-      .me()
-      .then((res) => {
-        if (res.success && res.user) {
-          setUser(res.user);
-          authService.setUser(res.user);
-        } else if (res.success && res.user === null) {
-          // No session cookie: drop any profile cached by an earlier sign-in.
-          setUser(null);
-          authService.clearCachedUser();
-        }
-      })
-      // accountFetch resolves {success:false} on its own failures; this catch
-      // is defense-in-depth so boot-time validation can never reject unhandled.
-      .catch(() => {})
-      .finally(() => setAuthInitialized(true));
-  }, []);
+    let cancelled = false;
+    void verifySession(() => cancelled).finally(() => {
+      if (!cancelled) setAuthInitialized(true);
+    });
+    return () => { cancelled = true; };
+  }, [verifySession]);
+
+  const retryAuth = useCallback(() => { void verifySession(); }, [verifySession]);
 
   // Verification links commonly open in a new tab. Refresh an account that
   // still looks unverified whenever this tab becomes active again, so the
@@ -267,7 +298,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       newsMode,
       setNewsMode,
       t,
-      sidebarOpen,
       setSidebarOpen,
       selectedCategory,
       selectedCategories, setSelectedCategories, selectedSentiments, setSelectedSentiments,
@@ -283,6 +313,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       user,
       isAuthenticated,
       authInitialized,
+      authUnavailable,
+      retryAuth,
       setUser,
       avatarUrl,
       setAvatarUrl,
@@ -294,7 +326,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       language,
       newsMode,
       t,
-      sidebarOpen,
       selectedCategory,
       selectedCategories, selectedSentiments,
       selectedSources,
@@ -304,12 +335,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       user,
       isAuthenticated,
       authInitialized,
+      authUnavailable,
+      retryAuth,
       avatarUrl,
       avatarSrc,
     ],
   );
 
-  return <AppContext.Provider value={value}><UiLocaleContext.Provider value={language}>{children}</UiLocaleContext.Provider></AppContext.Provider>;
+  return <AppContext.Provider value={value}><SidebarOpenContext.Provider value={sidebarOpen}><UiLocaleContext.Provider value={language}>{children}</UiLocaleContext.Provider></SidebarOpenContext.Provider></AppContext.Provider>;
 }
 
 export function useApp() {

@@ -1,9 +1,10 @@
+import { segment } from './styles';
 import { useUiText } from '../../i18n/uiText';
 import { useState, useEffect, useRef, type RefObject } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
-import { X, Check, LayoutGrid, Newspaper, Gauge, ArrowUpDown } from 'lucide-react';
+import { X, Newspaper } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
-import { CATEGORIES, CATEGORY_ACCENT, CATEGORY_LABELS, SOURCES, sourceLogoUrl } from '../../constants';
+import { CATEGORIES, CATEGORY_BADGE_CLASS, CATEGORY_LABELS, CATEGORY_TEXT, SOURCES, categoryVars, sourceLogoUrl, type Category } from '../../constants';
 import { ImageWithFallback } from '../utils/ImageWithFallback';
 import type { SentimentType } from '../../types/sentiment';
 import type { ArticleSort } from '../../services/newsAPI';
@@ -143,11 +144,6 @@ export function FilterSheet({ open, onClose, anchorRef, control, align = 'left' 
           >
             {t.filters}
           </span>
-          {activeCount > 0 && (
-            <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-[var(--brand)] text-white text-[11px] font-bold">
-              {activeCount}
-            </span>
-          )}
         </div>
         <div className="flex items-center gap-1">
           {activeCount > 0 && (
@@ -168,38 +164,35 @@ export function FilterSheet({ open, onClose, anchorRef, control, align = 'left' 
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className={`flex gap-1 p-2 border-b border-slate-100 dark:border-slate-700`}>
+      {/* Tabs: one line each, in the same track as the Insights / Pulse switch. Sized to their
+          labels (flex-auto) so "Sentiment" fits beside "Sort" on a 375px phone. */}
+      <div className="border-b border-slate-100 p-3 dark:border-slate-700"><div className={`${segment.track} flex w-full`}>
         {(
           [
-            { key: 'category', label: t.byCategory, icon: LayoutGrid },
-            { key: 'source', label: t.bySource, icon: Newspaper },
-            { key: 'sentiment', label: t.bySentiment, icon: Gauge },
-            { key: 'sort', label: t.sort, icon: ArrowUpDown },
+            { key: 'category', label: t.byCategory },
+            { key: 'source', label: t.bySource },
+            { key: 'sentiment', label: t.bySentiment },
+            { key: 'sort', label: t.sort },
           ] as const
-        ).map(({ key, label, icon: Icon }) => {
+        ).map(({ key, label }) => {
           const active = tab === key;
           return (
             <button
               key={key}
               onClick={() => setTab(key)}
-              className={`flex-1 min-w-0 flex flex-col items-center justify-center gap-1.5 px-1 py-2 rounded-lg text-center text-xs leading-tight sm:text-sm font-medium transition-colors ${
-                active
-                  ? 'bg-[var(--brand)] text-white'
-                  : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700'
-              }`}
+              aria-pressed={active}
+              className={`flex-auto min-w-0 min-h-9 truncate text-center max-sm:px-2 ${active ? segment.active : segment.item}`}
             >
-              <Icon size={16} className="shrink-0" />
-              <span>{label}</span>
+              {label}
             </button>
           );
         })}
-      </div>
+      </div></div>
 
       {/* Tab content */}
-      <div className="p-3 flex-1 min-h-0 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
+      <div className="p-4 flex-1 min-h-0 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
         {tab === 'category' ? (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2.5">
             <CategoryChip
               label={t.allCategories}
               active={c.categories.length === 0}
@@ -212,13 +205,13 @@ export function FilterSheet({ open, onClose, anchorRef, control, align = 'left' 
                 label={ui(CATEGORY_LABELS[cat])}
                 active={c.categories.includes(cat)}
                 isDark={isDark}
-                accent={CATEGORY_ACCENT[cat]}
+                category={cat}
                 onClick={() => c.setCategories(toggle(c.categories, cat))}
               />
             ))}
           </div>
         ) : tab === 'sentiment' ? (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2.5">
             <CategoryChip
               label={t.allSentiment}
               active={c.sentiments.length === 0}
@@ -237,7 +230,7 @@ export function FilterSheet({ open, onClose, anchorRef, control, align = 'left' 
             ))}
           </div>
         ) : tab === 'sort' ? (
-          <div className="grid grid-cols-1 gap-2">
+          <div className="flex flex-col gap-1.5">
             {c.sortOptions.map((option) => (
               <SortOption
                 key={option.value}
@@ -321,19 +314,21 @@ interface SortOptionProps {
   onClick: () => void;
 }
 
+/** Styled like a source row: plain until hovered, the chosen one tinted and outlined.
+ * min-h-12 matches a source row's height, which its 28px logo sets. */
 function SortOption({ label, selected, onClick }: SortOptionProps) {
   return (
     <button
       type="button"
+      aria-pressed={selected}
       onClick={onClick}
-      className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors ${
+      className={`flex min-h-12 w-full items-center rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-800 transition-colors dark:text-slate-100 ${
         selected
-          ? 'bg-[var(--brand)] text-white'
-          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-700/60 dark:text-slate-200 dark:hover:bg-slate-700'
+          ? 'bg-blue-500/10 ring-1 ring-blue-500/40'
+          : 'hover:bg-slate-100 dark:hover:bg-slate-700/60'
       }`}
     >
       {label}
-      {selected && <Check size={16} />}
     </button>
   );
 }
@@ -345,8 +340,8 @@ interface CategoryChipProps {
   onClick: () => void;
   // Optional semantic tone for sentiment chips; defaults to the theme accent.
   tone?: SentimentType;
-  /** Category colour for category chips: the active chip is filled with it, the rest show a dot. */
-  accent?: string;
+  /** Category chips always carry the category colour: tinted when off, filled when on. */
+  category?: Category;
 }
 
 const TONE_ACTIVE_CLASS: Record<SentimentType, string> = {
@@ -355,21 +350,39 @@ const TONE_ACTIVE_CLASS: Record<SentimentType, string> = {
   negative: 'bg-red-500 text-white',
 };
 
-function CategoryChip({ label, active, onClick, tone, accent }: CategoryChipProps) {
-  const activeClass = tone ? TONE_ACTIVE_CLASS[tone] : accent ? 'text-white' : 'bg-[var(--brand)] text-white';
+function CategoryChip({ label, active, onClick, tone, category }: CategoryChipProps) {
+  // A category chip is a soft tint of its colour until chosen, then filled like the badge on a
+  // card: the choice stands out without a checkmark or ring, and ten chips don't all shout at once.
+  if (category) {
+    return (
+      <button
+        type="button"
+        aria-pressed={active}
+        onClick={onClick}
+        style={categoryVars(category)}
+        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold transition-colors ${
+          active
+            ? `${CATEGORY_BADGE_CLASS[category]} shadow-sm`
+            : `${CATEGORY_TEXT} bg-[color-mix(in_srgb,var(--cat)_10%,transparent)] hover:bg-[color-mix(in_srgb,var(--cat)_18%,transparent)] dark:bg-[color-mix(in_srgb,var(--cat-light)_14%,transparent)] dark:hover:bg-[color-mix(in_srgb,var(--cat-light)_24%,transparent)]`
+        }`}
+      >
+        {label}
+      </button>
+    );
+  }
+  // "All …" is neutral ink, so it can't be mistaken for a blue category such as Politics.
+  const activeClass = tone ? TONE_ACTIVE_CLASS[tone] : 'bg-slate-800 text-white dark:bg-slate-100 dark:text-slate-900';
   return (
     <button
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      style={active && accent ? { background: accent } : undefined}
       className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
         active
           ? activeClass
           : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-700/60 dark:text-slate-200 dark:hover:bg-slate-700'
       }`}
     >
-      {accent && !active && <span aria-hidden className="h-2 w-2 rounded-full" style={{ background: accent }} />}
       {label}
     </button>
   );
@@ -386,6 +399,8 @@ interface SourceRowProps {
 function SourceRow({ name, logo, selected, onClick }: SourceRowProps) {
   return (
     <button
+      type="button"
+      aria-pressed={selected}
       onClick={onClick}
       className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-left transition-colors ${
         selected
@@ -406,17 +421,9 @@ function SourceRow({ name, logo, selected, onClick }: SourceRowProps) {
           <Newspaper size={14} className="text-slate-500 dark:text-slate-300" />
         </span>
       )}
+      {/* No checkbox: the tinted, outlined row shows the choice. */}
       <span className={`flex-1 text-sm font-medium text-slate-800 dark:text-slate-100`}>
         {name}
-      </span>
-      <span
-        className={`w-5 h-5 rounded-md flex items-center justify-center border transition-colors ${
-          selected
-            ? 'bg-[var(--brand)] border-blue-500 text-white'
-            : 'border-slate-300 dark:border-slate-600'
-        }`}
-      >
-        {selected && <Check size={14} />}
       </span>
     </button>
   );

@@ -4,9 +4,11 @@
 .auth-welcome p { color: #475569; }
 .auth-divider { display: flex; align-items: center; gap: 12px; margin: 4px 0 14px; font-size: 12px; color: #94a3b8; }
 .auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
-.auth-mode { display: flex; gap: 4px; padding: 4px; background: #eaf0f7; border-radius: 999px; margin-bottom: 22px; }
-.auth-mode button { flex: 1; min-height: 44px; border-radius: 999px; font-size: 13px; font-weight: 700; color: #475569; transition: background .18s, color .18s; }
-.auth-mode button[aria-pressed=true] { background: white; color: var(--brand); box-shadow: 0 2px 6px #173a6312; }
+/* The site-wide segment style (styles.ts `segment`). */
+.auth-mode { display: flex; gap: 4px; padding: 4px; background: white; border: 1px solid var(--color-slate-300); border-radius: 12px; margin-bottom: 22px; }
+.auth-mode button { flex: 1; min-height: 40px; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--color-slate-600); transition: background-color .15s, color .15s; }
+.auth-mode button:hover { color: var(--color-slate-900); background: var(--color-slate-100); }
+.auth-mode button[aria-pressed=true] { background: var(--brand); color: white; }
 .auth-input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft-strong); }
 .newsagg-auth :is(button, a):focus-visible, .auth-page :is(button, a, input):focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
 .auth-submit { background: var(--brand); box-shadow: 0 6px 18px var(--brand-soft-strong); transition: box-shadow .2s, transform .2s; }
@@ -16,9 +18,10 @@
 .newsagg-auth[data-theme=dark] .auth-welcome p { color: #94a3b8; }
 .newsagg-auth[data-theme=dark] .auth-divider { color: #64748b; }
 .newsagg-auth[data-theme=dark] .auth-divider::before, .newsagg-auth[data-theme=dark] .auth-divider::after { background: #334155; }
-.newsagg-auth[data-theme=dark] .auth-mode { background: #0f172a; }
-.newsagg-auth[data-theme=dark] .auth-mode button { color: #94a3b8; }
-.newsagg-auth[data-theme=dark] .auth-mode button[aria-pressed=true] { background: #253a55; color: #dbeafe; }
+.newsagg-auth[data-theme=dark] .auth-mode { background: var(--color-slate-800); border-color: var(--color-slate-600); }
+.newsagg-auth[data-theme=dark] .auth-mode button { color: var(--color-slate-300); }
+.newsagg-auth[data-theme=dark] .auth-mode button:hover { color: white; background: var(--color-slate-700); }
+.newsagg-auth[data-theme=dark] .auth-mode button[aria-pressed=true] { background: var(--brand); color: white; }
 .auth-google-surface { border-radius: 999px; background: #fff; color-scheme: light; }
 .newsagg-auth[data-theme=dark] .auth-google-surface { background: #202124; }
 .auth-google-button { min-width: 0; border-radius: inherit; }

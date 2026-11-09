@@ -73,7 +73,7 @@ export function PulseRail() {
             {ui('Showing')}
             <span className={`rounded-full px-2 py-0.5 font-semibold ${CATEGORY_BADGE_CLASS[selectedCategory]}`}>{ui(categoryLabel)}</span>
           </span>
-          <button type="button" onClick={() => setSelectedCategory('all')} className="min-h-8 rounded-lg px-2 text-xs font-semibold text-[var(--brand,#2563eb)] hover:underline">
+          <button type="button" onClick={() => setSelectedCategory('all')} className="min-h-8 rounded-lg px-2 text-xs font-semibold text-[var(--brand,#2563eb)] hover:text-[var(--brand-hover)]">
             {t.allCategories}
           </button>
         </div>
@@ -84,12 +84,12 @@ export function PulseRail() {
       {POSTS_ENABLED ? (
         isAuthenticated ? (
           <Link to="/posts?compose=1" className={teaserClasses}>
-            <PenSquare size={16} className="shrink-0 text-[var(--brand,#2563eb)]" />
+            <PenSquare size={16} className="shrink-0 text-[var(--brand,#2563eb)] hover:text-[var(--brand-hover)]" />
             {t.whatsHappening}
           </Link>
         ) : (
           <button onClick={() => setSidebarOpen(true)} className={teaserClasses}>
-            <PenSquare size={16} className="shrink-0 text-[var(--brand,#2563eb)]" />
+            <PenSquare size={16} className="shrink-0 text-[var(--brand,#2563eb)] hover:text-[var(--brand-hover)]" />
             {t.signInToPost}
           </button>
         )
@@ -111,7 +111,7 @@ export function PulseRail() {
       {POSTS_ENABLED && (
         <Link
           to="/posts"
-          className="text-sm font-medium px-2 py-1 text-[var(--brand,#2563eb)] hover:underline"
+          className="text-sm font-medium px-2 py-1 text-[var(--brand,#2563eb)] hover:text-[var(--brand-hover)]"
         >
           {t.viewAllPosts}
         </Link>

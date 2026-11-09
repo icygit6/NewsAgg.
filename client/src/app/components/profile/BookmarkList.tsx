@@ -16,6 +16,7 @@ import { CATEGORY_BADGE_CLASS, CATEGORY_GROUP_HOVER_TEXT, POSTS_ENABLED, TOPIC_T
 import { formatNewsDate } from '../../lib/formatDate';
 import type { SentimentType } from '../../types/sentiment';
 import { ListSkeleton } from '../ui/ContentSkeleton';
+import { NoteEditor } from './NoteEditor';
 
 export type BookmarkStatus = 'unread' | 'read' | 'archived';
 const statusOf = (b: { is_read: boolean; archived: boolean }): BookmarkStatus => b.archived ? 'archived' : b.is_read ? 'read' : 'unread';
@@ -25,11 +26,16 @@ const pillTone: Record<BookmarkStatus, string> = {
   archived: 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
 };
 
+/** On a phone's narrow card the pill is just its mark (dot, tick, box), which
+ * leaves the collection tag and note chip room; the word shows from sm up. */
 export function StatusPill({ status }: { status: BookmarkStatus }) {
   const ui = useUiText();
-  return <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 font-semibold ${pillTone[status]}`}>
+  const label = ui({ unread: 'Unread', read: 'Read', archived: 'Archived' }[status]);
+  return <span title={label} className={`inline-flex h-6 min-w-6 shrink-0 items-center justify-center gap-1 rounded-full px-1.5 font-semibold sm:px-2.5 ${pillTone[status]}`}>
     {status === 'unread' && <span aria-hidden="true" className="size-1.5 rounded-full bg-current" />}
-    {ui({ unread: 'Unread', read: 'Read', archived: 'Archived' }[status])}
+    {status === 'read' && <Check size={12} aria-hidden="true" className="sm:hidden" />}
+    {status === 'archived' && <Archive size={12} aria-hidden="true" className="sm:hidden" />}
+    <span className="max-sm:sr-only">{label}</span>
   </span>;
 }
 
@@ -59,23 +65,26 @@ const SENTIMENT_STYLE: Record<SentimentType, { bg: string; dot: string; dark: st
 };
 
 /** One saved story. The collection tag opens the collection picker and the
- * note button opens the note editor, so neither takes room until it's used. */
+ * note chip at the end of the tag row opens the note editor over the card,
+ * so neither a note nor editing one changes the card's size. */
 function BookmarkCard({ b, title, choices, onRemove }: { b: any; title?: string; choices: string[]; onRemove: () => void }) {
   const ui = useUiText();
   const { isDark, t, language } = useApp();
   const { update, archive } = useBookmarkActions();
   const [newCollection, setNewCollection] = useState(false);
-  const [editingNote, setEditingNote] = useState(false);
-  const noteRef = useRef<HTMLTextAreaElement>(null);
+  const [noteOpen, setNoteOpen] = useState(false);
+  const noteButtonRef = useRef<HTMLButtonElement>(null);
   const note: string = b.notes || '';
-  const saveNote = (value: string) => { setEditingNote(false); if (value.trim() !== note) update.mutate({ id: b.id, notes: value.trim() }); };
+  const saveNote = (text: string) => update.mutate({ id: b.id, notes: text });
 
   const category = TOPIC_TO_CATEGORY[b.topic as keyof typeof TOPIC_TO_CATEGORY];
   const sentiment = SENTIMENT_STYLE[b.sentiment as SentimentType] ? b.sentiment as SentimentType : null;
   const headline = title || ui('Untitled article');
 
   // Same frame as the home feed's NewsCard; the bookmark controls live in the footer.
-  return <article data-status={statusOf(b)} className={`group min-w-0 motion-safe:transition-transform motion-safe:duration-200 motion-safe:hover:-translate-y-0.5 ${b.archived ? 'opacity-70' : ''}`}>
+  // relative: the note pop-up is placed against the whole card, so a long note
+  // can rise past the card's clipped frame instead of being cut off.
+  return <article data-status={statusOf(b)} className={`group relative min-w-0 motion-safe:transition-transform motion-safe:duration-200 motion-safe:hover:-translate-y-0.5 ${b.archived ? 'opacity-70' : ''}`}>
     <div style={categoryVars(category) as React.CSSProperties} className={`news-card-frame flex h-full flex-col overflow-hidden rounded-2xl border transition-[border-color,box-shadow] duration-200 ${isDark ? 'bg-slate-900 border-slate-800 hover:border-slate-600' : 'bg-white border-slate-200 hover:border-blue-300 hover:shadow-md'}`}>
       {/* The image links to the story; the badges and the post button sit on
           top of it rather than inside the link. */}
@@ -107,18 +116,24 @@ function BookmarkCard({ b, title, choices, onRemove }: { b: any; title?: string;
 
         <Link to={`/article/${b.article_id}`} viewTransition title={headline} className={`news-headline mb-2 line-clamp-3 min-h-[4.2em] font-poppins text-sm font-semibold leading-[1.4] [overflow-wrap:anywhere] transition-colors sm:text-base ${CATEGORY_GROUP_HOVER_TEXT} ${b.is_read ? 'text-slate-500 dark:text-slate-400' : 'text-[#0b1f33] dark:text-slate-100'}`}>{headline}</Link>
 
-        {editingNote
-          ? <textarea ref={noteRef} autoFocus aria-label={`${ui('Note')}: ${b.article_title}`} defaultValue={note} placeholder={ui('Add a private note…')} maxLength={1000} rows={3}
-              onBlur={e=>saveNote(e.target.value)}
-              onKeyDown={e=>{ if(e.key==='Escape'){ e.preventDefault(); setEditingNote(false); } if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){ e.preventDefault(); saveNote(e.currentTarget.value); } }}
-              className="mb-2 w-full resize-none rounded-xl border border-slate-200 bg-white p-2.5 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-ring)] dark:border-slate-700 dark:bg-slate-900"/>
-          : note&&<button onClick={()=>setEditingNote(true)} title={ui('Edit note')} className="mb-2 block w-full border-l-2 border-slate-200 pl-2.5 text-left text-xs italic leading-relaxed text-slate-600 line-clamp-2 hover:border-[var(--brand)] dark:border-slate-700 dark:text-slate-300">{note}</button>}
-
         <div className="flex-1" />
+
 
         <div className="mb-2 flex min-w-0 items-center gap-1.5 text-xs">
           <StatusPill status={statusOf(b)}/>
           <CollectionPicker chip label={`${ui('Collection')}: ${b.article_title}`} value={b.collection_name} choices={choices} isDark={isDark} onNew={()=>setNewCollection(true)} onChange={name=>update.mutate({id:b.id,collectionName:name})}/>
+          {/* The note lives in a chip as tall as the tags, right after the collection:
+              faint when empty, filled yellow when there is one. It opens the
+              note to read first; the tap target is 44px tall without making the row taller. */}
+          <button ref={noteButtonRef} type="button" aria-expanded={noteOpen}
+            title={ui(note ? 'Note' : 'Add note')}
+            aria-label={`${ui(note ? 'Edit note' : 'Add note')}: ${b.article_title}`}
+            onClick={() => setNoteOpen(open => !open)}
+            className={`relative inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full ring-1 transition-colors before:absolute before:-inset-x-1 before:-inset-y-2.5 before:content-[''] ${note
+              ? 'bg-amber-100 text-amber-700 ring-amber-200 hover:bg-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30 dark:hover:bg-amber-500/25'
+              : 'text-slate-400 ring-slate-200 hover:text-blue-600 hover:ring-blue-300 dark:text-slate-500 dark:ring-slate-700 dark:hover:text-blue-400'}`}>
+            <NotebookPen size={13} aria-hidden="true" />
+          </button>
         </div>
         {newCollection&&<div className="mb-2"><CollectionNameInput label={`${ui('New collection…')}: ${b.article_title}`} isDark={isDark} onCancel={()=>setNewCollection(false)} onSubmit={raw=>{
           setNewCollection(false);
@@ -141,11 +156,12 @@ function BookmarkCard({ b, title, choices, onRemove }: { b: any; title?: string;
         <div className={`mt-2 flex items-center justify-between gap-1 border-t pt-2 border-slate-200 dark:border-slate-700`}>
           <button aria-pressed={b.is_read} title={ui(b.is_read?'Mark unread':'Mark read')} aria-label={`${ui(b.is_read?'Mark unread':'Mark read')}: ${b.article_title}`} onClick={()=>update.mutate({id:b.id,isRead:!b.is_read})} className={b.is_read?`${iconBase} bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25 dark:text-emerald-400`:iconButton}><Check size={16}/></button>
           <button aria-pressed={b.archived} title={ui(b.archived?'Unarchive':'Archive')} aria-label={`${ui(b.archived?'Unarchive':'Archive')}: ${b.article_title}`} onClick={()=>archive(b)} className={b.archived?`${iconBase} bg-amber-500/15 text-amber-600 hover:bg-amber-500/25 dark:text-amber-400`:iconButton}>{b.archived?<ArchiveRestore size={16}/>:<Archive size={16}/>}</button>
-          <button aria-expanded={editingNote} title={ui(note?'Edit note':'Add note')} aria-label={`${ui(note?'Edit note':'Add note')}: ${b.article_title}`} onMouseDown={e=>{ if(editingNote) e.preventDefault(); }} onClick={()=>editingNote?saveNote(noteRef.current?.value??note):setEditingNote(true)} className={note?`${iconBase} text-[var(--brand)] hover:bg-[color-mix(in_srgb,var(--brand)_10%,transparent)]`:iconButton}><NotebookPen size={16}/></button>
           {b.article_url&&<a href={b.article_url} target="_blank" rel="noopener noreferrer" title={ui('Open original article')} aria-label={`Open original article: ${b.article_title}`} className={iconButton}><ExternalLink size={16}/></a>}
           <button title={ui('Remove bookmark')} aria-label={`Remove bookmark: ${b.article_title}`} onClick={onRemove} className={`${iconBase} text-red-500 hover:bg-red-500/10`}><Trash2 size={16}/></button>
         </div>
       </div>
     </div>
+    {/* Outside the frame, which clips its contents. */}
+    {noteOpen && <NoteEditor note={note} onSave={saveNote} onClose={() => setNoteOpen(false)} storyTitle={headline} triggerRef={noteButtonRef} />}
   </article>;
 }

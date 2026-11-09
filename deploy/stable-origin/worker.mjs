@@ -57,6 +57,18 @@ export default {
     headers.delete('x-forwarded-host');
     headers.delete('x-forwarded-for');
     headers.set('x-forwarded-proto', 'https');
+    // Cloudflare rewrites CF-Connecting-IP on this subrequest to the Worker's
+    // own address, so every visitor would reach the API as one client and share
+    // one rate limit. Pass the visitor's address in our own header, vouched for
+    // by a secret only this Worker and the API know; never forward a copy a
+    // visitor sent themselves.
+    headers.delete('x-newsagg-client-ip');
+    headers.delete('x-newsagg-edge-key');
+    const visitorIp = request.headers.get('cf-connecting-ip');
+    if (env.NEWSAGG_EDGE_KEY && visitorIp) {
+      headers.set('x-newsagg-client-ip', visitorIp);
+      headers.set('x-newsagg-edge-key', env.NEWSAGG_EDGE_KEY);
+    }
     try {
       const upstream = await fetch(new Request(target, {method:request.method, headers, body:['GET','HEAD'].includes(request.method)?null:request.body, redirect:'manual'}));
       const response = new Response(upstream.body, upstream);

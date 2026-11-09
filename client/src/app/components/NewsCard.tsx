@@ -128,8 +128,8 @@ export function NewsCard({ article }: NewsCardProps) {
             </div>
           </div>
 
-          <div className="flex min-w-0 flex-1 flex-col p-2.5 sm:p-3">
-            <div className="mb-2 flex min-w-0 items-center gap-2">
+          <div className="flex min-w-0 flex-1 flex-col px-2.5 py-3.5 sm:px-3 sm:py-4">
+            <div className="mb-3 flex min-w-0 items-center gap-2">
               <SourceLogo source={article.source} isDark={isDark} className="h-7 w-7 shrink-0 sm:h-8 sm:w-8" />
 
               <div className="min-w-0">
@@ -142,15 +142,16 @@ export function NewsCard({ article }: NewsCardProps) {
               </div>
             </div>
 
-            <h3 title={article.title} className={`news-headline mb-2 shrink-0 line-clamp-3 min-h-[4.2em] [overflow-wrap:anywhere] font-poppins text-sm font-semibold leading-[1.4] transition-colors sm:text-base ${CATEGORY_GROUP_HOVER_TEXT} text-[#0b1f33] dark:text-slate-100`} style={{ textWrap: 'wrap' }}>
+            <h3 title={article.title} className={`news-headline mb-3 shrink-0 line-clamp-3 min-h-[4.2em] [overflow-wrap:anywhere] font-poppins text-sm font-semibold leading-[1.4] transition-colors sm:text-base ${CATEGORY_GROUP_HOVER_TEXT} text-[#0b1f33] dark:text-slate-100`} style={{ textWrap: 'wrap' }}>
               {article.title}
             </h3>
 
-            {/* At least the height of the bookmark card's action row, so home and bookmark
-                cards are the same height (headlines above reserve three lines, as there). */}
-            <div className="min-h-11 flex-1" />
+            {/* Home cards match the bookmark cards' height, which carry an extra action row
+                (about 44px). That space is spread through the padding and the gaps between
+                rows rather than left as one empty band under the headline; this takes the rest. */}
+            <div className="min-h-4 flex-1" />
 
-            <div className="mb-2 flex min-w-0 items-center gap-1 overflow-hidden">
+            <div className="mb-3 flex min-w-0 items-center gap-1 overflow-hidden">
               {article.keywords.slice(0, 3).map((keyword) => (
                 <span
                   key={`${article.id}-${keyword}`}
@@ -162,7 +163,7 @@ export function NewsCard({ article }: NewsCardProps) {
               ))}
             </div>
 
-            <div className={`flex flex-wrap items-center justify-between gap-x-2 gap-y-1 pt-2 border-t text-xs border-slate-200 text-slate-500 dark:border-slate-700 dark:text-slate-400`}>
+            <div className={`flex flex-wrap items-center justify-between gap-x-2 gap-y-1 pt-3 border-t text-xs border-slate-200 text-slate-500 dark:border-slate-700 dark:text-slate-400`}>
               <div className="flex items-center gap-1.5 min-w-0">
                 <Clock3 size={14} className="flex-shrink-0 opacity-70" />
                 <span className="truncate font-medium">
@@ -173,7 +174,7 @@ export function NewsCard({ article }: NewsCardProps) {
               <span className="flex-shrink-0 font-medium">{formatNewsDate(article.publishedAt, language)}</span>
             </div>
 
-            <div className={`flex min-w-0 items-center justify-between gap-3 mt-1 text-xs text-slate-500 dark:text-slate-400`}>
+            <div className={`flex min-w-0 items-center justify-between gap-3 mt-2 text-xs text-slate-500 dark:text-slate-400`}>
               <span className="truncate opacity-80">{article.source.domain || t.source}</span>
             </div>
           </div>

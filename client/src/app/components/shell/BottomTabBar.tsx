@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router';
 import { Home, MessageSquareQuote, Bookmark, BarChart2, ShieldCheck } from 'lucide-react';
-import { useApp } from '../../contexts/AppContext';
-import { adminAttentionCount, useAdminOverview, useIsAdmin } from '../../hooks/useAdmin';
+import { useApp, useSidebarOpen } from '../../contexts/AppContext';
+import { adminAttentionCount, useAdminAttention, useIsAdmin } from '../../hooks/useAdmin';
 import { useUiText } from '../../i18n/uiText';
 import { POSTS_ENABLED } from '../../constants';
 
@@ -15,11 +15,12 @@ interface TabItem {
 /** Small/medium-screen bottom navigation (hidden ≥lg, where NavRail takes over). */
 export function BottomTabBar() {
   const ui = useUiText();
-  const { t, avatarSrc, sidebarOpen, setSidebarOpen } = useApp();
+  const { t, avatarSrc, setSidebarOpen } = useApp();
+  const sidebarOpen = useSidebarOpen();
   // Admins get the same entry point the desktop rail gives them.
   const admin = useIsAdmin();
-  const adminOverview = useAdminOverview();
-  const openReports = adminAttentionCount(adminOverview.data);
+  const adminAttention = useAdminAttention();
+  const openReports = adminAttentionCount(adminAttention.data);
   const scrollTop = () => {
     document.getElementById('main-scroll')?.scrollTo({ top: 0, behavior: 'instant' });
     window.scrollTo({ top: 0, behavior: 'instant' });

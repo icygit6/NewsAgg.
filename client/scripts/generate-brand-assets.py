@@ -73,10 +73,10 @@ draw = ImageDraw.Draw(og)
 draw.text((600, 373), "NewsAgg", font=nunito(84, 700), fill=INK, anchor="mm")
 draw.text(
     (600, 452),
-    "Automated News Aggregation, NLP-Based Sentiment and Topic Classification,",
+    "Automated Multilingual News Aggregation",
     font=nunito(25, 600),
     fill=SLATE,
     anchor="mm",
 )
-draw.text((600, 490), "and Topic Insights Dashboard", font=nunito(25, 600), fill=SLATE, anchor="mm")
+draw.text((600, 490), "with NLP Sentiment Analysis and Topic Insights Dashboard", font=nunito(25, 600), fill=SLATE, anchor="mm")
 save(og.convert("RGB"), "og-image.png")

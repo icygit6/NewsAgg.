@@ -66,3 +66,25 @@ it('drops automatic paging, and its bar, when the reader prefers reduced motion'
   view(25);
   expect(bar()).toBeNull();
 });
+
+it('steps through pages with arrows beside the dots, wrapping at both ends', () => {
+  view(25);
+  const list = screen.getByRole('region', { name: 'Live view' });
+  Object.defineProperty(list, 'clientWidth', { configurable: true, value: 300 });
+  const scrollTo = vi.fn();
+  list.scrollTo = scrollTo;
+  fireEvent.click(screen.getByRole('button', { name: 'Previous page' }));
+  // Wrapping cuts straight to the last page; a neighbouring page slides.
+  expect(scrollTo).toHaveBeenLastCalledWith({ left: 600, behavior: 'instant' });
+  // Pressed again before that scroll settles, it keeps going from page three.
+  fireEvent.click(screen.getByRole('button', { name: 'Previous page' }));
+  expect(scrollTo).toHaveBeenLastCalledWith({ left: 300, behavior: 'smooth' });
+  fireEvent.click(screen.getByRole('button', { name: 'Next page' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Next page' }));
+  expect(scrollTo).toHaveBeenLastCalledWith(expect.objectContaining({ left: 0 }));
+});
+
+it('has no arrows when everything fits on one page', () => {
+  view(10);
+  expect(screen.queryByRole('button', { name: 'Next page' })).toBeNull();
+});

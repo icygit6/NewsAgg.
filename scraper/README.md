@@ -1,6 +1,6 @@
-# NewsAgg: Automated News Aggregation, NLP-Based Sentiment and Topic Classification, and Topic Insights Dashboard
+# NewsAgg: Automated Multilingual News Aggregation with NLP Sentiment Analysis and Topic Insights Dashboard
 
-NewsAgg：自動化新聞聚合、以 NLP 進行情緒與主題分類，以及主題洞察儀表板
+NewsAgg：自動化多語新聞聚合，結合 NLP 情感分析與主題洞察儀表板
 
 ## Scraper
 

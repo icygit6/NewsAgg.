@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
-import { ArrowUp, ChevronDown, Eraser, Loader2, Send, Sparkles, X } from 'lucide-react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { AnimatePresence, animate, motion, useDragControls, useMotionValue, useReducedMotion, useTransform, type PanInfo } from 'motion/react';
+import { ChevronDown, Eraser, Loader2, Send, Sparkles, X } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { getArticleId } from '../../services/newsAPI';
 import { getRuntimeConfig } from '../../lib/runtimeConfig';
-import { useUiText } from '../../i18n/uiText';
-import { scrollMainToTop, useMainScrolledPast } from '../../hooks/useMainScroll';
+import { getMain, useMainScrolledPast } from '../../hooks/useMainScroll';
+import { ScrollTopButton } from '../ui/ScrollTopButton';
 import type { Language } from '../../i18n/translations';
 import type { NewsArticle } from '../../types/article';
 import { authFetch } from '../../lib/apiFetch';
@@ -66,8 +67,61 @@ function ArticleChatSession({ article, isDark }: ArticleChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>(() => loadHistory(storageKey));
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const ui = useUiText();
   const scrolledDown = useMainScrolledPast(400, storageKey);
+  const reducedMotion = useReducedMotion();
+  const panelRef = useRef<HTMLElement>(null);
+  const dragControls = useDragControls();
+  const x = useMotionValue(0);
+  const scrimOpacity = useTransform(x, value => Math.max(0, 1 - Math.max(0, value) / 320));
+  const leaving = useRef(false);
+  // A fresh opening starts at rest; the panel unmounts on close, so this only clears the last swipe.
+  useLayoutEffect(() => {
+    if (!open) return;
+    leaving.current = false;
+    x.set(0);
+  }, [open, x]);
+
+  // Escape closes the panel; the focus goes back to where it was.
+  useEffect(() => {
+    if (!open) return;
+    const before = document.activeElement as HTMLElement | null;
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape' && !event.defaultPrevented) setOpen(false); };
+    document.addEventListener('keydown', onKeyDown);
+    return () => { document.removeEventListener('keydown', onKeyDown); before?.focus?.({ preventScroll: true }); };
+  }, [open]);
+
+  const startSwipe = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === 'mouse' || leaving.current) return;
+    // The message box and its text keep their own gestures.
+    if ((event.target as Element).closest('input, textarea, select, summary, details')) return;
+    dragControls.start(event);
+  };
+  const endSwipe = (_event: unknown, info: PanInfo) => {
+    const close = info.offset.x > 90 || info.velocity.x > 500;
+    // Continue from where the finger let go, with its speed, instead of snapping back and re-sliding.
+    const spring = { type: 'spring' as const, stiffness: 520, damping: 44, velocity: info.velocity.x, restDelta: 1, restSpeed: 10 };
+    if (!close) { animate(x, 0, reducedMotion ? { duration: 0 } : spring); return; }
+    leaving.current = true;
+    const distance = panelRef.current?.getBoundingClientRect().width ?? window.innerWidth;
+    animate(x, distance, { ...(reducedMotion ? { duration: 0 } : spring), onComplete: () => setOpen(false) });
+  };
+  // Phones: fold the pill into a circle while reading down, bring it back when scrolling up or at the top.
+  const [compact, setCompact] = useState(false);
+  useEffect(() => {
+    setCompact(false);
+    let last = getMain()?.scrollTop ?? 0;
+    const onScroll = (event: Event) => {
+      const main = getMain();
+      if (!main || event.target !== main) return;
+      const top = main.scrollTop;
+      if (top <= 200) setCompact(false);
+      else if (top > last + 8) setCompact(true);
+      else if (top < last - 8) setCompact(false);
+      if (Math.abs(top - last) > 8) last = top;
+    };
+    document.addEventListener('scroll', onScroll, { passive: true, capture: true });
+    return () => document.removeEventListener('scroll', onScroll, true);
+  }, [storageKey]);
   // Tracks which article the state currently belongs to, so a reply that
   // resolves after navigating to another article (component stays mounted)
   // can't write the old article's conversation into the new one's state —
@@ -161,60 +215,72 @@ function ArticleChatSession({ article, isDark }: ArticleChatProps) {
 
   return (
     <>
-      {/* Floating controls (hidden while the panel is open): scroll-to-top sits
-          beside the chat trigger in one row instead of stacking above it. */}
+      {/* Floating controls (hidden while the panel is open). On phones the scroll-to-top
+          circle stacks above the trigger, so both sit in one thumb column and the trigger
+          never moves; desktop shows scroll-to-top beside the reading column instead.
+          The pill folds into a circle while reading down the page. */}
       {!open && (
-        <div className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] lg:bottom-6 right-6 z-40 flex items-center gap-3">
-          <AnimatePresence>
-            {scrolledDown && (
-              <motion.button
-                key="to-top"
-                type="button"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                onClick={() => scrollMainToTop(true)}
-                aria-label={ui('Scroll to top')}
-                title={ui('Scroll to top')}
-                className={`grid place-items-center w-11 h-11 rounded-full shadow-lg ring-1 transition-colors bg-white text-slate-700 ring-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-700 dark:hover:bg-slate-700`}
-              >
-                <ArrowUp size={20} />
-              </motion.button>
-            )}
-          </AnimatePresence>
+        <div className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] lg:bottom-6 right-6 z-40 flex flex-col items-end gap-3">
+          <ScrollTopButton show={scrolledDown} className="lg:hidden" />
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="group inline-flex items-center gap-2 pl-4 pr-5 py-3 rounded-full text-sm font-semibold text-white shadow-lg shadow-blue-600/25 ring-1 ring-white/20 bg-[var(--brand)] hover:bg-[var(--brand-hover)] hover:shadow-xl hover:-translate-y-0.5 transition-all"
+            aria-label={askLabel}
+            className={`group inline-flex items-center justify-center gap-2 rounded-full text-sm font-semibold text-white shadow-lg shadow-blue-600/25 ring-1 ring-white/20 bg-[var(--brand)] hover:bg-[var(--brand-hover)] hover:shadow-xl hover:-translate-y-0.5 transition-all ${compact ? 'max-lg:size-12 lg:py-3 lg:pl-4 lg:pr-5' : 'py-3 pl-4 pr-5'}`}
           >
             <Sparkles size={16} className="transition-transform group-hover:rotate-12" />
-            {askLabel}
+            <span className={compact ? 'max-lg:hidden' : ''}>{askLabel}</span>
           </button>
         </div>
       )}
 
+      {/* Portaled to the body like the account drawer, so it covers the top bar and bottom tabs. */}
+      {createPortal(
       <AnimatePresence>
         {open && (
           <>
-            {/* Mobile-only dimmer: on small screens the panel covers most of the
-                width, so a tap-to-close scrim helps. Desktop stays scrim-free so
-                the article keeps scrolling behind the docked panel. */}
+            {/* Dimmer below lg, where the panel covers most of the page. Desktop stays
+                scrim-free so the article keeps scrolling behind the docked panel. It
+                follows the drag, and has no backdrop blur (re-blurring every frame made
+                the slide stutter on phones). */}
             <motion.div
               key="chat-overlay"
+              aria-hidden="true"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              transition={{ duration: reducedMotion ? 0 : 0.2, ease: 'easeOut' }}
               onClick={() => setOpen(false)}
-              className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm lg:hidden"
-            />
+              className="fixed inset-0 z-[60] lg:hidden"
+            >
+              <motion.div style={{ opacity: scrimOpacity }} className="absolute inset-0 bg-black/40" />
+            </motion.div>
+            {/* Two layers, like the account drawer: the outer one only slides in and out
+                (a compositor transform); the inner one is what a swipe drags. */}
             <motion.aside
               key="chat-panel"
+              ref={panelRef}
               aria-label={askLabel}
-              initial={{ x: 380, opacity: 0.5 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: 380, opacity: 0.5 }}
-              transition={{ type: 'spring', stiffness: 320, damping: 34 }}
-              className={`fixed top-0 right-0 z-[60] h-dvh w-full max-w-sm flex flex-col overflow-hidden border-l shadow-2xl lg:rounded-l-3xl bg-white border-slate-100 dark:bg-slate-900 dark:border-slate-700/60`}
+              initial={{ transform: 'translateX(100%)' }}
+              animate={{ transform: 'translateX(0%)' }}
+              exit={{ transform: 'translateX(100%)', transition: { duration: reducedMotion ? 0 : 0.2, ease: [0.4, 0, 1, 1] } }}
+              transition={{ duration: reducedMotion ? 0 : 0.3, ease: [0.32, 0.72, 0, 1] }}
+              style={{ willChange: 'transform' }}
+              className="fixed inset-y-0 right-0 z-[70] w-full sm:w-[400px] sm:max-w-[95vw]"
+            >
+            <motion.div
+              // Swipe right to close (touch and pen only; a mouse keeps selecting text).
+              drag="x"
+              dragListener={false}
+              dragControls={dragControls}
+              dragDirectionLock
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={{ left: 0, right: 1 }}
+              dragMomentum={false}
+              onPointerDown={startSwipe}
+              onDragEnd={endSwipe}
+              style={{ x, willChange: 'transform' }}
+              className="touch-pan-y flex h-full flex-col overflow-hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] border-l shadow-2xl sm:rounded-l-3xl bg-white border-slate-100 dark:bg-slate-900 dark:border-slate-700/60"
             >
               <div className={`relative shrink-0 px-4 py-3 border-b border-slate-100 dark:border-slate-700/60`}>
                 {/* Gradient hairline, echoing the floating trigger. */}
@@ -263,7 +329,7 @@ function ArticleChatSession({ article, isDark }: ArticleChatProps) {
                 </div>
               </div>
 
-              <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+              <div ref={scrollRef} className="flex-1 touch-pan-y overflow-y-auto overscroll-contain px-4 py-4 space-y-3">
                 {messages.length === 0 && !loading && (
                   <div className="pt-6 text-center">
                     <span className={`inline-grid place-items-center w-12 h-12 rounded-2xl ${isDark ? 'bg-slate-800 text-blue-300' : 'bg-blue-50 text-blue-600 dark:text-blue-400'}`}>
@@ -377,10 +443,12 @@ function ArticleChatSession({ article, isDark }: ArticleChatProps) {
                   </button>
                 </div>
               </div>
+            </motion.div>
             </motion.aside>
           </>
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+      document.body)}
     </>
   );
 }

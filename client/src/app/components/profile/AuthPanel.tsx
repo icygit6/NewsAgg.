@@ -336,7 +336,7 @@ export function AuthPanel({ isDark, onAuthenticated }: AuthPanelProps) {
           <div className="space-y-3">
             <label className={`flex items-start gap-3 text-sm text-slate-700 dark:text-slate-300`}>
               <input type="checkbox" checked={termsAccepted} onChange={(event) => setTermsAccepted(event.target.checked)} className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 dark:text-blue-400" />
-              <span>{ui("I agree to the")} <a href="/terms" target="_blank" rel="noreferrer" className="font-semibold text-blue-600 dark:text-blue-400 hover:underline">{ui("Terms of Service")}</a>. <span className="text-red-500">*</span></span>
+              <span>{ui("I agree to the")} <a href="/terms" target="_blank" rel="noreferrer" className="font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">{ui("Terms of Service")}</a>. <span className="text-red-500">*</span></span>
             </label>
             <label className={`flex items-start gap-3 text-sm text-slate-700 dark:text-slate-300`}>
               <input type="checkbox" checked={emailUpdates} onChange={(event) => setEmailUpdates(event.target.checked)} className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 dark:text-blue-400" />
@@ -426,7 +426,7 @@ export function AuthPanel({ isDark, onAuthenticated }: AuthPanelProps) {
           {ui(mode === 'login' ? 'Create one' : mode === 'signup' ? 'Sign in' : '← Back to sign in')}
         </button>
       </div>
-      <p className="mt-3 text-center text-xs text-slate-500 dark:text-slate-400"><a className="font-semibold text-[var(--brand)] underline-offset-4 hover:underline" href="/privacy" target="_blank" rel="noreferrer">{ui('Privacy Policy')}</a></p>
+      <p className="mt-3 text-center text-xs text-slate-500 dark:text-slate-400"><a className="font-semibold text-[var(--brand)] hover:text-[var(--brand-hover)]" href="/privacy" target="_blank" rel="noreferrer">{ui('Privacy Policy')}</a></p>
     </section>
   );
 }

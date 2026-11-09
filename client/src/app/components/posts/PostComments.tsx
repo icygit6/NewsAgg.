@@ -44,14 +44,15 @@ function CommentRow({ comment, rootId, onReply, onDelete, own, deleting }: {
       <img loading="lazy" src={comment.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(comment.username)}`} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-baseline gap-x-2 text-xs">
-          <Link to={`/profile/${comment.username}`} className="font-semibold hover:text-blue-600 dark:hover:text-blue-400">{comment.display_name || comment.username}</Link>
+          <Link to={`/profile/${encodeURIComponent(comment.username)}`} className="font-semibold hover:text-blue-600 dark:hover:text-blue-400">{comment.display_name || comment.username}</Link>
           <time dateTime={comment.created_at} className="opacity-50">{new Date(comment.created_at).toLocaleString()}</time>
         </div>
         {comment.parent_id && comment.parent_id !== rootId && comment.parent_username && <p className="mt-1 text-xs text-blue-600 dark:text-blue-400">{ui('Reply to')} @{comment.parent_username}</p>}
         <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-relaxed">{comment.content}</p>
-        <div className={`mt-1 flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400`}>
-          <button type="button" onClick={() => onReply(comment)} className="font-semibold hover:text-blue-600 dark:hover:text-blue-400">{ui('Reply')}</button>
-          {own && <button type="button" onClick={() => onDelete(comment.id)} disabled={deleting} className="inline-flex items-center gap-1 hover:text-red-500 disabled:opacity-50"><Trash2 size={14} />{ui('Delete')}</button>}
+        {/* text-xs sits on each button, not the row: the base stylesheet gives every button the body size, which is what made these 16px. */}
+        <div className={`mt-1 flex items-center gap-3 text-slate-500 dark:text-slate-400`}>
+          <button type="button" onClick={() => onReply(comment)} className="py-1 text-xs font-semibold hover:text-blue-600 dark:hover:text-blue-400">{ui('Reply')}</button>
+          {own && <button type="button" onClick={() => onDelete(comment.id)} disabled={deleting} className="inline-flex items-center gap-1 py-1 text-xs hover:text-red-500 disabled:opacity-50"><Trash2 size={12} />{ui('Delete')}</button>}
         </div>
       </div>
     </div>
@@ -149,7 +150,7 @@ export function PostComments({ postId }: { postId: number }) {
             <div key={root.id}>
               {row(root, root.id)}
               {replies.length > 0 && (
-                <button type="button" onClick={() => setOpen(root.id, !open)} aria-expanded={open} className="mb-2 ml-10 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline dark:text-blue-400">
+                <button type="button" onClick={() => setOpen(root.id, !open)} aria-expanded={open} className="mb-2 ml-10 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">
                   <ChevronDown size={14} className={`transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
                   {open ? ui('Hide replies') : `${ui('View replies')} (${replies.length})`}
                 </button>

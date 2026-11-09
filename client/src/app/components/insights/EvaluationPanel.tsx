@@ -46,18 +46,18 @@ export function EvaluationPanel() {
   const unanimous = data.humanUnanimity[task];
   const scoreHeaders = [ui('Matches / n'), ui('Agreement'), 'Macro F1', 'Cohen κ'];
   const tabs = [
-    ['results', ui('Evaluation')], ['pairs', ui('Human & AI comparisons')],
-    ['methods', ui('Models & calculations')], ['tests', ui('Verification')],
-    ['references', ui('Glossary & references')],
+    ['results', ui('Evaluation'), ui('Results')], ['pairs', ui('Human & AI comparisons'), ui('Compare')],
+    ['methods', ui('Models & calculations'), ui('Models')], ['tests', ui('Verification'), ui('Tests')],
+    ['references', ui('Glossary & references'), ui('Glossary')],
   ];
 
-  return <section id="research" className={`evidence mt-8 ${isDark ? 'evidence-dark' : ''}`} aria-labelledby="research-title">
+  return <section id="research" className={`evidence ${isDark ? 'evidence-dark' : ''}`} aria-labelledby="research-title">
     <div className="evidence-heading">
       <div><p className="evidence-eyebrow"><FlaskConical size={16} aria-hidden /> {ui('Research notebook')}</p>
         <h2 id="research-title">{ui('Behind the analysis')}</h2>
         <p>{ui('A frozen evaluation sample, with traceable calculations and test evidence.')}</p>
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="evidence-actions">
         <a className="evidence-download" href="/research-foundations.html"><BookOpen size={16} aria-hidden />{ui('Research foundations')}</a>
         <a className="evidence-download" href={dataUrl} download="NewsAgg-evaluation-2026-10-15.json"><ArrowDownToLine size={16} aria-hidden />{ui('Download aggregate JSON')}</a>
       </div>
@@ -67,33 +67,23 @@ export function EvaluationPanel() {
     </div>
     <p className="evidence-notice">{ui('Interim reference agreement, not final accuracy. No adjudicated gold labels exist yet. This 120-article snapshot is separate from the live feed and does not change with its category filter.')}</p>
     <div className="evidence-tabs" aria-label={ui('Research sections')}>
-      {tabs.map(([id, title]) => <button type="button" key={id} aria-pressed={view === id} onClick={() => setView(id)}>{title}</button>)}
+      {tabs.map(([id, title, short]) => <button type="button" key={id} aria-label={title} aria-pressed={view === id} onClick={() => setView(id)}><span className="evidence-short">{short}</span><span className="evidence-long">{title}</span></button>)}
     </div>
 
     {(view === 'results' || view === 'pairs') && <div className="evidence-controls">
-      {/* Visible choices instead of native selects: two tasks as a segmented
-          switch, six references as grouped chips. */}
+      {/* A segmented switch rather than a native select; the task applies to
+          everything below, so it stays at the top. */}
       <div className="evidence-control">
         <span id="evidence-task-label">{ui('Task')}</span>
         <div className="evidence-segment" role="group" aria-labelledby="evidence-task-label">
-          {([['sentiment', ui('Sentiment · 3 classes')], ['topic', ui('Topic · 8 classes')]] as const).map(([value, title]) =>
-            <button type="button" key={value} aria-pressed={task === value} onClick={() => setTask(value)}>{title}</button>)}
+          {([['sentiment', ui('Sentiment · 3 classes'), ui('Sentiment')], ['topic', ui('Topic · 8 classes'), ui('Topic')]] as const).map(([value, title, short]) =>
+            <button type="button" key={value} aria-label={title} aria-pressed={task === value} onClick={() => setTask(value)}><span className="evidence-short">{short}</span><span className="evidence-long">{title}</span></button>)}
         </div>
       </div>
-      {view === 'results' && <div className="evidence-control">
-        <span id="evidence-reference-label">{ui('Reference for details')}</span>
-        <div className="evidence-chips" role="group" aria-labelledby="evidence-reference-label">
-          {(['human', 'ai'] as const).map(kind => <div key={kind} className="evidence-chip-group">
-            <small>{kind === 'human' ? ui('Human') : ui('AI reference')}</small>
-            {data.references.filter(r => (r.kind === 'human') === (kind === 'human')).map(r =>
-              <button type="button" key={r.id} aria-pressed={reference === r.id} onClick={() => setReference(r.id)}>{name(r.id)}</button>)}
-          </div>)}
-        </div>
-      </div>}
     </div>}
 
     {view === 'results' && <div className="evidence-body">
-      <div className="evidence-grid">
+      <div className="evidence-grid evidence-grid-results">
         <div className="evidence-card"><h3>{ui('NewsAgg vs each reference')}</h3>
           <p>{ui('Macro F1 · equal weight per class · scale 0–1')}</p>
           <div className="evidence-bars">{data.references.map(r => <div className="evidence-bar-row" key={r.id}>
@@ -114,6 +104,18 @@ export function EvaluationPanel() {
       <div className="evidence-card">
         <h3>{ui('Confusion matrix')} · {name(reference)}</h3>
         <p>{ui('Rows = reference labels. Columns = NewsAgg predictions. Diagonal cells are matches; every cell is an article count.')}</p>
+        {/* Next to the tables it changes, so a choice visibly does something;
+            AI references carry the violet of their bars above. */}
+        <div className="evidence-control evidence-reference">
+          <span id="evidence-reference-label">{ui('Reference for details')}</span>
+          <div className="evidence-chips" role="group" aria-labelledby="evidence-reference-label">
+            {/* Humans A–D on one row, the AI references on the next. */}
+            {(['human', 'ai'] as const).map(kind => <div key={kind} className="evidence-chip-row">
+              {data.references.filter(r => (r.kind === 'human') === (kind === 'human')).map(r =>
+                <button type="button" key={r.id} data-kind={r.kind} aria-pressed={reference === r.id} onClick={() => setReference(r.id)}>{name(r.id)}</button>)}
+            </div>)}
+          </div>
+        </div>
         <EvidenceTable caption={`${name(reference)} → NewsAgg`} headers={[ui('Reference ↓ / NewsAgg →'), ...metric.labels.map(label)]}>
           {metric.matrix.map((row, i) => <tr key={metric.labels[i]}><th scope="row">{label(metric.labels[i])}</th>{row.map((count, j) => <td key={j} className={i === j ? 'evidence-diagonal' : ''}>{count}</td>)}</tr>)}
         </EvidenceTable>

@@ -25,11 +25,13 @@ test('the filter tabs stay inside their pills at phone width', async ({ page }) 
   await page.goto('/');
   await page.getByRole('button', { name: /filter/i }).first().click();
 
-  const overflow = await page
-    .getByRole('button', { name: /by category/i })
-    .first()
-    .evaluate((el) => el.scrollWidth - el.clientWidth);
-  expect(overflow, 'the icon and label must fit inside the tab').toBeLessThanOrEqual(1);
+  for (const label of ['Category', 'Source', 'Sentiment', 'Sort']) {
+    const overflow = await page
+      .getByRole('button', { name: label, exact: true })
+      .filter({ visible: true })
+      .evaluate((el) => el.scrollWidth - el.clientWidth);
+    expect(overflow, `the ${label} label must fit inside its tab`).toBeLessThanOrEqual(1);
+  }
 });
 
 test('choosing a category closes the loop back to the chip strip', async ({ page }) => {

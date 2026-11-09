@@ -1,12 +1,13 @@
 import { Outlet } from 'react-router';
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { useApp } from '../contexts/AppContext';
+import { useApp, useSidebarOpen } from '../contexts/AppContext';
 import { AppShell } from '../components/shell/AppShell';
 import { ScrollToTop } from '../components/ScrollToTop';
 import { VerifyEmailBanner } from '../components/auth/VerifyEmailBanner';
 import { DrawerSkeleton } from '../components/ui/ContentSkeleton';
 import { LazyFeedbackHost } from '../components/feedback/LazyFeedbackHost';
 import { Toaster } from 'sonner';
+import { useDrawerHistory } from '../hooks/useDrawerHistory';
 
 // Dev-only stress-data switch; `false &&` in the production build, so the
 // chunk is never requested.
@@ -18,12 +19,27 @@ const ProfileSidebar = lazy(() =>
 );
 
 export function Root() {
-  const { isDark, sidebarOpen, t } = useApp();
+  const { isDark, setSidebarOpen, t } = useApp();
+  const sidebarOpen = useSidebarOpen();
   const [hasOpenedSidebar, setHasOpenedSidebar] = useState(sidebarOpen);
+  useDrawerHistory(sidebarOpen, setSidebarOpen);
 
   useEffect(() => {
     if (sidebarOpen) setHasOpenedSidebar(true);
   }, [sidebarOpen]);
+
+  // Load and mount the drawer while the browser is idle (it renders nothing until opened), so
+  // the first tap on Profile slides it in at once instead of fetching, evaluating and
+  // mounting it in the middle of the animation.
+  useEffect(() => {
+    const load = () => { void import('../components/ProfileSidebar').then(() => setHasOpenedSidebar(true)); };
+    if (typeof window.requestIdleCallback === 'function') {
+      const handle = window.requestIdleCallback(load, { timeout: 4000 });
+      return () => window.cancelIdleCallback(handle);
+    }
+    const timer = window.setTimeout(load, 2000);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   return (
     <div

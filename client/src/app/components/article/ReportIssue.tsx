@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useUiText } from '../../i18n/uiText';
 import { Flag, Loader2 } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { StyledSelect } from '../ui/StyledSelect';
@@ -11,9 +12,14 @@ const REASONS = ['sentiment', 'topic', 'summary', 'translation', 'content', 'oth
  * Reader correction route (report §V.5): flags a wrong label, summary,
  * translation or extraction for the team to review. It never edits the article.
  */
-export function ReportIssue({ articleId, isDark }: { articleId: string; isDark: boolean }) {
+/* With `opened`, a parent (the article's ⋯ menu) decides when the form shows
+ * and `onClose` hides it again; without it the component draws its own button. */
+export function ReportIssue({ articleId, isDark, opened, onClose }: { articleId: string; isDark: boolean; opened?: boolean; onClose?: () => void }) {
   const { t, isAuthenticated, setSidebarOpen } = useApp();
-  const [open, setOpen] = useState(false);
+  const ui = useUiText();
+  const [ownOpen, setOwnOpen] = useState(false);
+  const open = opened ?? ownOpen;
+  const close = () => { setOwnOpen(false); onClose?.(); };
   const [reason, setReason] = useState<(typeof REASONS)[number]>('sentiment');
   const [message, setMessage] = useState('');
   const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'failed'>('idle');
@@ -37,11 +43,12 @@ export function ReportIssue({ articleId, isDark }: { articleId: string; isDark: 
   const field = `${fieldInput} resize-y`;
 
   if (!open) {
+    if (opened !== undefined) return null;
     return (
       <button
         type="button"
         // Guests can read but not report; the button opens sign-in instead.
-        onClick={() => { if (!isAuthenticated) { setSidebarOpen(true); return; } setOpen(true); setState('idle'); }}
+        onClick={() => { if (!isAuthenticated) { setSidebarOpen(true); return; } setOwnOpen(true); setState('idle'); }}
         className={button.secondary}
       >
         <Flag size={16} />{t.reportIssue}
@@ -54,7 +61,10 @@ export function ReportIssue({ articleId, isDark }: { articleId: string; isDark: 
       <p className={`text-sm font-semibold text-slate-900 dark:text-slate-100`}>{t.reportIssueTitle}</p>
       <p className={`mt-1 text-xs leading-relaxed ${muted}`}>{t.reportIssueHint}</p>
       {state === 'sent' ? (
-        <p className="mt-3 text-sm font-medium text-emerald-600">{t.reportSent}</p>
+        <div className="mt-3 flex items-center justify-between gap-2">
+          <p className="text-sm font-medium text-emerald-600">{t.reportSent}</p>
+          {onClose && <button type="button" onClick={close} className={button.ghost}>{ui('Close')}</button>}
+        </div>
       ) : (
         <div className="mt-3 space-y-2">
           <StyledSelect label={t.reportIssueTitle} value={reason} onChange={setReason} isDark={isDark} disabled={state === 'sending'} options={REASONS.map((value, index) => ({ value, label: t.reportReasons[index] }))} />
@@ -69,7 +79,7 @@ export function ReportIssue({ articleId, isDark }: { articleId: string; isDark: 
           />
           {state === 'failed' && <p className="text-xs font-medium text-red-600">{t.reportFailed}</p>}
           <div className="flex justify-end gap-2">
-            <button type="button" onClick={() => setOpen(false)} className={button.ghost}>
+            <button type="button" onClick={close} className={button.ghost}>
               {t.cancel}
             </button>
             <button

@@ -6,6 +6,7 @@ import { authService } from '../../services/authService';
 import { useApp } from '../../contexts/AppContext';
 import { useProfilePrivacy } from '../../hooks/useProfilePrivacy';
 import { AvatarEditor } from './AvatarEditor';
+import { button } from '../ui/styles';
 import { PROFILE_BACKGROUNDS as BANNERS } from '../../lib/profileBackgrounds';
 import { prepareBackground } from '../../lib/prepareBackground';
 import { formatNewsDate } from '../../lib/formatDate';
@@ -48,13 +49,14 @@ export function ProfileHeader() {
     catch (error) { setMessage(error instanceof Error ? error.message : 'Could not upload image'); }
     finally { setSaving(false); }
   };
-  const actionBtn = `inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition-colors border-slate-300 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800`;
+  // Neutral: blue is kept for the page's main action (Write a post).
+  const actionBtn = button.secondary;
   const joined = formatDate(user.created_at, language);
   const lastLogin = formatDate(user.last_login, language);
 
   return (
     <div
-      className={`rounded-3xl border shadow-sm bg-white/95 border-slate-200 dark:bg-slate-900/80 dark:border-slate-800`}
+      className={`rounded-3xl border bg-white/95 border-slate-200 dark:bg-slate-900/80 dark:border-slate-800`}
     >
       {/* Only the banner clips, so the avatar menu can overflow the card. */}
       <div className="h-28 sm:h-40 relative overflow-hidden rounded-t-3xl" style={{ background: banner }}>
@@ -64,7 +66,7 @@ export function ProfileHeader() {
           <Palette size={14} />{ui("Change background")} </button>
       </div>
       <div className="px-5 pb-5 sm:px-6 sm:pb-6">
-        <div className="-mt-12 flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-5">
+        <div className="relative -mt-12 flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-5">
           <AvatarEditor />
           {/* The avatar overlaps the banner by 3rem; start the name just below it. */}
           <div className="min-w-0 pb-1 sm:pt-14">
@@ -73,14 +75,15 @@ export function ProfileHeader() {
             </h1>
             <p className={`mt-0.5 text-sm font-medium text-slate-600 dark:text-slate-400`}>@{user.username}</p>
           </div>
-          {/* One way out to /settings, which opens on the Profile section. */}
-          <Link to="/settings" className={`${actionBtn} shrink-0 self-start sm:ml-auto sm:mt-14`}><Settings size={16} />{t.settings}</Link>
+          {/* One way out to /settings (opens on Profile), top right at every width:
+              beside the avatar just under the banner on phones, level with the name from sm up. */}
+          <Link to="/settings" className={`${actionBtn} absolute right-0 top-14 shrink-0 sm:static sm:ml-auto sm:mt-14 sm:self-start`}><Settings size={16} />{t.settings}</Link>
         </div>
         {user.bio && <p className={`mt-4 max-w-2xl text-sm leading-relaxed text-slate-700 dark:text-slate-300`}>{user.bio}</p>}
         {editing && <div className={`mt-5 rounded-2xl border p-4 border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-950/40`} aria-label={ui("Background colours")}>
           <div className="w-full flex flex-wrap items-center gap-3">
             <button type="button" disabled={saving} onClick={() => fileInput.current?.click()} className="rounded-lg bg-blue-600 text-white px-3 py-2 text-xs disabled:opacity-50">{saving ? ui("Saving…") : ui("Upload image")}</button>
-            {user.profileBackgroundImage && <button type="button" disabled={saving} onClick={() => void saveBackground(user.profileBackground ?? 0)} className="text-xs font-semibold hover:underline">{ui("Remove image")}</button>}
+            {user.profileBackgroundImage && <button type="button" disabled={saving} onClick={() => void saveBackground(user.profileBackground ?? 0)} className="text-xs font-semibold hover:opacity-80">{ui("Remove image")}</button>}
             <p className="text-xs opacity-70">{ui("JPG, PNG or WebP · up to 10 MB · centre-cropped to 3:1")}</p>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">{BANNERS.map((gradient, index) => <button key={gradient} type="button" disabled={saving}

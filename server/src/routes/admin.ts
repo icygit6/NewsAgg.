@@ -75,6 +75,21 @@ adminRouter.get('/overview', async (_req, res: Response) => {
   }
 })
 
+// Just the badge number in the navigation: three counts, no database or table
+// sizes. Every page an admin has open asks for this, so it must stay cheap.
+adminRouter.get('/attention', async (_req, res: Response) => {
+  try {
+    const counts = await query(`SELECT
+      (SELECT count(*)::int FROM article_reports WHERE status = 'open') AS open_article_reports,
+      (SELECT count(*)::int FROM post_reports WHERE status = 'open') AS open_post_reports,
+      (SELECT count(*)::int FROM feedback WHERE status = 'open') AS open_feedback`)
+    res.json({ success: true, data: counts.rows[0] })
+  } catch (err: any) {
+    logger.error({ err: err?.message }, '[admin] attention failed')
+    res.status(500).json({ success: false, error: 'Failed to load admin counts' })
+  }
+})
+
 adminRouter.get('/reports', async (_req, res: Response) => {
   try {
     const articleReports = await query(`SELECT r.id, r.article_id, r.reason, r.message, r.status, r.created_at,

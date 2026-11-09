@@ -26,6 +26,20 @@ export function hasSessionToken(req: any): boolean {
   return Boolean(requestToken(req))
 }
 
+/** The account a request's token was signed for, checked by signature only
+ * (no database round trip). Cheap enough for per-request rate-limit keys;
+ * routes still authenticate with authMiddleware, which also checks revocation. */
+export function tokenUserId(req: any): string | null {
+  const token = requestToken(req)
+  if (!token) return null
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId?: number | string }
+    return decoded.userId === undefined ? null : String(decoded.userId)
+  } catch {
+    return null
+  }
+}
+
 function requestToken(req: any): string | undefined {
   const auth = req.headers.authorization
   const bearer = typeof auth === 'string' && auth.startsWith('Bearer ') ? auth.slice(7) : undefined

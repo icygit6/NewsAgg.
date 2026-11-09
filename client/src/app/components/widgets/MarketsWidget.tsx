@@ -140,7 +140,7 @@ export function MarketsWidget() {
               href="https://www.exchangerate-api.com"
               target="_blank"
               rel="noreferrer"
-              className="underline-offset-2 hover:text-[var(--brand)] hover:underline"
+              className="hover:text-[var(--brand)]"
             >{ui("Rates by ExchangeRate-API")} </a>{' '}
             · {asOfLabel} {formatAsOf(data.fx.updatedAt, locale)}
           </p>

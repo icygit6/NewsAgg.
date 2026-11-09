@@ -1,3 +1,4 @@
+import { segment } from '../ui/styles';
 import { useState, type ReactNode } from 'react';
 import { useUiPunctuation, useUiText } from '../../i18n/uiText';
 import { TrendingDown, TrendingUp } from 'lucide-react';
@@ -9,6 +10,7 @@ import type { SentimentType } from '../../types/sentiment';
 import { SentimentExplorer } from './SentimentExplorer';
 import { DonutChart } from './DonutChart';
 import { SentimentReasons } from './SentimentReasons';
+import { useReasonFocus } from './useReasonFocus';
 import { panelBaseClass, chartTextColor, chartMutedColor } from './shared';
 import { LoadingIndicator } from '../ui/ContentSkeleton';
 import { RollingNumber } from '../ui/RollingNumber';
@@ -39,6 +41,7 @@ export function SentimentByCategory({ part }: { part?: 'overview' | 'ranking' })
   const p = useUiPunctuation();
   const { t, isDark, selectedCategory, setSelectedCategory } = useApp();
   const { data, isPending, isError } = useStatsOverview(selectedCategory);
+  const [reasonFocus, pickReason] = useReasonFocus(selectedCategory);
 
   const rows: CategoryRow[] = (data?.byCategory ?? [])
     .map((item) => ({ category: TOPIC_TO_CATEGORY[item.topic as CategoryTopic], total: item.total, sentiments: item.sentiments }))
@@ -85,12 +88,12 @@ export function SentimentByCategory({ part }: { part?: 'overview' | 'ranking' })
             {scopeChip}
           </div>}
           {isPending ? loading : isError ? failed : <>
-            <SentimentExplorer counts={scopeCounts} sources={selectedRow ? scopeRow?.bySource : data?.bySource} scopeKey={selectedCategory} />
+            <SentimentExplorer counts={scopeCounts} sources={selectedRow ? scopeRow?.bySource : data?.bySource} scopeKey={selectedCategory} selection={reasonFocus} onPick={pickReason} />
             {!part && <div className="flex items-center justify-between text-xs pt-2">
               <span style={{ color: mutedColor }}>{ui('Articles analysed')}</span>
               <span className="font-semibold tabular-nums" style={{ color: textColor }}>{scopeTotal}</span>
             </div>}
-            <SentimentReasons show={part ? 'open' : 'all'} evidence={evidence} />
+            <SentimentReasons show={part ? 'open' : 'all'} evidence={evidence} focus={reasonFocus} onPick={pickReason} />
           </>}
         </section>
   );
@@ -111,11 +114,11 @@ export function SentimentByCategory({ part }: { part?: 'overview' | 'ranking' })
                 </span>}
               </div>
             )}
-            <div className="my-3 flex gap-2" role="group" aria-label={ui('Category chart style')}>
-              {[false, true].map(value => <button key={String(value)} type="button" aria-pressed={donuts === value} onClick={() => setDonuts(value)} className={`rounded-lg px-3 py-2 text-[13px] font-semibold ${donuts === value ? 'bg-[var(--brand)] text-white' : 'border border-current/20'}`}>{ui(value ? 'Donuts' : 'Bars')}</button>)}
+            <div className={`${segment.track} my-3`} role="group" aria-label={ui('Category chart style')}>
+              {[false, true].map(value => <button key={String(value)} type="button" aria-pressed={donuts === value} onClick={() => setDonuts(value)} className={donuts === value ? segment.active : segment.item}>{ui(value ? 'Donuts' : 'Bars')}</button>)}
             </div>
             {donuts ? <div className="grid grid-cols-2 gap-4">{rows.map(row => <section key={row.category} className="min-w-0 border-b border-current/10 pb-3">
-              <button type="button" aria-pressed={false} onClick={() => setSelectedCategory(row.category)} className="w-full rounded-lg py-2 text-sm font-semibold text-[var(--brand)]">{ui(CATEGORY_LABELS[row.category])} · {row.total}</button>
+              <button type="button" aria-pressed={false} onClick={() => setSelectedCategory(row.category)} className="flex w-full items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold hover:bg-white dark:hover:bg-slate-800"><span className={`rounded-full px-2.5 py-0.5 text-xs ${CATEGORY_BADGE_CLASS[row.category]}`}>{ui(CATEGORY_LABELS[row.category])}</span><span className="tabular-nums">{row.total}</span></button>
               <div className="flex flex-wrap items-center justify-center gap-x-5">
               <DonutChart size="clamp(112px, 12vw, 168px)" segments={TYPES.map(type => ({ name: t[type], value: row.sentiments[type], color: SENTIMENT_COLOR[type] }))} isDark={isDark} />
               <dl className="w-full min-w-0 space-y-2 pb-3 text-xs">{TYPES.map(type => <div key={type} className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1"><dt className="inline-flex items-center gap-1.5" style={{color:SENTIMENT_COLOR[type]}}><span className="h-2 w-2 shrink-0 rounded-full" style={{background:SENTIMENT_COLOR[type]}} />{t[type]}</dt><dd className="tabular-nums font-semibold" style={{color:SENTIMENT_COLOR[type]}}>{row.sentiments[type].toLocaleString()} · {share(row.sentiments[type], row.total)}%</dd></div>)}</dl>
@@ -134,7 +137,7 @@ export function SentimentByCategory({ part }: { part?: 'overview' | 'ranking' })
                     >
                       <div className="flex items-center gap-2 text-xs">
                         <span className="w-4 text-right tabular-nums" style={{ color: mutedColor }}>{index + 1}</span>
-                        <span className="font-semibold" style={{ color: textColor }}>{ui(CATEGORY_LABELS[row.category])}</span>
+                        <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${CATEGORY_BADGE_CLASS[row.category]}`}>{ui(CATEGORY_LABELS[row.category])}</span>
                         <span className="ml-auto font-semibold tabular-nums" style={{ color: textColor }}><RollingNumber value={row.total} /></span>
                       </div>
                       <div className="chart-grow mt-1.5 ml-6 flex h-2 overflow-hidden rounded-full" aria-hidden="true">

@@ -53,8 +53,11 @@ export function useDeletedContent(offset: number, enabled: boolean, postId?: num
   return useQuery({ queryKey: ['admin', 'deleted', offset, postId], queryFn: () => request<DeletedContent[]>(`/api/admin/deleted-content?offset=${offset}${postId ? `&postId=${postId}` : ''}`), enabled: admin && enabled, staleTime: 0 });
 }
 
+/** The open-item counts behind the navigation badge (/api/admin/attention). */
+export type AdminAttention = Pick<AdminOverview, 'open_article_reports' | 'open_post_reports' | 'open_feedback'>;
+
 /** Everything waiting for an admin: open article and post reports plus unread feedback. */
-export function adminAttentionCount(overview: AdminOverview | undefined) {
+export function adminAttentionCount(overview: AdminAttention | undefined) {
   return (overview?.open_article_reports ?? 0) + (overview?.open_post_reports ?? 0) + (overview?.open_feedback ?? 0);
 }
 
@@ -70,6 +73,21 @@ export function useAdminOverview() {
     queryFn: () => request<AdminOverview>('/api/admin/overview'),
     enabled: admin,
     refetchInterval: 60_000,
+  });
+}
+
+/** The navigation badge. Every page an admin has open runs this, so it asks for
+ * three counts, not the whole overview, and only every few minutes or when the
+ * tab is brought back into view. */
+export function useAdminAttention() {
+  const admin = useIsAdmin();
+  return useQuery({
+    queryKey: ['admin', 'attention'],
+    queryFn: () => request<AdminAttention>('/api/admin/attention'),
+    enabled: admin,
+    staleTime: 60_000,
+    refetchInterval: 5 * 60_000,
+    refetchOnWindowFocus: true,
   });
 }
 

@@ -1,20 +1,40 @@
 import rateLimit from 'express-rate-limit'
+import type { Request } from 'express'
+import { clientIp, ipBucket } from '../lib/clientIp'
+import { tokenUserId } from './auth'
+
+// Limits keyed by address use the visitor's real IP (see lib/clientIp): behind
+// the Cloudflare Worker, req.ip is the Worker for everyone.
+const byIp = (req: Request) => ipBucket(clientIp(req))
+
+// Cheap reads the app makes on every page or poll. Counting them against the
+// shared budget is what locked readers out of their own profile when it ran out.
+const UNMETERED = new Set(['/api/account/me', '/api/stats/revision', '/api/config/public'])
 
 export const explanationLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 30,
+  keyGenerator: byIp,
   message: { success: false, message: 'Too many explanation requests — try again later' },
 })
 
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 min
   max: 600, // SPA traffic: paginated feed + per-article fetches add up fast
+  // Signed-in readers get their own budget even when they share an address
+  // (a campus or office network); everyone else is counted per visitor IP.
+  keyGenerator: (req: Request) => {
+    const userId = tokenUserId(req)
+    return userId ? `user:${userId}` : byIp(req)
+  },
+  skip: (req: Request) => req.method === 'GET' && UNMETERED.has(req.path),
   message: { success: false, message: 'Too many requests' }
 })
 
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
+  keyGenerator: byIp,
   message: { success: false, message: 'Too many auth attempts' }
 })
 
@@ -55,6 +75,7 @@ export const likeLimiter = rateLimit({
 export const articleReportLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
+  keyGenerator: byIp,
   message: { success: false, message: 'Too many reports — try again later' },
 })
 
@@ -62,12 +83,14 @@ export const articleReportLimiter = rateLimit({
 export const feedbackLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
+  keyGenerator: byIp,
   message: { success: false, error: 'Too much feedback at once — try again in a few minutes' },
 })
 
 export const translateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 30,
+  keyGenerator: byIp,
   message: { success: false, message: 'Too many translation requests — try again later' }
 })
 

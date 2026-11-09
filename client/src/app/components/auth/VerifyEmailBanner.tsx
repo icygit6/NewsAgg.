@@ -34,7 +34,7 @@ export function VerifyEmailBanner() {
           <button
             onClick={resend}
             disabled={state === 'sending'}
-            className="shrink-0 font-semibold underline-offset-2 hover:underline hover:opacity-90 disabled:opacity-60"
+            className="shrink-0 font-semibold hover:opacity-90 disabled:opacity-60"
           >
             {ui(state === 'sending' ? 'Sending…' : 'Resend')}
           </button>

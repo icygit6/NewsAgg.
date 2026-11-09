@@ -1,23 +1,27 @@
-import { useUiText } from '../i18n/uiText';
 import { useLayoutEffect, useRef } from 'react';
-import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
-import { ArrowUp } from 'lucide-react';
 import { useLocation, useNavigationType } from 'react-router';
-import { getMain, scrollMainToTop, useMainScrolledPast } from '../hooks/useMainScroll';
+import { getMain, useMainScrolledPast } from '../hooks/useMainScroll';
+import { ScrollTopButton } from './ui/ScrollTopButton';
 
 const positions = new Map<string, number>();
 
 export function ScrollToTop() {
-  const ui = useUiText();
-  const { pathname, key } = useLocation();
+  const { pathname, search, key, state } = useLocation();
   const navigation = useNavigationType();
   const previousPath = useRef('');
+  const drawer = (state as { drawer?: boolean } | null)?.drawer === true;
+  const place = useRef({ pathname, search, drawer });
   const show = useMainScrolledPast(400, pathname);
-  const shouldReduceMotion = useReducedMotion();
 
   useLayoutEffect(() => {
     const el = getMain();
     if (!el) return;
+    // Opening or closing the account drawer adds or drops a history entry on the same page; keep the scroll position.
+    const was = place.current;
+    place.current = { pathname, search, drawer };
+    if (pathname === was.pathname && search === was.search && drawer !== was.drawer) return;
+    // Switching the article's Article/Insights tab only changes the query string; that page restores its own offsets.
+    if (pathname.startsWith('/article/') && pathname === previousPath.current) return;
     const restore = navigation === 'POP' && previousPath.current.startsWith('/article/')
       && !pathname.startsWith('/article/');
     const target = restore ? positions.get(key) ?? 0 : 0;
@@ -48,31 +52,27 @@ export function ScrollToTop() {
       el.removeEventListener('scroll', remember);
       window.history.scrollRestoration = originalRestoration;
     };
-  }, [key, pathname, navigation]);
+  }, [key, pathname, search, drawer, navigation]);
 
-  const scrollToTop = () => scrollMainToTop(!shouldReduceMotion);
-
-  // Article pages place this control beside the chat trigger (ArticleChat),
-  // so two stacked floating buttons no longer cover the reading column.
-  const isArticle = pathname.startsWith('/article/');
-  const offset = 'bottom-[calc(5rem+env(safe-area-inset-bottom))] lg:bottom-6';
-
+  // Phones: above the bottom tab bar. Desktop uses CentreColumnScrollTop instead.
   return (
-    <AnimatePresence>
-      {show && !isArticle && (
-        <motion.button
-          initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.75 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.75 }}
-          whileHover={shouldReduceMotion ? undefined : { scale: 1.06 }}
-          whileTap={shouldReduceMotion ? undefined : { scale: 0.94 }}
-          onClick={scrollToTop}
-          className={`fixed ${offset} right-6 z-50 w-12 h-12 rounded-full bg-[var(--brand)] text-white shadow-lg shadow-blue-600/30 flex items-center justify-center hover:shadow-xl hover:shadow-blue-600/40 transition-shadow`}
-          aria-label={ui("Scroll to top")}
-        >
-          <ArrowUp size={20} />
-        </motion.button>
-      )}
-    </AnimatePresence>
+    <ScrollTopButton
+      show={show && !placesOwnScrollTop(pathname)}
+      className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-6 lg:hidden"
+    />
   );
+}
+
+/** Desktop: pinned to the centre column's corner (AppShell), like the article page's reading
+ * column, so it sits under the content it scrolls and never covers the right rail. */
+export function CentreColumnScrollTop() {
+  const { pathname } = useLocation();
+  const show = useMainScrolledPast(400, pathname);
+  return <ScrollTopButton show={show && !placesOwnScrollTop(pathname)} className="absolute bottom-6 right-6 max-lg:hidden" />;
+}
+
+// Article pages place this control themselves (beside the reading column on desktop, in the
+// chat trigger row on phones). Settings is a short form whose full-width phone buttons it would cover.
+function placesOwnScrollTop(pathname: string) {
+  return pathname.startsWith('/article/') || pathname === '/settings';
 }

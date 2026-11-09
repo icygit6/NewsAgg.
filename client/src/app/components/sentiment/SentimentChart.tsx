@@ -1,14 +1,16 @@
 import { useUiText } from '../../i18n/uiText';
 import { useEffect, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { InsightMark } from '../ui/InsightMark';
 import { useApp } from '../../contexts/AppContext';
-import { CATEGORY_ACCENT, CATEGORY_BADGE_CLASS, CATEGORIES, CATEGORY_LABELS } from '../../constants';
+import { CATEGORY_BADGE_CLASS, CATEGORIES, CATEGORY_LABELS } from '../../constants';
 import { useStatsOverview, type StatsOverview } from '../../hooks/useStats';
 import type { NewsCategoryFilter } from '../../types/article';
 import type { SentimentDistributionItem } from '../../types/sentiment';
 import { SentimentExplorer } from './SentimentExplorer';
 import { SentimentReasons } from './SentimentReasons';
+import { useReasonFocus } from './useReasonFocus';
 import { panelBaseClass, chartTextColor, chartMutedColor } from './shared';
 import { LoadingIndicator } from '../ui/ContentSkeleton';
 import { RollingNumber } from '../ui/RollingNumber';
@@ -23,6 +25,8 @@ const toDistribution = (overview: StatsOverview | undefined): SentimentDistribut
 
 
 const SENTIMENT_ROTATE_MS = 10000;
+// Same as the AutoPages arrows under Live View and Reporting authors.
+const arrowClass = 'grid h-8 w-8 shrink-0 place-items-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-800 pointer-coarse:h-11 pointer-coarse:w-11 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100';
 
 export function SentimentChart() {
   const ui = useUiText();
@@ -31,14 +35,17 @@ export function SentimentChart() {
   const [sentimentCategoryIndex, setSentimentCategoryIndex] = useState(0);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
-  const [reasonsOpen, setReasonsOpen] = useState(false);
-  const paused = hovered || focused || reasonsOpen;
+  // Rotation keeps going with the reasons open (they stay open from one category to the
+  // next); hovering or focusing the panel pauses it.
+  const paused = hovered || focused;
   const rotationCategories = selectedCategories.length > 1 ? selectedCategories : CATEGORIES;
   const rotationCount = rotationCategories.length;
 
   const rotatingSentimentCategory: NewsCategoryFilter = selectedCategory === 'all'
     ? rotationCategories[sentimentCategoryIndex % rotationCount]
     : selectedCategory;
+  const [overallReasonFocus, pickOverallReason] = useReasonFocus(selectedCategory);
+  const [categoryReasonFocus, pickCategoryReason] = useReasonFocus(rotatingSentimentCategory);
 
   // SQL-side aggregates via /api/stats/overview (no full-dataset download).
   const { data: overallOverview, isPending: overallLoading, isError: overallError } = useStatsOverview(selectedCategory);
@@ -64,8 +71,8 @@ export function SentimentChart() {
     if (categoryIndex >= 0) setSentimentCategoryIndex(categoryIndex);
   }, [selectedCategory, rotationCount, paused, sentimentCategoryIndex, reducedMotion]);
 
+  // The reasons dropdown keeps its open or closed state from one category to the next.
   const handleNextSentimentCategory = () => {
-    setReasonsOpen(false);
     setSentimentCategoryIndex((prev) => (prev + 1) % rotationCount);
   };
 
@@ -112,12 +119,12 @@ export function SentimentChart() {
           </div>
 
           {overallLoading ? <div className="grid min-h-44 place-items-center"><LoadingIndicator label={t.loading} /></div> : overallError ? <LoadError message={t.fetchFailed} /> : <>
-          <SentimentExplorer counts={overallOverview?.sentiments ?? {positive:0,neutral:0,negative:0}} sources={overallOverview?.bySource} scopeKey={selectedCategory} />
+          <SentimentExplorer counts={overallOverview?.sentiments ?? {positive:0,neutral:0,negative:0}} sources={overallOverview?.bySource} scopeKey={selectedCategory} selection={overallReasonFocus} onPick={pickOverallReason} />
           <div className="flex items-center justify-between text-xs pt-2">
             <span style={{ color: mutedColor }}>{selectedCategory === 'all' ? ui("Articles analysed") : `${ui("Articles analysed (")}${ui(CATEGORY_LABELS[selectedCategory])})`}</span>
             <span className="font-semibold" style={{ color: textColor }}><RollingNumber value={overallTotal} /></span>
           </div>
-          <SentimentReasons evidence={overallOverview?.evidence} />
+          <SentimentReasons evidence={overallOverview?.evidence} focus={overallReasonFocus} onPick={pickOverallReason} />
           </>}
         </div>
 
@@ -129,38 +136,40 @@ export function SentimentChart() {
                 {sentimentCategoryLabel}
               </span>
             </div>
-
-            {selectedCategory === 'all' && (
-              <button
-                type="button"
-                onPointerDown={event => { if (event.pointerType === 'mouse') event.preventDefault(); }}
-                onClick={handleNextSentimentCategory}
-                className={`text-xs px-3 py-1.5 rounded-full font-semibold transition-colors bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/30`}
-              >
-                {t.next}
-              </button>
-            )}
           </div>
 
           {categoryLoading ? <div className="grid min-h-44 place-items-center"><LoadingIndicator label={t.loading} /></div> : categoryError ? <LoadError message={t.fetchFailed} /> : <>
-          <SentimentExplorer counts={categoryOverview?.sentiments ?? {positive:0,neutral:0,negative:0}} sources={categoryOverview?.bySource} scopeKey={rotatingSentimentCategory} />
+          <SentimentExplorer counts={categoryOverview?.sentiments ?? {positive:0,neutral:0,negative:0}} sources={categoryOverview?.bySource} scopeKey={rotatingSentimentCategory} selection={categoryReasonFocus} onPick={pickCategoryReason} />
           <div className="flex items-center justify-between text-xs pt-2">
             <span style={{ color: mutedColor }}>{ui("Articles analysed (")}{sentimentCategoryLabel})</span>
             <span className="font-semibold" style={{ color: textColor }}><RollingNumber value={categoryTotal} /></span>
           </div>
-          <SentimentReasons key={rotatingSentimentCategory} evidence={categoryOverview?.evidence} onOpenChange={setReasonsOpen} />
+          <SentimentReasons evidence={categoryOverview?.evidence} scopeKey={rotatingSentimentCategory} focus={categoryReasonFocus} onPick={pickCategoryReason} />
           </>}
 
-          {selectedCategory === 'all' && <div className="mt-3 flex flex-wrap justify-center gap-1" role="group" aria-label={ui('Per Category')}>
+          {/* Arrows either side of the dots; like the timer, they wrap. */}
+          {selectedCategory === 'all' && <div className="mt-3 flex items-center justify-center gap-1">
+          <button type="button" aria-label={ui('Previous category')}
+            onPointerDown={event => { if (event.pointerType === 'mouse') event.preventDefault(); }}
+            onClick={() => setSentimentCategoryIndex((prev) => (prev + rotationCount - 1) % rotationCount)}
+            className={arrowClass}><ChevronLeft size={16} aria-hidden="true" /></button>
+          {/* No gap and 24px-wide dots so all eight fit on one row between the arrows,
+              even in the narrowest rail with the larger touch arrows. */}
+          <div className="flex min-w-0 flex-wrap justify-center" role="group" aria-label={ui('Per Category')}>
             {rotationCategories.map((category, index) => <button key={category} type="button"
               aria-label={ui(CATEGORY_LABELS[category])} title={ui(CATEGORY_LABELS[category])}
               aria-current={rotatingSentimentCategory === category ? 'true' : undefined}
               onPointerDown={event => { if (event.pointerType === 'mouse') event.preventDefault(); }}
-              onClick={() => { setReasonsOpen(false); setSentimentCategoryIndex(index); }}
-              style={{ color: CATEGORY_ACCENT[category] }}
-              className="group grid h-9 w-9 place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-current">
-              <span className={`h-2.5 rounded-full transition-[background-color,width] duration-150 motion-reduce:transition-none group-hover:bg-current ${rotatingSentimentCategory === category ? 'w-5 bg-current' : 'w-2.5 bg-slate-300 dark:bg-slate-600'}`} />
+              onClick={() => setSentimentCategoryIndex(index)}
+              className="group grid h-9 w-6 place-items-center rounded-full text-slate-500 focus-visible:outline-2 focus-visible:outline-current dark:text-slate-400">
+              {/* Grey, not the category colour: the selected dot is wider and darker. */}
+              <span className={`h-2.5 rounded-full transition-[background-color,width] duration-150 motion-reduce:transition-none ${rotatingSentimentCategory === category ? 'w-5 bg-current' : 'w-2.5 bg-slate-300 group-hover:bg-current dark:bg-slate-600'}`} />
             </button>)}
+          </div>
+          <button type="button" aria-label={ui('Next category')}
+            onPointerDown={event => { if (event.pointerType === 'mouse') event.preventDefault(); }}
+            onClick={handleNextSentimentCategory}
+            className={arrowClass}><ChevronRight size={16} aria-hidden="true" /></button>
           </div>}
           {/* The track always keeps its space so pausing on hover doesn't
               shrink the panel and push the pointer back out of it. */}
